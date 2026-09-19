@@ -14,6 +14,8 @@ export default function AppShellLayout() {
         <Stack.Screen name="(drawer)" />
         <Stack.Screen name="account" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="artist/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="collection/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="profile/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </ChatProvider>
   );

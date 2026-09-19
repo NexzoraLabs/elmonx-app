@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
@@ -15,7 +16,9 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
   const isSingle = layout === 'single';
 
   return (
-    <View style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}>
+    <Pressable
+      style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}
+      onPress={() => router.push(`/collection/${item.id}`)}>
       <View style={[styles.thumbWrapper, isSingle ? styles.thumbSingle : styles.thumbGrid]}>
         {item.imageUrl ? (
           <Image
@@ -41,7 +44,7 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
         {item.title}
       </Text>
       <Text style={styles.date}>Drop Date : {item.dropDate}</Text>
-    </View>
+    </Pressable>
   );
 }
 

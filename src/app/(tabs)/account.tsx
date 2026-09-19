@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,8 +10,15 @@ import { AppColors } from '@/constants/app-colors';
 import { ACCOUNT_SECTIONS } from '@/data/account-menu';
 
 export default function AccountScreen() {
+  const [toggleValues, setToggleValues] = useState<Record<string, boolean>>({ 'dark-mode': true });
+
   const handlePressRow = (_key: string) => {
     // TODO: wire up destinations once those screens are designed.
+  };
+
+  const handleToggleChange = (key: string, value: boolean) => {
+    setToggleValues((prev) => ({ ...prev, [key]: value }));
+    // TODO: wire up real light/dark theme switching once a light theme exists.
   };
 
   const handleLogOut = () => {
@@ -50,7 +58,13 @@ export default function AccountScreen() {
         </View>
 
         {ACCOUNT_SECTIONS.map((section) => (
-          <AccountSection key={section.title} section={section} onPressRow={handlePressRow} />
+          <AccountSection
+            key={section.title}
+            section={section}
+            onPressRow={handlePressRow}
+            toggleValues={toggleValues}
+            onToggleChange={handleToggleChange}
+          />
         ))}
 
         <View style={styles.logOutSection}>

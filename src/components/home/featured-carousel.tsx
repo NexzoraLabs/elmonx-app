@@ -1,10 +1,12 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,7 +42,10 @@ export function FeaturedCarousel({ banners }: { banners: FeaturedBanner[] }) {
         onMomentumScrollEnd={handleMomentumEnd}
         contentContainerStyle={styles.scrollContent}>
         {banners.map((banner) => (
-          <View key={banner.id} style={styles.slideWrapper}>
+          <Pressable
+            key={banner.id}
+            style={styles.slideWrapper}
+            onPress={() => router.push(`/collection/${banner.id}`)}>
             {banner.imageUrl ? (
               <View style={[styles.slide, styles.imageSlide]}>
                 <Image
@@ -71,7 +76,7 @@ export function FeaturedCarousel({ banners }: { banners: FeaturedBanner[] }) {
                 <Text style={styles.dropSubtitle}>{banner.dropSubtitle}</Text>
               </View>
             </View>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
 
