@@ -7,7 +7,7 @@ import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { NumericKeypad } from '@/components/auth/numeric-keypad';
 import { OtpInput } from '@/components/auth/otp-input';
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 const CODE_LENGTH = 4;
 const RESEND_SECONDS = 24;
@@ -47,7 +47,7 @@ export default function VerifyCodeScreen() {
     // TODO: replace with real code-verification API call once backend integration begins.
     setTimeout(() => {
       setVerifying(false);
-      router.replace('/(tabs)/home');
+      router.replace('/home');
     }, 400);
   };
 
@@ -92,30 +92,30 @@ export default function VerifyCodeScreen() {
 
 const styles = StyleSheet.create({
   title: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 26,
     fontWeight: '700',
     marginTop: 8,
   },
   subtitle: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 10,
   },
   emailText: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
   },
   otpSection: {
     marginTop: 32,
   },
   resendText: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 13,
     marginTop: 20,
   },
   resendLink: {
-    color: AuthColors.link,
+    color: AppColors.link,
     fontWeight: '600',
   },
   keypadSection: {

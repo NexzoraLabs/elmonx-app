@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 export default function AuthLayout() {
   return (
@@ -11,7 +11,7 @@ export default function AuthLayout() {
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
-          contentStyle: { backgroundColor: AuthColors.background },
+          contentStyle: { backgroundColor: AppColors.background },
         }}>
         <Stack.Screen name="welcome" />
         <Stack.Screen name="sign-in" />

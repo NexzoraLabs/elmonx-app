@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 type OtpInputProps = {
   length: number;
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   digit: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 24,
     fontWeight: '600',
     height: 30,
@@ -44,9 +44,9 @@ const styles = StyleSheet.create({
     height: 2,
     width: '100%',
     borderRadius: 1,
-    backgroundColor: AuthColors.border,
+    backgroundColor: AppColors.border,
   },
   underlineActive: {
-    backgroundColor: AuthColors.textPrimary,
+    backgroundColor: AppColors.textPrimary,
   },
 });

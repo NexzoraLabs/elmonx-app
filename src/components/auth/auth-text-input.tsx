@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 type AuthTextInputProps = TextInputProps & {
   secureToggle?: boolean;
@@ -26,7 +26,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
         ]}>
         <TextInput
           ref={ref}
-          placeholderTextColor={AuthColors.textPlaceholder}
+          placeholderTextColor={AppColors.textPlaceholder}
           style={[styles.input, style]}
           secureTextEntry={secureToggle ? isHidden : secureTextEntry}
           onFocus={(event) => {
@@ -44,7 +44,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
             <Ionicons
               name={isHidden ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={AuthColors.iconMuted}
+              color={AppColors.iconMuted}
             />
           </Pressable>
         ) : null}
@@ -58,20 +58,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: AuthColors.border,
+    borderBottomColor: AppColors.border,
     paddingVertical: 12,
     gap: 8,
   },
   containerFocused: {
-    borderBottomColor: AuthColors.borderFocused,
+    borderBottomColor: AppColors.borderFocused,
   },
   containerError: {
-    borderBottomColor: AuthColors.danger,
+    borderBottomColor: AppColors.danger,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     padding: 0,
   },
 });

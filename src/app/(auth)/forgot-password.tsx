@@ -5,7 +5,7 @@ import { AuthButton } from '@/components/auth/auth-button';
 import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 import { isValidEmail } from '@/utils/auth-validation';
 
 export default function ForgotPasswordScreen() {
@@ -61,13 +61,13 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   title: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 26,
     fontWeight: '700',
     marginTop: 8,
   },
   subtitle: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 10,
@@ -77,11 +77,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   error: {
-    color: AuthColors.danger,
+    color: AppColors.danger,
     fontSize: 13,
   },
   success: {
-    color: '#34C759',
+    color: AppColors.success,
     fontSize: 13,
   },
 });

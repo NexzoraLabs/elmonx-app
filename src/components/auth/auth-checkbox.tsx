@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 type AuthCheckboxProps = {
   checked: boolean;
@@ -18,7 +18,7 @@ export function AuthCheckbox({ checked, onChange, label }: AuthCheckboxProps) {
       onPress={() => onChange(!checked)}
       hitSlop={8}>
       <View style={[styles.box, checked && styles.boxChecked]}>
-        {checked ? <Ionicons name="checkmark" size={14} color={AuthColors.buttonPrimaryText} /> : null}
+        {checked ? <Ionicons name="checkmark" size={14} color={AppColors.buttonPrimaryText} /> : null}
       </View>
       <Text style={styles.label}>{label}</Text>
     </Pressable>
@@ -36,16 +36,16 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: AuthColors.buttonSecondaryBorder,
+    borderColor: AppColors.buttonSecondaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   boxChecked: {
-    backgroundColor: AuthColors.buttonPrimaryBg,
-    borderColor: AuthColors.buttonPrimaryBg,
+    backgroundColor: AppColors.buttonPrimaryBg,
+    borderColor: AppColors.buttonPrimaryBg,
   },
   label: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 14,
   },
 });

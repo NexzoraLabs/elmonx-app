@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 const DIGIT_KEYS: { digit: string; letters?: string }[] = [
   { digit: '1' },
@@ -49,7 +49,7 @@ export function NumericKeypad({ onPressDigit, onBackspace }: NumericKeypadProps)
         style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
         onPress={onBackspace}
         hitSlop={8}>
-        <Ionicons name="backspace-outline" size={24} color={AuthColors.textPrimary} />
+        <Ionicons name="backspace-outline" size={24} color={AppColors.textPrimary} />
       </Pressable>
     </View>
   );
@@ -66,20 +66,20 @@ const styles = StyleSheet.create({
     width: '30%',
     aspectRatio: 1.6,
     borderRadius: 14,
-    backgroundColor: AuthColors.surface,
+    backgroundColor: AppColors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   keyPressed: {
-    backgroundColor: AuthColors.border,
+    backgroundColor: AppColors.border,
   },
   digit: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 22,
     fontWeight: '600',
   },
   letters: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 10,
     letterSpacing: 1,
     marginTop: 2,

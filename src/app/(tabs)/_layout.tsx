@@ -1,45 +1,16 @@
-import { Tabs } from 'expo-router';
-import { Image } from 'expo-image';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
 
-import { Colors } from '@/constants/theme';
+import { AppColors } from '@/constants/app-colors';
 
-export default function TabLayout() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' || scheme == null ? 'light' : scheme];
-
+export default function AppShellLayout() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: AppColors.background },
       }}>
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ size }) => (
-            <Image
-              source={require('@/assets/images/tabIcons/home.png')}
-              style={{ width: size, height: size, tintColor: colors.text }}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ size }) => (
-            <Image
-              source={require('@/assets/images/tabIcons/explore.png')}
-              style={{ width: size, height: size, tintColor: colors.text }}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="(drawer)" />
+      <Stack.Screen name="account" options={{ animation: 'slide_from_right' }} />
+    </Stack>
   );
 }

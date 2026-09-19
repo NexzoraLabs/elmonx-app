@@ -1,4 +1,4 @@
-export const AuthColors = {
+export const AppColors = {
   background: '#0A0A0B',
   surface: '#17171A',
   border: '#2A2A2D',
@@ -15,6 +15,12 @@ export const AuthColors = {
   buttonDisabledText: '#6B6B70',
   iconMuted: '#9A9AA1',
   danger: '#FF453A',
+  success: '#34C759',
+  gold: '#F5B400',
+  rarityCommon: '#34C759',
+  rarityRare: '#3D8BFF',
+  rarityUltraRare: '#FF9F0A',
+  overlay: 'rgba(0,0,0,0.6)',
 } as const;
 
-export type AuthColor = keyof typeof AuthColors;
+export type AppColor = keyof typeof AppColors;

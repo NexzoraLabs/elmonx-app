@@ -5,7 +5,7 @@ import { AuthButton } from '@/components/auth/auth-button';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { CollectibleHero } from '@/components/auth/collectible-hero';
 import { LogoMark } from '@/components/auth/logo-mark';
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 export default function WelcomeScreen() {
   return (
@@ -60,13 +60,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
   },
   subtitle: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -76,12 +76,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   terms: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
     textAlign: 'center',
   },
   link: {
-    color: AuthColors.link,
+    color: AppColors.link,
   },
 });

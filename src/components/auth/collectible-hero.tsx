@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 /**
  * Placeholder for the Figma hero illustration (fanned collectible cards).
@@ -47,9 +47,9 @@ const styles = StyleSheet.create({
     width: 140,
     height: 190,
     borderRadius: 16,
-    backgroundColor: AuthColors.surface,
+    backgroundColor: AppColors.surface,
     borderWidth: 1,
-    borderColor: AuthColors.border,
+    borderColor: AppColors.border,
     alignItems: 'center',
     justifyContent: 'flex-end',
     padding: 10,
@@ -58,12 +58,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontSize: 11,
     fontWeight: '700',
   },
   cardSubtitle: {
-    color: AuthColors.textSecondary,
+    color: AppColors.textSecondary,
     fontSize: 10,
     marginTop: 2,
   },

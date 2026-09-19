@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 /**
  * Text placeholder for the ElmonX wordmark. Swap for the exported
@@ -22,10 +22,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   glyph: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
   },
   word: {
-    color: AuthColors.textPrimary,
+    color: AppColors.textPrimary,
     fontWeight: '700',
     letterSpacing: 3,
   },

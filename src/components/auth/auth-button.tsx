@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 type AuthButtonVariant = 'primary' | 'secondary';
 
@@ -42,7 +42,7 @@ export function AuthButton({
       ]}>
       {loading ? (
         <ActivityIndicator
-          color={isPrimary ? AuthColors.buttonPrimaryText : AuthColors.buttonSecondaryText}
+          color={isPrimary ? AppColors.buttonPrimaryText : AppColors.buttonSecondaryText}
         />
       ) : (
         <>
@@ -72,15 +72,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   primary: {
-    backgroundColor: AuthColors.buttonPrimaryBg,
+    backgroundColor: AppColors.buttonPrimaryBg,
   },
   primaryDisabled: {
-    backgroundColor: AuthColors.buttonDisabledBg,
+    backgroundColor: AppColors.buttonDisabledBg,
   },
   secondary: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: AuthColors.buttonSecondaryBorder,
+    borderColor: AppColors.buttonSecondaryBorder,
   },
   pressed: {
     opacity: 0.85,
@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryLabel: {
-    color: AuthColors.buttonPrimaryText,
+    color: AppColors.buttonPrimaryText,
   },
   primaryLabelDisabled: {
-    color: AuthColors.buttonDisabledText,
+    color: AppColors.buttonDisabledText,
   },
   secondaryLabel: {
-    color: AuthColors.buttonSecondaryText,
+    color: AppColors.buttonSecondaryText,
   },
 });

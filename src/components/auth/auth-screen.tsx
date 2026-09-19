@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthColors } from '@/constants/auth-colors';
+import { AppColors } from '@/constants/app-colors';
 
 type AuthScreenProps = {
   header?: ReactNode;
@@ -33,7 +33,7 @@ export function AuthScreen({ header, children, footer, scrollable = true }: Auth
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AuthColors.background,
+    backgroundColor: AppColors.background,
   },
   flex: {
     flex: 1,
