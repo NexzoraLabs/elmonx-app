@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 
@@ -6,9 +6,10 @@ type CategoryTabsProps = {
   categories: readonly string[];
   selected: string;
   onSelect: (category: string) => void;
+  underline?: boolean;
 };
 
-export function CategoryTabs({ categories, selected, onSelect }: CategoryTabsProps) {
+export function CategoryTabs({ categories, selected, onSelect, underline }: CategoryTabsProps) {
   return (
     <ScrollView
       horizontal
@@ -17,8 +18,11 @@ export function CategoryTabs({ categories, selected, onSelect }: CategoryTabsPro
       {categories.map((category) => {
         const isActive = category === selected;
         return (
-          <Pressable key={category} onPress={() => onSelect(category)} hitSlop={4}>
+          <Pressable key={category} onPress={() => onSelect(category)} hitSlop={4} style={styles.tab}>
             <Text style={[styles.label, isActive && styles.labelActive]}>{category}</Text>
+            {underline ? (
+              <View style={[styles.underline, isActive && styles.underlineActive]} />
+            ) : null}
           </Pressable>
         );
       })}
@@ -33,6 +37,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
+  tab: {
+    alignItems: 'center',
+    gap: 8,
+  },
   label: {
     color: AppColors.textSecondary,
     fontSize: 14,
@@ -40,5 +48,14 @@ const styles = StyleSheet.create({
   },
   labelActive: {
     color: AppColors.textPrimary,
+  },
+  underline: {
+    height: 2,
+    width: '100%',
+    borderRadius: 1,
+    backgroundColor: 'transparent',
+  },
+  underlineActive: {
+    backgroundColor: AppColors.textPrimary,
   },
 });
