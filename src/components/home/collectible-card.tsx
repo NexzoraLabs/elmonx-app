@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
@@ -11,7 +12,16 @@ export function CollectibleCard({ item }: { item: CollectibleItem }) {
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
         <RarityBadge rarity={item.rarity} />
-        <PlaceholderThumb color={item.color} icon="diamond-outline" style={styles.thumb} />
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.thumb}
+            contentFit="contain"
+            transition={150}
+          />
+        ) : (
+          <PlaceholderThumb color={item.color} icon="diamond-outline" style={styles.thumb} />
+        )}
       </View>
       <Text style={styles.title} numberOfLines={1}>
         {item.title}
@@ -27,11 +37,14 @@ export function CollectibleCard({ item }: { item: CollectibleItem }) {
 
 const styles = StyleSheet.create({
   card: {
-    width: '48%',
+    width: 150,
   },
   thumbWrapper: {
-    width: '100%',
-    aspectRatio: 1,
+    width: 150,
+    height: 150,
+    borderRadius: 14,
+    backgroundColor: AppColors.surface,
+    overflow: 'hidden',
   },
   thumb: {
     width: '100%',

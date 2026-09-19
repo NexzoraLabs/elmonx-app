@@ -22,6 +22,7 @@ export default function CollectionsScreen() {
   }, [category]);
 
   const gridItems = COLLECTIONS_GRID.filter((item) => item.category === category);
+  const isSingleColumn = category === 'Collections';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -44,9 +45,13 @@ export default function CollectionsScreen() {
             <Text style={styles.emptyText}>Nothing here yet.</Text>
           </View>
         ) : (
-          <View style={styles.grid}>
+          <View style={isSingleColumn ? styles.list : styles.grid}>
             {gridItems.map((item) => (
-              <CollectionGridCard key={item.id} item={item} />
+              <CollectionGridCard
+                key={item.id}
+                item={item}
+                layout={isSingleColumn ? 'single' : 'grid'}
+              />
             ))}
           </View>
         )}
@@ -71,6 +76,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 32,
+  },
+  list: {
+    gap: 20,
   },
   grid: {
     flexDirection: 'row',

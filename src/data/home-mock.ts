@@ -55,12 +55,31 @@ export type DropItem = {
   title: string;
   expected: string;
   color: string;
+  imageUrl?: string;
 };
 
 export const UPCOMING_DROPS: DropItem[] = [
-  { id: 'drop-1', title: 'Guardian Spirit', expected: '30 JUN 2026', color: '#7B3FF2' },
-  { id: 'drop-2', title: 'Astro Cadet', expected: '30 JUL 2026', color: '#2AB3A6' },
-  { id: 'drop-3', title: 'Neon Oracle', expected: '12 AUG 2026', color: '#E0637C' },
+  {
+    id: 'drop-1',
+    title: 'Guardian Spirit',
+    expected: '30 JUN 2026',
+    color: '#7B3FF2',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296280985_180592430.png',
+  },
+  {
+    id: 'drop-2',
+    title: 'Astro Cadet',
+    expected: '30 JUL 2026',
+    color: '#2AB3A6',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296290890_401984887.png',
+  },
+  {
+    id: 'drop-3',
+    title: 'Neon Oracle',
+    expected: '12 AUG 2026',
+    color: '#E0637C',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296343717_967812359.png',
+  },
 ];
 
 export type FeaturedDropItem = {
@@ -83,13 +102,46 @@ export type CollectibleItem = {
   price: string;
   rarity: Rarity;
   color: string;
+  imageUrl?: string;
 };
 
 export const COLLECTIBLES: CollectibleItem[] = [
-  { id: 'col-1', title: 'Blue Butterfly', date: '10 Nov 27', price: '99.99', rarity: 'rare', color: '#2E5FB4' },
-  { id: 'col-2', title: 'Crimson Statue', date: '10 Nov 27', price: '149.99', rarity: 'ultraRare', color: '#B4442E' },
-  { id: 'col-3', title: 'Coral Reef', date: '18 Nov 27', price: '59.99', rarity: 'common', color: '#2AB3A6' },
-  { id: 'col-4', title: 'Golden Mask', date: '02 Dec 27', price: '199.99', rarity: 'ultraRare', color: '#C79A3A' },
+  {
+    id: 'col-1',
+    title: 'Blue Butterfly',
+    date: '10 Nov 27',
+    price: '99.99',
+    rarity: 'rare',
+    color: '#2E5FB4',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296280985_180592430.png',
+  },
+  {
+    id: 'col-2',
+    title: 'Crimson Statue',
+    date: '10 Nov 27',
+    price: '149.99',
+    rarity: 'ultraRare',
+    color: '#B4442E',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296290890_401984887.png',
+  },
+  {
+    id: 'col-3',
+    title: 'Coral Reef',
+    date: '18 Nov 27',
+    price: '59.99',
+    rarity: 'common',
+    color: '#2AB3A6',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296343717_967812359.png',
+  },
+  {
+    id: 'col-4',
+    title: 'Golden Mask',
+    date: '02 Dec 27',
+    price: '199.99',
+    rarity: 'ultraRare',
+    color: '#C79A3A',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296570143_148915379.png',
+  },
 ];
 
 export type ArPhotoItem = {
@@ -127,6 +179,7 @@ export type LeavingSoonItem = {
   price: string;
   endsAt: number;
   color: string;
+  imageUrl?: string;
 };
 
 export const LEAVING_SOON: LeavingSoonItem[] = [
@@ -137,6 +190,7 @@ export const LEAVING_SOON: LeavingSoonItem[] = [
     price: '99.99',
     endsAt: Date.now() + (2 * 24 * 60 + 19 * 60 + 40) * 60 * 1000,
     color: '#B4442E',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296379704_493235667.png',
   },
   {
     id: 'ls-2',
@@ -145,6 +199,7 @@ export const LEAVING_SOON: LeavingSoonItem[] = [
     price: '99.99',
     endsAt: Date.now() + (1 * 24 * 60 + 4 * 60 + 12) * 60 * 1000,
     color: '#2E5FB4',
+    imageUrl: 'https://assets.elmonx.com/drops/1754296355984_763057948.png',
   },
 ];
 

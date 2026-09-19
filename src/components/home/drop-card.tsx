@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LogoMark } from '@/components/auth/logo-mark';
@@ -9,7 +10,16 @@ export function DropCard({ item }: { item: DropItem }) {
   return (
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
-        <PlaceholderThumb color={item.color} icon="sparkles-outline" iconSize={30} style={styles.thumb} />
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.thumb}
+            contentFit="contain"
+            transition={150}
+          />
+        ) : (
+          <PlaceholderThumb color={item.color} icon="sparkles-outline" iconSize={30} style={styles.thumb} />
+        )}
         <View style={styles.logoOverlay}>
           <LogoMark size={9} />
         </View>
@@ -29,6 +39,9 @@ const styles = StyleSheet.create({
   thumbWrapper: {
     width: 150,
     height: 150,
+    borderRadius: 16,
+    backgroundColor: AppColors.surface,
+    overflow: 'hidden',
   },
   thumb: {
     width: 150,

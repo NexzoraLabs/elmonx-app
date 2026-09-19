@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CountdownPill } from '@/components/home/countdown-badge';
@@ -11,7 +12,16 @@ export function LeavingSoonCard({ item }: { item: LeavingSoonItem }) {
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
         <CountdownPill targetMs={item.endsAt} />
-        <PlaceholderThumb color={item.color} icon="hourglass-outline" style={styles.thumb} />
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.thumb}
+            contentFit="contain"
+            transition={150}
+          />
+        ) : (
+          <PlaceholderThumb color={item.color} icon="hourglass-outline" style={styles.thumb} />
+        )}
       </View>
       <Text style={styles.title} numberOfLines={1}>
         {item.title}
@@ -32,10 +42,13 @@ const styles = StyleSheet.create({
   thumbWrapper: {
     width: 150,
     height: 150,
+    borderRadius: 16,
+    backgroundColor: AppColors.surface,
+    overflow: 'hidden',
   },
   thumb: {
-    width: 150,
-    height: 150,
+    width: '100%',
+    height: '100%',
     borderRadius: 16,
   },
   title: {

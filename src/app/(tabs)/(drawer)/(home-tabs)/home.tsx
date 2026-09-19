@@ -75,11 +75,14 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <SectionHeader title="Collectibles" onPressSeeAll={() => {}} />
-          <View style={styles.grid}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalList}>
             {COLLECTIBLES.map((item) => (
               <CollectibleCard key={item.id} item={item} />
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={styles.section}>

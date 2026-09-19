@@ -6,10 +6,17 @@ import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
 import type { CollectionGridItem } from '@/data/collections-mock';
 
-export function CollectionGridCard({ item }: { item: CollectionGridItem }) {
+type CollectionGridCardProps = {
+  item: CollectionGridItem;
+  layout?: 'single' | 'grid';
+};
+
+export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCardProps) {
+  const isSingle = layout === 'single';
+
   return (
-    <View style={styles.card}>
-      <View style={styles.thumbWrapper}>
+    <View style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}>
+      <View style={[styles.thumbWrapper, isSingle ? styles.thumbSingle : styles.thumbGrid]}>
         {item.imageUrl ? (
           <Image
             source={{ uri: item.imageUrl }}
@@ -40,14 +47,25 @@ export function CollectionGridCard({ item }: { item: CollectionGridItem }) {
 
 const styles = StyleSheet.create({
   card: {
+    // width is set per-layout below
+  },
+  cardGrid: {
     width: '48%',
+  },
+  cardSingle: {
+    width: '100%',
   },
   thumbWrapper: {
     width: '100%',
-    aspectRatio: 0.85,
     borderRadius: 14,
     backgroundColor: AppColors.surface,
     overflow: 'hidden',
+  },
+  thumbGrid: {
+    aspectRatio: 0.85,
+  },
+  thumbSingle: {
+    aspectRatio: 1.6,
   },
   thumb: {
     width: '100%',
