@@ -19,9 +19,7 @@ export default function CollectionsScreen() {
   const gridItems =
     category === 'Collections'
       ? COLLECTIONS_GRID
-      : category === 'Favourites'
-        ? COLLECTIONS_GRID.filter((item) => item.favourite)
-        : COLLECTIONS_GRID.filter((item) => item.category === category);
+      : COLLECTIONS_GRID.filter((item) => item.category === category);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
