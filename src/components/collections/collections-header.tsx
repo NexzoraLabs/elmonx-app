@@ -3,18 +3,28 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 
-export function CollectionsHeader() {
+type CollectionsHeaderProps = {
+  onPressSearch?: () => void;
+  onPressOptions?: () => void;
+  onPressFilter?: () => void;
+};
+
+export function CollectionsHeader({
+  onPressSearch,
+  onPressOptions,
+  onPressFilter,
+}: CollectionsHeaderProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.title}>Collections</Text>
       <View style={styles.actions}>
-        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button}>
+        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button} onPress={onPressSearch}>
           <Ionicons name="search-outline" size={18} color={AppColors.textPrimary} />
         </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button}>
+        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button} onPress={onPressOptions}>
           <Ionicons name="options-outline" size={18} color={AppColors.textPrimary} />
         </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button}>
+        <Pressable accessibilityRole="button" hitSlop={8} style={styles.button} onPress={onPressFilter}>
           <Ionicons name="filter-outline" size={18} color={AppColors.textPrimary} />
         </Pressable>
       </View>
