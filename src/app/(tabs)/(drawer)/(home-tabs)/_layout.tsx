@@ -38,25 +38,24 @@ export default function HomeTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="trends"
+        name="social"
         options={{
-          title: 'Trends',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trending-up-outline" size={size} color={color} />
-          ),
+          title: 'Social',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="movement"
+        name="showroom"
         options={{
-          title: 'Movement',
-          tabBarIcon: ({ color, size }) => <Ionicons name="pulse-outline" size={size} color={color} />,
+          title: 'Showroom',
+          tabBarIcon: ({ color, size }) => <Ionicons name="easel-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat',
+          tabBarBadge: 2,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),

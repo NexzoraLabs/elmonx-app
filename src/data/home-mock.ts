@@ -162,10 +162,14 @@ export type CommunityPost = {
   id: string;
   name: string;
   verified: boolean;
+  isFollowing: boolean;
   timeAgo: string;
   caption: string;
+  images: string[];
   likeCount: string;
   commentCount: string;
+  viewCount: string;
+  repostCount: string;
   shareCount: string;
   color: string;
 };
@@ -175,13 +179,65 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
     id: 'post-1',
     name: 'Liam Carter',
     verified: true,
-    timeAgo: '3h',
+    isFollowing: false,
+    timeAgo: '1d',
     caption:
       'Just acquired an incredible digital art piece! Thrilled to be part of this vibrant NFT community! #CryptoArt #DigitalCollectibles',
+    images: ['#6B4F8A'],
     likeCount: '5.5k',
     commentCount: '297',
-    shareCount: '297',
+    viewCount: '297',
+    repostCount: '10',
+    shareCount: '10',
     color: '#2E5FB4',
+  },
+  {
+    id: 'post-2',
+    name: 'Evelyn Brooks',
+    verified: false,
+    isFollowing: false,
+    timeAgo: '1d',
+    caption:
+      'Just minted a stunning new NFT that captures the essence of the digital age! Excited to share this journey with fellow art enthusiasts! #NFTArt #DigitalTreasures',
+    images: ['#1B2A6B', '#3C8C3C'],
+    likeCount: '5.5k',
+    commentCount: '297',
+    viewCount: '297',
+    repostCount: '10',
+    shareCount: '10',
+    color: '#C77B4A',
+  },
+  {
+    id: 'post-3',
+    name: 'Sophia Bennett',
+    verified: true,
+    isFollowing: true,
+    timeAgo: '2d',
+    caption:
+      'Finally completed my Mondrian Doodles set! The hunt for that last piece took three weeks. Worth every trade. #Doodles #Collector',
+    images: ['#7B3FF2'],
+    likeCount: '3.2k',
+    commentCount: '184',
+    viewCount: '184',
+    repostCount: '6',
+    shareCount: '6',
+    color: '#7B3FF2',
+  },
+  {
+    id: 'post-4',
+    name: 'Chris Evans',
+    verified: false,
+    isFollowing: true,
+    timeAgo: '3d',
+    caption:
+      'Reached Level 20 on the leaderboard this week. Grinding those social rewards paid off! #ElmonX #Leaderboard',
+    images: ['#C79A3A'],
+    likeCount: '4.1k',
+    commentCount: '210',
+    viewCount: '210',
+    repostCount: '9',
+    shareCount: '9',
+    color: '#C79A3A',
   },
 ];
 
