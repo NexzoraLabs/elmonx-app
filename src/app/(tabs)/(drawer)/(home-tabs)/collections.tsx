@@ -21,10 +21,7 @@ export default function CollectionsScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [category]);
 
-  const gridItems =
-    category === 'Collections'
-      ? COLLECTIONS_GRID
-      : COLLECTIONS_GRID.filter((item) => item.category === category);
+  const gridItems = COLLECTIONS_GRID.filter((item) => item.category === category);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>

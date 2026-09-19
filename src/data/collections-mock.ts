@@ -1,6 +1,6 @@
 export const COLLECTIONS_CATEGORY_TABS = ['Collections', 'Collectibles', 'Partners', 'Artists'] as const;
 
-export type CollectionCategory = 'Collectibles' | 'Partners';
+export type CollectionCategory = 'Collections' | 'Collectibles' | 'Partners';
 
 export type CollectionGridItem = {
   id: string;
@@ -11,6 +11,18 @@ export type CollectionGridItem = {
   dismissible?: boolean;
   imageUrl?: string;
 };
+
+const COLLECTIONS_ONLY: CollectionGridItem[] = [
+  { id: 'cln-1', title: 'Collection 01', dropDate: '01 Nov 27', color: '#8A6A2E', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1789581002999_960395123.webp' },
+  { id: 'cln-2', title: 'Collection 02', dropDate: '03 Nov 27', color: '#2E5FB4', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1788899578390_834962955.webp' },
+  { id: 'cln-3', title: 'Collection 03', dropDate: '05 Nov 27', color: '#B4442E', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1788738318100_353849025.webp' },
+  { id: 'cln-4', title: 'Collection 04', dropDate: '07 Nov 27', color: '#7B3FF2', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1787011204238_876960679.webp' },
+  { id: 'cln-5', title: 'Collection 05', dropDate: '09 Nov 27', color: '#4A4A4A', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1786640412375_478071926.webp' },
+  { id: 'cln-6', title: 'Collection 06', dropDate: '11 Nov 27', color: '#C79A3A', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1786316912555_64079004.webp' },
+  { id: 'cln-7', title: 'Collection 07', dropDate: '13 Nov 27', color: '#2AB3A6', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1785914933407_654163505.webp' },
+  { id: 'cln-8', title: 'Collection 08', dropDate: '15 Nov 27', color: '#8A2E2E', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1785863745811_302002232.webp' },
+  { id: 'cln-9', title: 'Collection 09', dropDate: '17 Nov 27', color: '#1B1F2E', category: 'Collections', imageUrl: 'https://assets.elmonx.com/collections/1785147221754_249403018.webp' },
+];
 
 const COLLECTIBLES: CollectionGridItem[] = [
   { id: 'col-1', title: 'Dagger from the Tomb of Tutankhamun', dropDate: '10 Nov 27', color: '#8A6A2E', category: 'Collectibles', imageUrl: 'https://assets.elmonx.com/drops/1754296280985_180592430.png' },
@@ -38,4 +50,4 @@ const PARTNERS: CollectionGridItem[] = [
   { id: 'ptn-10', title: 'National Geographic Explorer Set', dropDate: '20 Dec 27', color: '#2AB3A6', category: 'Partners' },
 ];
 
-export const COLLECTIONS_GRID: CollectionGridItem[] = [...COLLECTIBLES, ...PARTNERS];
+export const COLLECTIONS_GRID: CollectionGridItem[] = [...COLLECTIONS_ONLY, ...COLLECTIBLES, ...PARTNERS];
