@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import {
@@ -40,14 +41,25 @@ export function FeaturedCarousel({ banners }: { banners: FeaturedBanner[] }) {
         contentContainerStyle={styles.scrollContent}>
         {banners.map((banner) => (
           <View key={banner.id} style={styles.slideWrapper}>
-            <LinearGradient
-              colors={banner.colors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.slide}>
-              <Text style={styles.eyebrow}>{banner.eyebrow}</Text>
-              <Text style={styles.title}>{banner.title}</Text>
-            </LinearGradient>
+            {banner.imageUrl ? (
+              <View style={[styles.slide, styles.imageSlide]}>
+                <Image
+                  source={{ uri: banner.imageUrl }}
+                  style={styles.image}
+                  contentFit="contain"
+                  transition={150}
+                />
+              </View>
+            ) : (
+              <LinearGradient
+                colors={banner.colors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.slide}>
+                <Text style={styles.eyebrow}>{banner.eyebrow}</Text>
+                <Text style={styles.title}>{banner.title}</Text>
+              </LinearGradient>
+            )}
 
             <View style={styles.infoRow}>
               <PlaceholderThumb color={banner.colors[1]} style={styles.avatar} icon="person-outline" />
@@ -85,6 +97,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'flex-end',
     padding: 16,
+  },
+  imageSlide: {
+    padding: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: AppColors.surface,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   eyebrow: {
     color: 'rgba(10,10,11,0.7)',

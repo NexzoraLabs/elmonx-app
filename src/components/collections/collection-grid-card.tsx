@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
@@ -9,7 +10,16 @@ export function CollectionGridCard({ item }: { item: CollectionGridItem }) {
   return (
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
-        <PlaceholderThumb color={item.color} icon="image-outline" style={styles.thumb} />
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.thumb}
+            contentFit="contain"
+            transition={150}
+          />
+        ) : (
+          <PlaceholderThumb color={item.color} icon="image-outline" style={styles.thumb} />
+        )}
         {item.dismissible ? (
           <Pressable
             accessibilityRole="button"
@@ -35,6 +45,9 @@ const styles = StyleSheet.create({
   thumbWrapper: {
     width: '100%',
     aspectRatio: 0.85,
+    borderRadius: 14,
+    backgroundColor: AppColors.surface,
+    overflow: 'hidden',
   },
   thumb: {
     width: '100%',

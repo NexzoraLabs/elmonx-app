@@ -9,18 +9,17 @@ import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
 import { SocialButton } from '@/components/auth/social-button';
 import { AppColors } from '@/constants/app-colors';
-import { isValidEmail } from '@/utils/auth-validation';
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleContinue = () => {
-    if (!isValidEmail(email)) {
-      setError('Enter a valid email address');
+    if (identifier.trim().length === 0) {
+      setError('Enter your email or username');
       return;
     }
     if (password.length === 0) {
@@ -45,14 +44,13 @@ export default function SignInScreen() {
 
       <View style={styles.form}>
         <AuthTextInput
-          placeholder="Email address"
-          value={email}
-          onChangeText={setEmail}
+          placeholder="Email or Username"
+          value={identifier}
+          onChangeText={setIdentifier}
           autoCapitalize="none"
           autoCorrect={false}
-          keyboardType="email-address"
-          textContentType="emailAddress"
-          autoComplete="email"
+          textContentType="username"
+          autoComplete="username"
         />
 
         <AuthTextInput

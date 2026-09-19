@@ -14,6 +14,7 @@ export type FeaturedBanner = {
   dropSubtitle: string;
   endsAt: number;
   colors: [string, string];
+  imageUrl?: string;
 };
 
 export const FEATURED_BANNERS: FeaturedBanner[] = [
@@ -25,6 +26,7 @@ export const FEATURED_BANNERS: FeaturedBanner[] = [
     dropSubtitle: 'Thursday 8AM PT 30th July',
     endsAt: Date.now() + (5 * 24 * 60 + 24 * 60 + 40) * 60 * 1000,
     colors: ['#E4E7F5', '#B9C6F0'],
+    imageUrl: 'https://assets.elmonx.com/collections/1787011204239_519406411.webp',
   },
   {
     id: 'basquiat',
@@ -34,6 +36,7 @@ export const FEATURED_BANNERS: FeaturedBanner[] = [
     dropSubtitle: 'Friday 6PM PT 7th August',
     endsAt: Date.now() + (2 * 24 * 60 + 8 * 60 + 15) * 60 * 1000,
     colors: ['#FCE8D5', '#F2B880'],
+    imageUrl: 'https://assets.elmonx.com/collections/1786316912555_113690215.webp',
   },
   {
     id: 'warhol',
@@ -43,6 +46,7 @@ export const FEATURED_BANNERS: FeaturedBanner[] = [
     dropSubtitle: 'Sunday 12PM PT 16th August',
     endsAt: Date.now() + (9 * 24 * 60 + 2 * 60 + 5) * 60 * 1000,
     colors: ['#D9F2E6', '#8FD6B4'],
+    imageUrl: 'https://assets.elmonx.com/collections/1785914933779_709184833.webp',
   },
 ];
 
