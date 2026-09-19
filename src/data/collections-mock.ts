@@ -1,12 +1,6 @@
-export const COLLECTIONS_CATEGORY_TABS = [
-  'Collections',
-  'Collectibles',
-  'Partners',
-  'Art',
-  'Artists',
-] as const;
+export const COLLECTIONS_CATEGORY_TABS = ['Collections', 'Collectibles', 'Partners', 'Artists'] as const;
 
-export type CollectionCategory = 'Collectibles' | 'Partners' | 'Art';
+export type CollectionCategory = 'Collectibles' | 'Partners';
 
 export type CollectionGridItem = {
   id: string;
@@ -43,17 +37,4 @@ const PARTNERS: CollectionGridItem[] = [
   { id: 'ptn-10', title: 'National Geographic Explorer Set', dropDate: '20 Dec 27', color: '#2AB3A6', category: 'Partners' },
 ];
 
-const ART: CollectionGridItem[] = [
-  { id: 'art-1', title: 'Patrick Hughes Gallery', dropDate: '10 Nov 27', color: '#C9C2B2', category: 'Art', dismissible: true },
-  { id: 'art-2', title: 'Monet: Impressions of Light', dropDate: '10 Nov 27', color: '#4A5A8A', category: 'Art', dismissible: true },
-  { id: 'art-3', title: 'Piet Mondrian Doodles', dropDate: '10 Nov 27', color: '#E8E8E8', category: 'Art' },
-  { id: 'art-4', title: 'Van Gogh Masterpieces Vol. 1', dropDate: '10 Nov 27', color: '#8A4A2E', category: 'Art' },
-  { id: 'art-5', title: 'Picasso Blue Period', dropDate: '12 Nov 27', color: '#2E5FB4', category: 'Art' },
-  { id: 'art-6', title: 'Da Vinci Sketches Collection', dropDate: '14 Nov 27', color: '#8A6A2E', category: 'Art' },
-  { id: 'art-7', title: 'Rembrandt Light Studies', dropDate: '16 Nov 27', color: '#4A4A4A', category: 'Art' },
-  { id: 'art-8', title: 'Dali Surreal Dreams', dropDate: '18 Nov 27', color: '#C79A3A', category: 'Art' },
-  { id: 'art-9', title: 'Basquiat Crown Series', dropDate: '20 Nov 27', color: '#B4442E', category: 'Art' },
-  { id: 'art-10', title: 'Warhol Pop Editions', dropDate: '22 Nov 27', color: '#7B3FF2', category: 'Art' },
-];
-
-export const COLLECTIONS_GRID: CollectionGridItem[] = [...COLLECTIBLES, ...PARTNERS, ...ART];
+export const COLLECTIONS_GRID: CollectionGridItem[] = [...COLLECTIBLES, ...PARTNERS];

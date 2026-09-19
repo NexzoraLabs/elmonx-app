@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +15,11 @@ export default function CollectionsScreen() {
   const [category, setCategory] = useState<string>(COLLECTIONS_CATEGORY_TABS[0]);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<CollectionFilters>(DEFAULT_FILTERS);
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [category]);
 
   const gridItems =
     category === 'Collections'
@@ -31,7 +36,10 @@ export default function CollectionsScreen() {
         underline
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
         {category === 'Artists' ? (
           ARTISTS.map((artist) => <ArtistListRow key={artist.id} artist={artist} />)
         ) : gridItems.length === 0 ? (
