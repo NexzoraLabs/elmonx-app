@@ -1,12 +1,36 @@
-import type { CollectionGridItem } from '@/data/collections-mock';
+import { Platform } from 'react-native';
+
+import type { CollectionCategory, CollectionGridItem } from '@/data/collections-mock';
 
 const API_BASE_URL = 'https://api.elmonx.com/api';
+const ITEMS_PER_PAGE = 15;
+
+export type PagedResult<T> = {
+  items: T[];
+  totalRecords: number;
+};
 
 export type DropImage = {
   original_name: string;
   original_key: string;
   original_url: string;
   field_name: string;
+};
+
+export type UnityAssetFile = {
+  original_name: string;
+  original_key: string;
+  original_url: string;
+  field_name: string;
+};
+
+export type UnityAssetEntry = {
+  Id: string;
+  tokenId: string;
+  multiframe: string;
+  face: string | null;
+  Android_assets: UnityAssetFile;
+  IOS_assets: UnityAssetFile;
 };
 
 export type BlindBoxItemData = {
@@ -31,6 +55,7 @@ export type Drop = {
   drop_edition: string;
   contract_address: string;
   images: DropImage[];
+  unity_assets: UnityAssetEntry[];
   release_date: string;
   public_sale_date: string | null;
   sale_close_time: string | null;
@@ -49,13 +74,13 @@ type DropListResponse = {
   total_records: number;
 };
 
-export async function fetchFeaturedDrops(): Promise<Drop[]> {
+export async function fetchFeaturedDrops(page: number): Promise<PagedResult<Drop>> {
   const params = new URLSearchParams();
   params.append('access', 'open');
   params.append('status', 'Featured');
   params.append('is_deleted', 'False');
-  params.append('current_page', '1');
-  params.append('items_per_page', '15');
+  params.append('current_page', String(page));
+  params.append('items_per_page', String(ITEMS_PER_PAGE));
   params.append('type', 'Eth_Product');
   params.append('type', 'Layer_2');
   params.append('type', 'Polygon');
@@ -65,7 +90,26 @@ export async function fetchFeaturedDrops(): Promise<Drop[]> {
     throw new Error(`Failed to load drops (${response.status})`);
   }
   const json: DropListResponse = await response.json();
-  return json.data;
+  return { items: json.data, totalRecords: json.total_records };
+}
+
+export async function fetchPartnerDrops(page: number): Promise<PagedResult<Drop>> {
+  const params = new URLSearchParams();
+  params.append('type', 'Collaborator');
+  params.append('access', 'open');
+  params.append('status', 'Featured');
+  params.append('orderBy_field', 'sort_no');
+  params.append('orderBy_mode', 'Asc');
+  params.append('is_deleted', 'False');
+  params.append('current_page', String(page));
+  params.append('items_per_page', String(ITEMS_PER_PAGE));
+
+  const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load partner drops (${response.status})`);
+  }
+  const json: DropListResponse = await response.json();
+  return { items: json.data, totalRecords: json.total_records };
 }
 
 export async function fetchDropById(dropId: string): Promise<Drop | undefined> {
@@ -89,13 +133,21 @@ export function formatDropDate(isoDate: string): string {
   return `${day} ${month} ${year}`;
 }
 
-export function dropToGridItem(drop: Drop): CollectionGridItem {
+/** Picks the platform-appropriate Unity asset (iOS build vs Android build) for the "View in 3D" viewer. */
+export function getPlatformUnityAsset(drop: Drop): UnityAssetFile | undefined {
+  const entry = drop.unity_assets?.[0];
+  if (!entry) return undefined;
+  const asset = Platform.OS === 'ios' ? entry.IOS_assets : entry.Android_assets;
+  return asset?.original_url ? asset : undefined;
+}
+
+export function dropToGridItem(drop: Drop, category: CollectionCategory = 'Collectibles'): CollectionGridItem {
   return {
     id: drop._id,
     title: drop.title,
     dropDate: formatDropDate(drop.release_date),
     color: '#1B1F2E',
-    category: 'Collectibles',
+    category,
     imageUrl: drop.images[0]?.original_url,
     isBlindBox: drop.is_blind_box,
   };

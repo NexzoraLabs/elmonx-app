@@ -14,6 +14,7 @@ export function CategoryTabs({ categories, selected, onSelect, underline }: Cate
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.scrollView}
       contentContainerStyle={styles.row}>
       {categories.map((category) => {
         const isActive = category === selected;
@@ -31,6 +32,10 @@ export function CategoryTabs({ categories, selected, onSelect, underline }: Cate
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   row: {
     flexDirection: 'row',
     gap: 20,

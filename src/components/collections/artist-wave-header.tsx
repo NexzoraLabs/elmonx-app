@@ -1,9 +1,10 @@
+import { Image } from 'expo-image';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 
-export function ArtistWaveHeader({ color }: { color: string }) {
+export function ArtistWaveHeader({ color, imageUrl }: { color: string; imageUrl?: string }) {
   return (
     <View style={styles.container}>
       <Svg
@@ -31,7 +32,11 @@ export function ArtistWaveHeader({ color }: { color: string }) {
           fill="none"
         />
       </Svg>
-      <PlaceholderThumb color={color} icon="person-outline" style={styles.avatar} iconSize={28} />
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.avatar} contentFit="cover" transition={150} />
+      ) : (
+        <PlaceholderThumb color={color} icon="person-outline" style={styles.avatar} iconSize={28} />
+      )}
     </View>
   );
 }

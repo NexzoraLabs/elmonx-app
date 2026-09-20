@@ -1,18 +1,28 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
-import type { Artist } from '@/data/artists-mock';
+import type { Brand } from '@/services/brands-api';
 
-export function ArtistListRow({ artist }: { artist: Artist }) {
+export function ArtistListRow({ brand }: { brand: Brand }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      onPress={() => router.push(`/artist/${artist.id}`)}>
-      <PlaceholderThumb color={artist.color} icon="person-outline" style={styles.avatar} iconSize={18} />
+      onPress={() =>
+        router.push({
+          pathname: '/artist/[id]',
+          params: { id: brand._id, name: brand.title, image: brand.image ?? '', description: brand.description ?? '' },
+        })
+      }>
+      {brand.image ? (
+        <Image source={{ uri: brand.image }} style={styles.avatar} contentFit="cover" transition={150} />
+      ) : (
+        <PlaceholderThumb color="#1B1F2E" icon="person-outline" style={styles.avatar} iconSize={18} />
+      )}
       <Text style={styles.name} numberOfLines={1}>
-        {artist.name}
+        {brand.title}
       </Text>
     </Pressable>
   );

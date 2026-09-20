@@ -10,6 +10,8 @@ import { BlindBoxItemCard } from '@/components/collection-detail/blind-box-item-
 import { DetailHeader } from '@/components/collection-detail/detail-header';
 import { DetailImageCarousel } from '@/components/collection-detail/detail-image-carousel';
 import { DropTimePill } from '@/components/collection-detail/drop-time-pill';
+import { ViewIn3DButton } from '@/components/collection-detail/view-in-3d-button';
+import { Viewer3DModal } from '@/components/collection-detail/viewer-3d-modal';
 import { AppColors } from '@/constants/app-colors';
 import {
   DESCRIPTION_TEXT,
@@ -24,7 +26,7 @@ import {
   type BlindBoxItem,
   type DetailVariant,
 } from '@/data/collection-detail-mock';
-import { fetchDropById, formatDropDate, type Drop } from '@/services/drops-api';
+import { fetchDropById, formatDropDate, getPlatformUnityAsset, type Drop } from '@/services/drops-api';
 
 function dropAvailability(drop: Drop): Availability {
   if (drop.is_sale_closed) return 'soldOut';
@@ -59,6 +61,7 @@ export default function CollectionDetailScreen() {
   const [drop, setDrop] = useState<Drop | null>(null);
   const [loading, setLoading] = useState(!mockSource);
   const [loadError, setLoadError] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
 
   useEffect(() => {
     if (mockSource || !id) return;
@@ -122,6 +125,7 @@ export default function CollectionDetailScreen() {
   const comingSoonTarget = mockSource ? getComingSoonTarget(source.id) : new Date(drop!.release_date).getTime();
   const blindBoxItems: BlindBoxItem[] =
     variant === 'blindBox' ? (mockSource ? getBlindBoxItems(source.id) : dropBlindBoxItems(drop!)) : [];
+  const platformAsset = mockSource ? undefined : getPlatformUnityAsset(drop!);
 
   const footerButton =
     variant === 'blindBox' ? (
@@ -144,6 +148,8 @@ export default function CollectionDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <DetailImageCarousel images={images} color={source.color} />
+
+        {platformAsset ? <ViewIn3DButton onPress={() => setViewerVisible(true)} /> : null}
 
         <View style={styles.infoRow}>
           <View style={styles.infoText}>
@@ -193,6 +199,13 @@ export default function CollectionDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>{footerButton}</View>
+
+      <Viewer3DModal
+        visible={viewerVisible}
+        onClose={() => setViewerVisible(false)}
+        title={source.title}
+        imageUrl={images[0]}
+      />
     </SafeAreaView>
   );
 }

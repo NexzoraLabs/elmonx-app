@@ -5,11 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArtistWaveHeader } from '@/components/collections/artist-wave-header';
 import { AppColors } from '@/constants/app-colors';
-import { ARTISTS } from '@/data/artists-mock';
 
 export default function ArtistDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const artist = ARTISTS.find((item) => item.id === id);
+  const { name, image, description } = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    image?: string;
+    description?: string;
+  }>();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -23,12 +26,12 @@ export default function ArtistDetailScreen() {
       </Pressable>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <ArtistWaveHeader color={artist?.color ?? AppColors.surface} />
-        <Text style={styles.name}>{artist?.name ?? 'Unknown Artist'}</Text>
+        <ArtistWaveHeader color={AppColors.surface} imageUrl={image} />
+        <Text style={styles.name}>{name || 'Unknown Artist'}</Text>
 
         <View style={styles.detailsCard}>
           <Text style={styles.detailsTitle}>Artist Details</Text>
-          <Text style={styles.bio}>{artist?.bio ?? 'No details available for this artist yet.'}</Text>
+          <Text style={styles.bio}>{description || 'No details available for this artist yet.'}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
