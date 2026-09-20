@@ -39,6 +39,11 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
             <Ionicons name="close" size={14} color="#FFFFFF" />
           </Pressable>
         ) : null}
+        {item.isBlindBox ? (
+          <View style={styles.blindBoxBadge}>
+            <Text style={styles.blindBoxBadgeText}>Blind Box</Text>
+          </View>
+        ) : null}
       </View>
       <Text style={styles.title} numberOfLines={1}>
         {item.title}
@@ -85,6 +90,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  blindBoxBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: AppColors.gold,
+  },
+  blindBoxBadgeText: {
+    color: AppColors.background,
+    fontSize: 10,
+    fontWeight: '700',
   },
   title: {
     color: AppColors.textPrimary,

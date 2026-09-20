@@ -10,6 +10,7 @@ export type CollectionGridItem = {
   category: CollectionCategory;
   dismissible?: boolean;
   imageUrl?: string;
+  isBlindBox?: boolean;
 };
 
 const COLLECTIONS_ONLY: CollectionGridItem[] = [
