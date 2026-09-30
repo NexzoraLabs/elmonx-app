@@ -27,6 +27,7 @@ import {
   type DetailVariant,
 } from '@/data/collection-detail-mock';
 import { fetchDropById, formatDropDate, getPlatformUnityAsset, type Drop } from '@/services/drops-api';
+import { isUnityViewerAvailable, presentUnityViewer } from '@/services/unity-bridge';
 
 function dropAvailability(drop: Drop): Availability {
   if (drop.is_sale_closed) return 'soldOut';
@@ -126,6 +127,15 @@ export default function CollectionDetailScreen() {
   const blindBoxItems: BlindBoxItem[] =
     variant === 'blindBox' ? (mockSource ? getBlindBoxItems(source.id) : dropBlindBoxItems(drop!)) : [];
   const platformAsset = mockSource ? undefined : getPlatformUnityAsset(drop!);
+  const unityAssetEntry = mockSource ? undefined : drop!.unity_assets?.[0];
+
+  const handleViewIn3D = () => {
+    if (unityAssetEntry && platformAsset && isUnityViewerAvailable()) {
+      presentUnityViewer(unityAssetEntry, platformAsset);
+    } else {
+      setViewerVisible(true);
+    }
+  };
 
   const footerButton =
     variant === 'blindBox' ? (
@@ -149,7 +159,7 @@ export default function CollectionDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <DetailImageCarousel images={images} color={source.color} />
 
-        {platformAsset ? <ViewIn3DButton onPress={() => setViewerVisible(true)} /> : null}
+        {platformAsset ? <ViewIn3DButton onPress={handleViewIn3D} /> : null}
 
         <View style={styles.infoRow}>
           <View style={styles.infoText}>

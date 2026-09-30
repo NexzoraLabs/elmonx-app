@@ -8,7 +8,11 @@
     "scheme": "elmonxapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.elmonx.app.dev",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This lets you view collectables in augmented reality using your camera."
+      }
     },
     "android": {
       "package": "com.elmonx.app",
@@ -32,6 +36,14 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
         }
       ]
     ],
