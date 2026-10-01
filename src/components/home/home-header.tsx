@@ -26,9 +26,6 @@ export function HomeHeader() {
 
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" hitSlop={8}>
-          <Ionicons name="add-circle-outline" size={22} color={AppColors.textPrimary} />
-        </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={8}>
           <Ionicons name="search-outline" size={22} color={AppColors.textPrimary} />
         </Pressable>
         <Pressable accessibilityRole="button" hitSlop={8}>
@@ -36,9 +33,9 @@ export function HomeHeader() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open profile"
+          accessibilityLabel="Open account"
           hitSlop={8}
-          onPress={() => router.push(`/profile/${CURRENT_USER_ID}`)}>
+          onPress={() => router.push('/account')}>
           <PlaceholderThumb
             color={currentUser.avatarColor}
             icon="person-outline"

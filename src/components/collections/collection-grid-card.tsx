@@ -18,7 +18,12 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
   return (
     <Pressable
       style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}
-      onPress={() => router.push(`/collection/${item.id}`)}>
+      onPress={() =>
+        router.push({
+          pathname: item.category === 'Collections' ? '/collection/[id]' : '/drop/[id]',
+          params: { id: item.id },
+        })
+      }>
       <View style={[styles.thumbWrapper, isSingle ? styles.thumbSingle : styles.thumbGrid]}>
         {item.imageUrl ? (
           <Image

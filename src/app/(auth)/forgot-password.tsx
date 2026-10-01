@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -6,26 +7,32 @@ import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 import { isValidEmail } from '@/utils/auth-validation';
 
 export default function ForgotPasswordScreen() {
+  const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!isValidEmail(email)) {
       setError('Enter a valid email address');
       return;
     }
     setError(null);
     setLoading(true);
-    // TODO: replace with real password-reset API call once backend integration begins.
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await requestPasswordReset(email.trim());
       setSent(true);
-    }, 400);
+      router.push({ pathname: '/(auth)/verify-code', params: { email: email.trim(), purpose: 'reset' } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to send reset code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

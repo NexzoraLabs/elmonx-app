@@ -1,3 +1,8 @@
+import {
+  appendCatalogParams,
+  DEFAULT_CATALOG_FILTERS,
+  type CatalogFilters,
+} from '@/services/catalog-filters';
 import type { CollectionGridItem } from '@/data/collections-mock';
 import { formatDropDate, type PagedResult } from '@/services/drops-api';
 
@@ -19,12 +24,17 @@ type CollectionsListResponse = {
   total_records: number;
 };
 
-export async function fetchCollectionsList(page: number): Promise<PagedResult<CollectionListItem>> {
+export async function fetchCollectionsList(
+  page: number,
+  filters: CatalogFilters = DEFAULT_CATALOG_FILTERS,
+  search = ''
+): Promise<PagedResult<CollectionListItem>> {
   const params = new URLSearchParams({
     is_deleted: 'False',
     current_page: String(page),
     items_per_page: String(ITEMS_PER_PAGE),
   });
+  appendCatalogParams(params, 'Collections', filters, search);
 
   const response = await fetch(`${API_BASE_URL}/collections/list?${params.toString()}`);
   if (!response.ok) {

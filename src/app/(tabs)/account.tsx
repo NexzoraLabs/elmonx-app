@@ -1,27 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccountSection } from '@/components/account/account-section';
 import { StatCard } from '@/components/account/stat-card';
+import { UserAvatar } from '@/components/account/user-avatar';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_SECTIONS } from '@/data/account-menu';
 
+const ROW_ROUTES: Record<string, Href> = {
+  'personal-information': '/personal-info',
+  settings: '/settings',
+  'app-rewards': '/rewards',
+  challenges: '/challenges',
+  leaderboard: '/leaderboard',
+  'shipping-address': '/shipping-address',
+  'promo-code': '/promo-code',
+  'my-vault-collectables': { pathname: '/collectibles', params: { tab: 'app' } },
+  'my-wallet-collectables': { pathname: '/collectibles', params: { tab: 'web' } },
+  'doodles-physicals': '/doodles-physicals',
+};
+
 export default function AccountScreen() {
-  const [toggleValues, setToggleValues] = useState<Record<string, boolean>>({ 'dark-mode': true });
+  const { user, signOut } = useAuth();
 
-  const handlePressRow = (_key: string) => {
-    // TODO: wire up destinations once those screens are designed.
+  const handlePressRow = (key: string) => {
+    const route = ROW_ROUTES[key];
+    if (route) router.push(route);
+    // TODO: wire up remaining destinations once those screens are designed.
   };
 
-  const handleToggleChange = (key: string, value: boolean) => {
-    setToggleValues((prev) => ({ ...prev, [key]: value }));
-    // TODO: wire up real light/dark theme switching once a light theme exists.
-  };
-
-  const handleLogOut = () => {
+  const handleLogOut = async () => {
+    await signOut();
     router.replace('/(auth)/welcome');
   };
 
@@ -37,7 +49,14 @@ export default function AccountScreen() {
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>My Account</Text>
-        <View style={styles.backButton} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Personal information"
+          hitSlop={8}
+          onPress={() => router.push('/personal-info')}
+          style={({ pressed }) => pressed && styles.pressed}>
+          <UserAvatar user={user} size={36} />
+        </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -47,7 +66,6 @@ export default function AccountScreen() {
             iconColor={AppColors.rarityRare}
             label="Total Rewards Earned"
             value="20.00"
-            delta="+4.00 Today"
           />
           <StatCard
             icon="logo-bitcoin"
@@ -58,24 +76,30 @@ export default function AccountScreen() {
         </View>
 
         {ACCOUNT_SECTIONS.map((section) => (
-          <AccountSection
-            key={section.title}
-            section={section}
-            onPressRow={handlePressRow}
-            toggleValues={toggleValues}
-            onToggleChange={handleToggleChange}
-          />
+          <AccountSection key={section.title} section={section} onPressRow={handlePressRow} />
         ))}
 
-        <View style={styles.logOutSection}>
-          <Text style={styles.title}>SESSION</Text>
-          <Pressable
-            style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
-            onPress={handleLogOut}>
-            <Ionicons name="log-out-outline" size={20} color={AppColors.danger} />
-            <Text style={styles.logOutLabel}>Log Out</Text>
-          </Pressable>
-        </View>
+        {user ? (
+          <View style={styles.userRow}>
+            <UserAvatar user={user} size={40} />
+            <View style={styles.userText}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {user.user_name}
+              </Text>
+              <Text style={styles.userEmail} numberOfLines={1}>
+                {user.email_address}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+              hitSlop={10}
+              style={({ pressed }) => [styles.logOutButton, pressed && styles.pressed]}
+              onPress={handleLogOut}>
+              <Ionicons name="log-out-outline" size={22} color={AppColors.danger} />
+            </Pressable>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -119,25 +143,33 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 28,
   },
-  logOutSection: {
-    marginTop: 4,
-  },
-  title: {
-    color: AppColors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  logOutRow: {
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: AppColors.border,
+    paddingTop: 16,
   },
-  logOutLabel: {
-    color: AppColors.danger,
+  userText: {
+    flex: 1,
+  },
+  userName: {
+    color: AppColors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
+  },
+  userEmail: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  logOutButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.surface,
   },
 });

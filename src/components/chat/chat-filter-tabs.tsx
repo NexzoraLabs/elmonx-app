@@ -1,27 +1,24 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 
-export type ChatFilter = 'All' | 'Unread' | 'Requests';
+// The backend has no message requests, so there is no "Requests" filter.
+export type ChatFilter = 'All' | 'Unread';
 
 type ChatFilterTabsProps = {
   selected: ChatFilter;
   onSelect: (filter: ChatFilter) => void;
   unreadCount: number;
-  requestsCount: number;
 };
 
-export function ChatFilterTabs({ selected, onSelect, unreadCount, requestsCount }: ChatFilterTabsProps) {
+export function ChatFilterTabs({ selected, onSelect, unreadCount }: ChatFilterTabsProps) {
   const tabs: { key: ChatFilter; label: string; count?: number }[] = [
     { key: 'All', label: 'All' },
     { key: 'Unread', label: 'Unread', count: unreadCount },
-    { key: 'Requests', label: 'Requests', count: requestsCount },
   ];
 
   return (
     <View style={styles.row}>
-      <Ionicons name="options-outline" size={18} color={AppColors.textSecondary} />
       {tabs.map((tab) => {
         const isActive = tab.key === selected;
         return (

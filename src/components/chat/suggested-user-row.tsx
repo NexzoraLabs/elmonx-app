@@ -1,16 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
-import type { SuggestedUser } from '@/data/chat-mock';
+import type { SuggestedUser } from '@/services/feed-api';
+import { resolveAvatar } from '@/services/profile-api';
 
 export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPress: () => void }) {
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
-      <PlaceholderThumb color={user.color} icon="person-outline" style={styles.avatar} iconSize={18} />
-      <View>
-        <Text style={styles.name}>{user.name}</Text>
-        <Text style={styles.meta}>Member since {user.memberSince}</Text>
+      <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.avatar} contentFit="cover" />
+      <View style={styles.text}>
+        <View style={styles.nameRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            @{user.user_name}
+          </Text>
+          {user.profile_privacy === 'Private' ? (
+            <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
+          ) : null}
+        </View>
+        <Text style={styles.meta}>{user.followers_count ?? 0} followers</Text>
       </View>
     </Pressable>
   );
@@ -30,11 +39,21 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: AppColors.surface,
+  },
+  text: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   name: {
     color: AppColors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   meta: {
     color: AppColors.textSecondary,

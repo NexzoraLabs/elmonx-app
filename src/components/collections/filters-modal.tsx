@@ -1,183 +1,312 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { SelectPill } from '@/components/collections/select-pill';
 import { AppColors } from '@/constants/app-colors';
-import { ARTISTS } from '@/data/artists-mock';
-import { RARITY_FILTERS, STATUS_FILTERS } from '@/data/filters-mock';
-
-export type CollectionFilters = {
-  status: string | null;
-  artistId: string | null;
-  priceMin: string;
-  priceMax: string;
-  rarity: string | null;
-};
-
-export const DEFAULT_FILTERS: CollectionFilters = {
-  status: null,
-  artistId: null,
-  priceMin: '',
-  priceMax: '',
-  rarity: null,
-};
+import {
+  BLOCKCHAIN_OPTIONS,
+  DEFAULT_CATALOG_FILTERS,
+  DESTINATION_OPTIONS,
+  EDITION_OPTIONS,
+  isValidDate,
+  type CatalogFilters,
+  type CatalogTab,
+  type FilterOption,
+} from '@/services/catalog-filters';
 
 type FiltersModalProps = {
   visible: boolean;
   onClose: () => void;
-  filters: CollectionFilters;
-  onApply: (filters: CollectionFilters) => void;
+  tab: CatalogTab;
+  filters: CatalogFilters;
+  onApply: (filters: CatalogFilters) => void;
+  brands: FilterOption[];
+  categories: FilterOption[];
 };
 
-export function FiltersModal({ visible, onClose, filters, onApply }: FiltersModalProps) {
-  const [draft, setDraft] = useState(filters);
-  const [artistPickerOpen, setArtistPickerOpen] = useState(false);
+/** Website filter-modal: edits a draft; nothing applies until "Apply Filters". */
+export function FiltersModal({ visible, onClose, tab, filters, onApply, brands, categories }: FiltersModalProps) {
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      {visible ? (
+        <FiltersContent
+          tab={tab}
+          filters={filters}
+          onClose={onClose}
+          onApply={onApply}
+          brands={brands}
+          categories={categories}
+        />
+      ) : null}
+    </Modal>
+  );
+}
 
-  const selectedArtist = ARTISTS.find((artist) => artist.id === draft.artistId);
+function FiltersContent({
+  tab,
+  filters,
+  onClose,
+  onApply,
+  brands,
+  categories,
+}: Omit<FiltersModalProps, 'visible'>) {
+  const [draft, setDraft] = useState<CatalogFilters>(filters);
+  const [artistOpen, setArtistOpen] = useState(false);
+  const [artistQuery, setArtistQuery] = useState('');
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryQuery, setCategoryQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const isPartners = tab === 'Partners';
 
-  const handleClear = () => setDraft(DEFAULT_FILTERS);
+  const set = <K extends keyof CatalogFilters>(key: K, value: CatalogFilters[K]) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const toggleBrand = (id: string) =>
+    setDraft((prev) => ({
+      ...prev,
+      brandIds: prev.brandIds.includes(id) ? prev.brandIds.filter((b) => b !== id) : [...prev.brandIds, id],
+    }));
 
   const handleApply = () => {
+    if ((draft.dateFrom && !isValidDate(draft.dateFrom)) || (draft.dateTo && !isValidDate(draft.dateTo))) {
+      setError('Dates must be in YYYY-MM-DD format.');
+      return;
+    }
     onApply(draft);
     onClose();
   };
 
+  const artistMatches = brands.filter((b) => b.title.toLowerCase().includes(artistQuery.trim().toLowerCase()));
+  const categoryMatches = categories.filter((c) =>
+    c.title.toLowerCase().includes(categoryQuery.trim().toLowerCase())
+  );
+  const selectedCategory = categories.find((c) => c._id === draft.categoryId);
+  const artistLabel =
+    draft.brandIds.length === 0
+      ? 'All Artists'
+      : draft.brandIds.length === 1
+        ? (brands.find((b) => b._id === draft.brandIds[0])?.title ?? '1 selected')
+        : `${draft.brandIds.length} artists selected`;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-      onShow={() => setDraft(filters)}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose}>
-            <View style={styles.closeButton}>
-              <Ionicons name="close" size={20} color={AppColors.textPrimary} />
-            </View>
-          </Pressable>
-          <Text style={styles.headerTitle}>Filters</Text>
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={handleClear}>
-            <Text style={styles.clearLabel}>Clear Filter</Text>
-          </Pressable>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>Status</Text>
-          <View style={styles.pillRow}>
-            {STATUS_FILTERS.map((status) => (
-              <SelectPill
-                key={status}
-                label={status}
-                selected={draft.status === status}
-                onPress={() =>
-                  setDraft((prev) => ({ ...prev, status: prev.status === status ? null : status }))
-                }
-              />
-            ))}
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose}>
+          <View style={styles.closeButton}>
+            <Ionicons name="close" size={20} color={AppColors.textPrimary} />
           </View>
+        </Pressable>
+        <Text style={styles.headerTitle}>Filters</Text>
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setDraft(DEFAULT_CATALOG_FILTERS)}>
+          <Text style={styles.clearLabel}>Clear filters</Text>
+        </Pressable>
+      </View>
 
-          <Text style={styles.sectionTitle}>Artist</Text>
-          <Pressable
-            style={styles.dropdown}
-            onPress={() => setArtistPickerOpen((prev) => !prev)}>
-            <Text style={selectedArtist ? styles.dropdownValue : styles.dropdownPlaceholder}>
-              {selectedArtist?.name ?? 'Select Artist'}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {!isPartners ? (
+          <>
+            <Section title="Blockchain">
+              <View style={styles.pillRow}>
+                {BLOCKCHAIN_OPTIONS.map((option) => (
+                  <SelectPill key={option} label={option} selected={draft.blockchain === option} onPress={() => set('blockchain', option)} />
+                ))}
+              </View>
+            </Section>
+
+            <Section title="Where it goes">
+              <View style={styles.pillRow}>
+                {DESTINATION_OPTIONS.map((option) => (
+                  <SelectPill key={option} label={option} selected={draft.destination === option} onPress={() => set('destination', option)} />
+                ))}
+              </View>
+            </Section>
+
+            <Section title="Edition Type">
+              <View style={styles.pillRow}>
+                {EDITION_OPTIONS.map((option) => (
+                  <SelectPill
+                    key={option}
+                    label={option === 'all' ? 'All' : option}
+                    selected={draft.edition === option}
+                    onPress={() => set('edition', option)}
+                  />
+                ))}
+              </View>
+            </Section>
+          </>
+        ) : null}
+
+        <Section title="Artist">
+          <Pressable style={styles.dropdown} onPress={() => setArtistOpen((prev) => !prev)}>
+            <Text style={draft.brandIds.length ? styles.dropdownValue : styles.dropdownPlaceholder} numberOfLines={1}>
+              {artistLabel}
             </Text>
-            <Ionicons
-              name={artistPickerOpen ? 'chevron-up' : 'chevron-down'}
-              size={18}
-              color={AppColors.textSecondary}
-            />
+            <Ionicons name={artistOpen ? 'chevron-up' : 'chevron-down'} size={18} color={AppColors.textSecondary} />
           </Pressable>
-          {artistPickerOpen ? (
+          {artistOpen ? (
             <View style={styles.dropdownList}>
-              {ARTISTS.map((artist) => (
-                <Pressable
-                  key={artist.id}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setDraft((prev) => ({ ...prev, artistId: artist.id }));
-                    setArtistPickerOpen(false);
-                  }}>
-                  <Text style={styles.dropdownItemLabel}>{artist.name}</Text>
-                </Pressable>
-              ))}
+              <SearchField value={artistQuery} onChangeText={setArtistQuery} placeholder="Search artists..." />
+              <ScrollView style={styles.optionScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                {artistMatches.map((brand) => {
+                  const checked = draft.brandIds.includes(brand._id);
+                  return (
+                    <Pressable key={brand._id} style={styles.optionRow} onPress={() => toggleBrand(brand._id)}>
+                      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                        {checked ? <Ionicons name="checkmark" size={13} color={AppColors.buttonPrimaryText} /> : null}
+                      </View>
+                      <Text style={styles.optionLabel} numberOfLines={1}>
+                        {brand.title}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                {artistMatches.length === 0 ? <Text style={styles.noOptions}>No artists found.</Text> : null}
+              </ScrollView>
             </View>
           ) : null}
+        </Section>
 
-          <Text style={styles.sectionTitle}>Price</Text>
-          <View style={styles.priceRow}>
-            <View style={styles.priceField}>
-              <Text style={styles.priceLabel}>Min</Text>
-              <View style={styles.priceInputRow}>
-                <Ionicons name="logo-bitcoin" size={18} color={AppColors.gold} />
-                <TextInput
-                  value={draft.priceMin}
-                  onChangeText={(value) => setDraft((prev) => ({ ...prev, priceMin: value }))}
-                  placeholder="0.00"
-                  placeholderTextColor={AppColors.textPlaceholder}
-                  keyboardType="decimal-pad"
-                  style={styles.priceInput}
-                />
+        {!isPartners ? (
+          <Section title="Category">
+            <Pressable style={styles.dropdown} onPress={() => setCategoryOpen((prev) => !prev)}>
+              <Text style={selectedCategory ? styles.dropdownValue : styles.dropdownPlaceholder} numberOfLines={1}>
+                {selectedCategory?.title.trim() ?? 'All Categories'}
+              </Text>
+              <Ionicons name={categoryOpen ? 'chevron-up' : 'chevron-down'} size={18} color={AppColors.textSecondary} />
+            </Pressable>
+            {categoryOpen ? (
+              <View style={styles.dropdownList}>
+                <SearchField value={categoryQuery} onChangeText={setCategoryQuery} placeholder="Search categories..." />
+                <ScrollView style={styles.optionScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                  <Pressable
+                    style={styles.optionRow}
+                    onPress={() => {
+                      set('categoryId', null);
+                      setCategoryOpen(false);
+                    }}>
+                    <Text style={[styles.optionLabel, !draft.categoryId && styles.optionSelected]}>All Categories</Text>
+                  </Pressable>
+                  {categoryMatches.map((category) => (
+                    <Pressable
+                      key={category._id}
+                      style={styles.optionRow}
+                      onPress={() => {
+                        set('categoryId', category._id);
+                        setCategoryOpen(false);
+                      }}>
+                      <Text
+                        style={[styles.optionLabel, draft.categoryId === category._id && styles.optionSelected]}
+                        numberOfLines={1}>
+                        {category.title.trim()}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
               </View>
-            </View>
-            <Text style={styles.priceDash}>-</Text>
-            <View style={styles.priceField}>
-              <Text style={styles.priceLabel}>Max</Text>
-              <View style={styles.priceInputRow}>
-                <Ionicons name="logo-bitcoin" size={18} color={AppColors.gold} />
-                <TextInput
-                  value={draft.priceMax}
-                  onChangeText={(value) => setDraft((prev) => ({ ...prev, priceMax: value }))}
-                  placeholder="10,000"
-                  placeholderTextColor={AppColors.textPlaceholder}
-                  keyboardType="decimal-pad"
-                  style={styles.priceInput}
-                />
-              </View>
-            </View>
-          </View>
+            ) : null}
+          </Section>
+        ) : null}
 
-          <Text style={styles.sectionTitle}>Rarity</Text>
-          <View style={styles.pillRow}>
-            {RARITY_FILTERS.map((rarity) => (
-              <SelectPill
-                key={rarity}
-                label={rarity}
-                selected={draft.rarity === rarity}
-                onPress={() =>
-                  setDraft((prev) => ({ ...prev, rarity: prev.rarity === rarity ? null : rarity }))
-                }
-              />
-            ))}
+        <Section title="Date Range">
+          <View style={styles.rangeRow}>
+            <RangeInput label="From" value={draft.dateFrom} onChangeText={(v) => set('dateFrom', v)} placeholder="YYYY-MM-DD" />
+            <Text style={styles.rangeDash}>-</Text>
+            <RangeInput label="To" value={draft.dateTo} onChangeText={(v) => set('dateTo', v)} placeholder="YYYY-MM-DD" />
           </View>
+        </Section>
 
-          <Text style={styles.sectionTitle}>Drop Date</Text>
-          <View style={styles.dateRow}>
-            <View style={styles.dateField}>
-              <Ionicons name="calendar-outline" size={16} color={AppColors.textSecondary} />
-              <Text style={styles.datePlaceholder}>Any date</Text>
-            </View>
+        <Section title="Price Range">
+          <View style={styles.rangeRow}>
+            <RangeInput
+              label="Min"
+              value={draft.priceMin}
+              onChangeText={(v) => set('priceMin', v.replace(/[^0-9.]/g, ''))}
+              placeholder="0.00"
+              numeric
+            />
+            <Text style={styles.rangeDash}>-</Text>
+            <RangeInput
+              label="Max"
+              value={draft.priceMax}
+              onChangeText={(v) => set('priceMax', v.replace(/[^0-9.]/g, ''))}
+              placeholder="0.00"
+              numeric
+            />
           </View>
-        </ScrollView>
+        </Section>
 
-        <View style={styles.footer}>
-          <AuthButton label="Apply" onPress={handleApply} />
-        </View>
-      </SafeAreaView>
-    </Modal>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <AuthButton label="Apply Filters" onPress={handleApply} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function SearchField({
+  value,
+  onChangeText,
+  placeholder,
+}: {
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <View style={styles.searchField}>
+      <Ionicons name="search-outline" size={16} color={AppColors.textSecondary} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={AppColors.textPlaceholder}
+        autoCorrect={false}
+        style={styles.searchInput}
+      />
+    </View>
+  );
+}
+
+function RangeInput({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  numeric,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  numeric?: boolean;
+}) {
+  return (
+    <View style={styles.rangeField}>
+      <Text style={styles.rangeLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={AppColors.textPlaceholder}
+        keyboardType={numeric ? 'decimal-pad' : 'numbers-and-punctuation'}
+        maxLength={numeric ? 12 : 10}
+        style={styles.rangeInput}
+      />
+    </View>
   );
 }
 
@@ -214,13 +343,15 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingBottom: 24,
-    gap: 12,
+  },
+  section: {
+    marginTop: 20,
+    gap: 10,
   },
   sectionTitle: {
     color: AppColors.textPrimary,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    marginTop: 16,
   },
   pillRow: {
     flexDirection: 'row',
@@ -231,6 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
     borderWidth: 1,
     borderColor: AppColors.border,
     borderRadius: 24,
@@ -238,10 +370,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   dropdownValue: {
+    flex: 1,
     color: AppColors.textPrimary,
     fontSize: 14,
   },
   dropdownPlaceholder: {
+    flex: 1,
     color: AppColors.textPlaceholder,
     fontSize: 14,
   },
@@ -251,66 +385,91 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
   },
-  dropdownItem: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.border,
-  },
-  dropdownItemLabel: {
-    color: AppColors.textPrimary,
-    fontSize: 14,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  priceField: {
-    flex: 1,
-    gap: 6,
-  },
-  priceLabel: {
-    color: AppColors.textSecondary,
-    fontSize: 13,
-  },
-  priceInputRow: {
+  searchField: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: AppColors.border,
   },
-  priceInput: {
+  searchInput: {
     flex: 1,
     color: AppColors.textPrimary,
     fontSize: 14,
     padding: 0,
   },
-  priceDash: {
-    color: AppColors.textSecondary,
-    fontSize: 16,
-    marginTop: 18,
+  optionScroll: {
+    maxHeight: 240,
   },
-  dateRow: {
-    flexDirection: 'row',
-  },
-  dateField: {
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: AppColors.border,
+  },
+  optionLabel: {
+    flex: 1,
+    color: AppColors.textPrimary,
+    fontSize: 14,
+  },
+  optionSelected: {
+    fontWeight: '700',
+    color: AppColors.link,
+  },
+  noOptions: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    padding: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: AppColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: AppColors.buttonPrimaryBg,
+    borderColor: AppColors.buttonPrimaryBg,
+  },
+  rangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  rangeField: {
+    flex: 1,
+    gap: 6,
+  },
+  rangeLabel: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+  },
+  rangeInput: {
     borderWidth: 1,
     borderColor: AppColors.border,
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  datePlaceholder: {
-    color: AppColors.textSecondary,
+    color: AppColors.textPrimary,
     fontSize: 14,
+  },
+  rangeDash: {
+    color: AppColors.textSecondary,
+    fontSize: 16,
+    marginTop: 18,
+  },
+  error: {
+    color: AppColors.danger,
+    fontSize: 13,
+    marginTop: 16,
   },
   footer: {
     paddingHorizontal: 20,

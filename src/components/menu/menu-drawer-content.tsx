@@ -1,59 +1,57 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import type { DrawerContentComponentProps } from 'expo-router/drawer';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { UserAvatar } from '@/components/account/user-avatar';
 import { AppColors } from '@/constants/app-colors';
-import { ACCOUNT_MENU_ITEMS, MARKET_MENU_ITEMS, type MenuItem } from '@/data/menu-items';
+import { useAuth } from '@/context/auth-context';
+import { ACCOUNT_MENU_ITEMS, type MenuItem } from '@/data/menu-items';
 
 type Segment = 'account' | 'market';
+
+// Temporary: these menu items open the public website until dedicated in-app
+// screens exist for them.
+const MENU_ITEM_URLS: Record<string, string> = {
+  explorer: 'https://elmonx.com/explorer',
+  community: 'https://elmonx.com/feed',
+  blogs: 'https://elmonx.com/articles',
+  news: 'https://elmonx.com/news',
+  faqs: 'https://elmonx.com/faqs',
+  privacy: 'https://elmonx.com/privacy-policy',
+  terms: 'https://elmonx.com/terms-and-conditions',
+};
 
 export function MenuDrawerContent(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const [segment, setSegment] = useState<Segment>('account');
-  const items = segment === 'account' ? ACCOUNT_MENU_ITEMS : MARKET_MENU_ITEMS;
+  const items = ACCOUNT_MENU_ITEMS;
+  const { user, signOut } = useAuth();
 
   const handlePressItem = (item: MenuItem) => {
     props.navigation.closeDrawer();
     if (item.key === 'profile') {
       router.push('/account');
+      return;
     }
-    // TODO: wire up the remaining destinations once those screens are designed.
+    const url = MENU_ITEM_URLS[item.key];
+    if (url) {
+      WebBrowser.openBrowserAsync(url);
+    }
+  };
+
+  const handleLogOut = async () => {
+    props.navigation.closeDrawer();
+    await signOut();
+    router.replace('/(auth)/welcome');
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Text style={styles.title}>Menu</Text>
-
-      <View style={styles.segmentRow}>
-        <Pressable
-          style={[styles.segment, segment === 'account' && styles.segmentActive]}
-          onPress={() => setSegment('account')}>
-          <Ionicons
-            name="person-outline"
-            size={16}
-            color={segment === 'account' ? AppColors.textPrimary : AppColors.textSecondary}
-          />
-          <Text style={[styles.segmentLabel, segment === 'account' && styles.segmentLabelActive]}>
-            Account
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.segment, segment === 'market' && styles.segmentActive]}
-          onPress={() => setSegment('market')}>
-          <Ionicons
-            name="storefront-outline"
-            size={16}
-            color={segment === 'market' ? AppColors.textPrimary : AppColors.textSecondary}
-          />
-          <Text style={[styles.segmentLabel, segment === 'market' && styles.segmentLabelActive]}>
-            Market
-          </Text>
-        </Pressable>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
         {items.map((item) => (
           <Pressable
@@ -68,6 +66,30 @@ export function MenuDrawerContent(props: DrawerContentComponentProps) {
           </Pressable>
         ))}
       </ScrollView>
+
+      {user ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+          <View style={styles.userRow}>
+            <UserAvatar user={user} size={40} />
+            <View style={styles.userText}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {user.user_name}
+              </Text>
+              <Text style={styles.userEmail} numberOfLines={1}>
+                {user.email_address}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+              hitSlop={10}
+              style={({ pressed }) => [styles.logOutButton, pressed && styles.itemPressed]}
+              onPress={handleLogOut}>
+              <Ionicons name="log-out-outline" size={22} color={AppColors.danger} />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -133,5 +155,41 @@ const styles = StyleSheet.create({
     color: AppColors.textPrimary,
     fontSize: 15,
     fontWeight: '500',
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: AppColors.border,
+    paddingTop: 16,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  userText: {
+    flex: 1,
+  },
+  userName: {
+    color: AppColors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  userEmail: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  logOutButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.surface,
   },
 });

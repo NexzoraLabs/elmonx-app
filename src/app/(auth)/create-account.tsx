@@ -7,9 +7,11 @@ import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 import { isValidEmail, isValidPassword } from '@/utils/auth-validation';
 
 export default function CreateAccountScreen() {
+  const { signUp } = useAuth();
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -19,13 +21,18 @@ export default function CreateAccountScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
-    if (!fullName.trim() || !username.trim()) {
-      setError('Full name and username are required');
+  const handleContinue = async () => {
+    const nameParts = fullName.trim().split(/\s+/);
+    if (!fullName.trim() || !username.trim() || nameParts.length < 2) {
+      setError('Enter your full name (first and last) and a username');
       return;
     }
     if (!isValidEmail(email)) {
       setError('Enter a valid email address');
+      return;
+    }
+    if (!phone.trim()) {
+      setError('Enter your phone number');
       return;
     }
     if (!isValidPassword(password)) {
@@ -38,11 +45,22 @@ export default function CreateAccountScreen() {
     }
     setError(null);
     setLoading(true);
-    // TODO: replace with real sign-up API call once backend integration begins.
-    setTimeout(() => {
+    try {
+      const [firstName, ...rest] = nameParts;
+      await signUp({
+        firstName,
+        lastName: rest.join(' '),
+        userName: username.trim(),
+        emailAddress: email.trim(),
+        password,
+        phoneNumber: phone.trim(),
+      });
+      router.replace('/home');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to create your account. Please try again.');
+    } finally {
       setLoading(false);
-      router.push({ pathname: '/(auth)/verify-code', params: { email } });
-    }, 400);
+    }
   };
 
   return (

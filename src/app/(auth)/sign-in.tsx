@@ -9,15 +9,17 @@ import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
 import { SocialButton } from '@/components/auth/social-button';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 
 export default function SignInScreen() {
+  const { signIn } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (identifier.trim().length === 0) {
       setError('Enter your email or username');
       return;
@@ -28,11 +30,14 @@ export default function SignInScreen() {
     }
     setError(null);
     setLoading(true);
-    // TODO: replace with real sign-in API call once backend integration begins.
-    setTimeout(() => {
+    try {
+      const emailAddress = await signIn(identifier.trim(), password);
+      router.push({ pathname: '/(auth)/verify-code', params: { email: emailAddress, purpose: 'login' } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to sign in. Please try again.');
+    } finally {
       setLoading(false);
-      router.replace('/home');
-    }, 400);
+    }
   };
 
   return (
@@ -80,7 +85,7 @@ export default function SignInScreen() {
         </View>
 
         <SocialButton provider="google" onPress={() => {}} />
-        <SocialButton provider="apple" onPress={() => {}} />
+        {/* Apple sign-in hidden for now — re-enable once ready. */}
       </View>
     </AuthScreen>
   );

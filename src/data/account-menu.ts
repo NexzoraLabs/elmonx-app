@@ -19,7 +19,6 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
   {
     title: 'ACCOUNT',
     rows: [
-      { key: 'account', label: 'Account', icon: 'person-outline' },
       { key: 'personal-information', label: 'Personal Information', icon: 'id-card-outline' },
       { key: 'settings', label: 'Settings', icon: 'settings-outline' },
     ],
@@ -28,12 +27,12 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     title: 'REWARDS & ACTIVITY',
     rows: [
       { key: 'app-rewards', label: 'App Rewards', icon: 'storefront-outline' },
-      { key: 'challenges', label: 'Challenges', icon: 'trophy-outline' },
+      { key: 'challenges', label: 'Quests, Earn XP', icon: 'trophy-outline' },
       { key: 'leaderboard', label: 'Leaderboard', icon: 'bar-chart-outline' },
     ],
   },
   {
-    title: 'COLLECTIONS',
+    title: 'Collectables',
     rows: [
       { key: 'my-wallet-collectables', label: 'My Wallet Collectables', icon: 'layers-outline' },
       { key: 'my-vault-collectables', label: 'My Vault Collectables', icon: 'shield-checkmark-outline' },
@@ -47,9 +46,5 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
       { key: 'promo-code', label: 'Promo Code', icon: 'pricetag-outline' },
       { key: 'shipping-address', label: 'Shipping Address', icon: 'location-outline' },
     ],
-  },
-  {
-    title: 'PREFERENCES',
-    rows: [{ key: 'dark-mode', label: 'Dark Mode', icon: 'moon-outline', type: 'toggle' }],
   },
 ];

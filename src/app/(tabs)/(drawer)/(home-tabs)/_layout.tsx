@@ -1,10 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppColors } from '@/constants/app-colors';
+import { useChat } from '@/context/chat-context';
 
 export default function HomeTabsLayout() {
+  const insets = useSafeAreaInsets();
+  const { totalUnread } = useChat();
+  // Keep icons/labels clear of the home indicator and rounded screen corners.
+  const bottomPadding = Math.max(insets.bottom, 10) + 4;
+
   return (
     <Tabs
       screenOptions={{
@@ -15,9 +22,9 @@ export default function HomeTabsLayout() {
           backgroundColor: AppColors.background,
           borderTopColor: AppColors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 60,
-          paddingTop: 6,
-          paddingBottom: 6,
+          height: 58 + bottomPadding,
+          paddingTop: 8,
+          paddingBottom: bottomPadding,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
@@ -38,10 +45,10 @@ export default function HomeTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="social"
+        name="feed"
         options={{
-          title: 'Social',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+          title: 'Feed',
+          tabBarIcon: ({ color, size }) => <Ionicons name="newspaper-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -55,7 +62,7 @@ export default function HomeTabsLayout() {
         name="chat"
         options={{
           title: 'Chat',
-          tabBarBadge: 2,
+          tabBarBadge: totalUnread > 0 ? (totalUnread > 99 ? '99+' : totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
@@ -66,12 +73,6 @@ export default function HomeTabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
-        }}
-        listeners={{
-          tabPress: (event) => {
-            event.preventDefault();
-            router.push('/account');
-          },
         }}
       />
     </Tabs>

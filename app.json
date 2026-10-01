@@ -11,7 +11,23 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.elmonx.app.dev",
       "infoPlist": {
-        "NSCameraUsageDescription": "This lets you view collectables in augmented reality using your camera."
+        "NSCameraUsageDescription": "This lets you view collectables in augmented reality using your camera.",
+        "NSPhotoLibraryUsageDescription": "This lets you choose a photo for your profile picture and cover image.",
+        "LSApplicationQueriesSchemes": [
+          "metamask",
+          "trust",
+          "rainbow",
+          "uniswap",
+          "zerion",
+          "cbwallet",
+          "safe",
+          "imtokenv2",
+          "okex",
+          "bitkeep",
+          "ledgerlive",
+          "exodus",
+          "argent"
+        ]
       }
     },
     "android": {
@@ -45,7 +61,9 @@
             "enableSceneSupport": true
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

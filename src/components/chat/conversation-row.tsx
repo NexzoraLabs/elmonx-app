@@ -1,50 +1,73 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
-import type { Conversation } from '@/data/chat-mock';
+import type { ConversationItem } from '@/services/chat-api';
+import { resolveAvatar } from '@/services/profile-api';
 
-export function ConversationRow({ conversation }: { conversation: Conversation }) {
+export function formatChatTime(iso?: string): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+type Props = {
+  conversation: ConversationItem;
+  online: boolean;
+  typing: boolean;
+};
+
+export function ConversationRow({ conversation, online, typing }: Props) {
+  const participant = conversation.participant;
+  const unread = conversation.unread_count > 0;
+  const preview = conversation.last_message
+    ? `${conversation.last_message_is_mine ? 'You: ' : ''}${conversation.last_message}`
+    : 'No messages yet';
+
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      onPress={() => router.push(`/chat/${conversation.id}`)}>
-      <PlaceholderThumb
-        color={conversation.avatarColor}
-        icon="person-outline"
-        style={styles.avatar}
-        iconSize={20}
-      />
+      onPress={() =>
+        router.push({
+          pathname: '/chat/[id]',
+          params: {
+            id: conversation.conversation_id,
+            userId: participant._id,
+            username: participant.user_name,
+            avatar: participant.profile_avatar || participant.profile_avatar_url || '',
+          },
+        })
+      }>
+      <View>
+        <Image
+          source={{ uri: resolveAvatar(participant.profile_avatar || participant.profile_avatar_url) }}
+          style={styles.avatar}
+          contentFit="cover"
+        />
+        {online ? <View style={styles.onlineDot} /> : null}
+      </View>
 
       <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={1}>
-          {conversation.name}
+        <Text style={[styles.name, unread && styles.nameUnread]} numberOfLines={1}>
+          @{participant.user_name}
         </Text>
-
-        {conversation.isBlocked ? (
-          <Text style={styles.blockedText}>You blocked this user</Text>
-        ) : (
-          <View style={styles.previewRow}>
-            {conversation.lastMessageRead ? (
-              <Ionicons name="checkmark-done" size={14} color={AppColors.rarityRare} />
-            ) : null}
-            {conversation.lastMessageIsImage ? (
-              <Ionicons name="image-outline" size={14} color={AppColors.textSecondary} />
-            ) : null}
-            <Text style={styles.preview} numberOfLines={1}>
-              {conversation.lastMessagePreview}
-            </Text>
-          </View>
-        )}
+        <Text style={[styles.preview, typing && styles.typing, unread && styles.previewUnread]} numberOfLines={1}>
+          {typing ? 'typing…' : preview}
+        </Text>
       </View>
 
       <View style={styles.meta}>
-        <Text style={styles.timestamp}>{conversation.timestamp}</Text>
-        {conversation.unreadCount > 0 ? (
+        <Text style={styles.timestamp}>{formatChatTime(conversation.last_message_at)}</Text>
+        {unread ? (
           <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
+            <Text style={styles.unreadText}>{conversation.unread_count}</Text>
           </View>
         ) : null}
       </View>
@@ -67,29 +90,41 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: AppColors.surface,
+  },
+  onlineDot: {
+    position: 'absolute',
+    right: 1,
+    bottom: 1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: AppColors.success,
+    borderWidth: 2,
+    borderColor: AppColors.background,
   },
   body: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
   name: {
     color: AppColors.textPrimary,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  previewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  nameUnread: {
+    fontWeight: '800',
   },
   preview: {
-    flex: 1,
     color: AppColors.textSecondary,
     fontSize: 13,
   },
-  blockedText: {
-    color: AppColors.danger,
-    fontSize: 13,
+  previewUnread: {
+    color: AppColors.textPrimary,
+  },
+  typing: {
+    color: AppColors.success,
+    fontStyle: 'italic',
   },
   meta: {
     alignItems: 'flex-end',
@@ -100,17 +135,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   unreadBadge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: AppColors.buttonPrimaryBg,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    backgroundColor: AppColors.link,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadText: {
-    color: AppColors.buttonPrimaryText,
-    fontSize: 10,
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '700',
   },
 });

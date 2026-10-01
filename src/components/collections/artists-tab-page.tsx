@@ -6,14 +6,15 @@ import { ArtistSkeletonList } from '@/components/collections/artist-skeleton-lis
 import { AppColors } from '@/constants/app-colors';
 import { fetchBrands, type Brand } from '@/services/brands-api';
 
-export function ArtistsTabPage() {
+/** Parent remounts this (via `key`) when the search changes, so it loads once per search. */
+export function ArtistsTabPage({ search = '' }: { search?: string }) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchBrands()
+    fetchBrands(search)
       .then((data) => {
         if (cancelled) return;
         setBrands(data);
@@ -28,7 +29,7 @@ export function ArtistsTabPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [search]);
 
   if (loading) {
     return (
@@ -49,7 +50,7 @@ export function ArtistsTabPage() {
   if (brands.length === 0) {
     return (
       <View style={[styles.page, styles.center]}>
-        <Text style={styles.emptyText}>Nothing here yet.</Text>
+        <Text style={styles.emptyText}>{search.trim() ? `No artists found for "${search.trim()}".` : 'Nothing here yet.'}</Text>
       </View>
     );
   }

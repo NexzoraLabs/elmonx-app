@@ -8,9 +8,10 @@ type ChatOptionsSheetProps = {
   visible: boolean;
   onClose: () => void;
   username: string;
+  isBlocked: boolean;
+  canDelete: boolean;
   onViewProfile: () => void;
-  onBlock: () => void;
-  onReport: () => void;
+  onBlockToggle: () => void;
   onDelete: () => void;
 };
 
@@ -18,9 +19,10 @@ export function ChatOptionsSheet({
   visible,
   onClose,
   username,
+  isBlocked,
+  canDelete,
   onViewProfile,
-  onBlock,
-  onReport,
+  onBlockToggle,
   onDelete,
 }: ChatOptionsSheetProps) {
   const action = (fn: () => void) => () => {
@@ -31,9 +33,14 @@ export function ChatOptionsSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <Row icon="person-outline" label="View Profile" onPress={action(onViewProfile)} />
-      <Row icon="ban-outline" label={`Block @${username.toUpperCase()}`} onPress={action(onBlock)} danger />
-      <Row icon="flag-outline" label="Report Post" onPress={action(onReport)} danger />
-      <Row icon="trash-outline" label="Delete Chat" onPress={action(onDelete)} danger last />
+      <Row
+        icon="ban-outline"
+        label={isBlocked ? `Unblock @${username}` : `Block @${username}`}
+        onPress={action(onBlockToggle)}
+        danger={!isBlocked}
+        last={!canDelete}
+      />
+      {canDelete ? <Row icon="trash-outline" label="Delete Chat" onPress={action(onDelete)} danger last /> : null}
     </BottomSheet>
   );
 }

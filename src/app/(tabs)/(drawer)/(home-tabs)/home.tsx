@@ -19,7 +19,6 @@ import { WorldCategoryCard } from '@/components/home/world-category-card';
 import { AppColors } from '@/constants/app-colors';
 import {
   AR_PHOTOS,
-  CATEGORY_TABS,
   COLLECTIBLES,
   COLLECTION_FILTERS,
   COMMUNITY_POSTS,
@@ -34,7 +33,6 @@ import {
 } from '@/data/home-mock';
 
 export default function HomeScreen() {
-  const [category, setCategory] = useState<string>(CATEGORY_TABS[0]);
   const [collectionFilter, setCollectionFilter] = useState<CollectionItem['category']>('Art');
 
   const filteredCollections = EXPLORE_COLLECTIONS.filter(
@@ -45,7 +43,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <HomeHeader />
-        <CategoryTabs categories={CATEGORY_TABS} selected={category} onSelect={setCategory} />
 
         <FeaturedCarousel banners={FEATURED_BANNERS} />
 

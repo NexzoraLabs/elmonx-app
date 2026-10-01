@@ -9,9 +9,10 @@ type StatCardProps = {
   label: string;
   value: string;
   delta?: string;
+  subtext?: string;
 };
 
-export function StatCard({ icon, iconColor, label, value, delta }: StatCardProps) {
+export function StatCard({ icon, iconColor, label, value, delta, subtext }: StatCardProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.label}>{label}</Text>
@@ -20,6 +21,7 @@ export function StatCard({ icon, iconColor, label, value, delta }: StatCardProps
         <Text style={styles.value}>{value}</Text>
         {delta ? <Text style={styles.delta}>{delta}</Text> : null}
       </View>
+      {subtext ? <Text style={styles.subtext}>{subtext}</Text> : null}
     </View>
   );
 }
@@ -50,5 +52,9 @@ const styles = StyleSheet.create({
     color: AppColors.success,
     fontSize: 11,
     fontWeight: '600',
+  },
+  subtext: {
+    color: AppColors.textSecondary,
+    fontSize: 11,
   },
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
+import { Image } from 'expo-image';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { AppColors } from '@/constants/app-colors';
 
@@ -20,15 +20,15 @@ type BlockUserSheetProps = {
   visible: boolean;
   onClose: () => void;
   name: string;
-  avatarColor: string;
+  avatarUrl: string;
   onConfirm: () => void;
 };
 
-export function BlockUserSheet({ visible, onClose, name, avatarColor, onConfirm }: BlockUserSheetProps) {
+export function BlockUserSheet({ visible, onClose, name, avatarUrl, onConfirm }: BlockUserSheetProps) {
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.header}>
-        <PlaceholderThumb color={avatarColor} icon="person-outline" style={styles.avatar} iconSize={22} />
+        <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
         <Text style={styles.title}>Block {name}?</Text>
         <Text style={styles.subtitle}>Are you sure you want to block this user.</Text>
       </View>

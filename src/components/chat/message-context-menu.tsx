@@ -6,20 +6,13 @@ import { AppColors } from '@/constants/app-colors';
 type MessageContextMenuProps = {
   visible: boolean;
   onClose: () => void;
-  onReply: () => void;
-  onForward: () => void;
-  onCopy: () => void;
-  onDelete: () => void;
+  /** Null when the message has no text to copy. */
+  onCopy: (() => void) | null;
+  /** Only for my own messages (website "Unsend"). */
+  onUnsend: (() => void) | null;
 };
 
-export function MessageContextMenu({
-  visible,
-  onClose,
-  onReply,
-  onForward,
-  onCopy,
-  onDelete,
-}: MessageContextMenuProps) {
+export function MessageContextMenu({ visible, onClose, onCopy, onUnsend }: MessageContextMenuProps) {
   const action = (fn: () => void) => () => {
     onClose();
     fn();
@@ -29,10 +22,8 @@ export function MessageContextMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <View style={styles.menu}>
-          <Row icon="arrow-undo-outline" label="Reply" onPress={action(onReply)} />
-          <Row icon="arrow-redo-outline" label="Forward" onPress={action(onForward)} />
-          <Row icon="copy-outline" label="Copy" onPress={action(onCopy)} />
-          <Row icon="trash-outline" label="Delete" onPress={action(onDelete)} danger last />
+          {onCopy ? <Row icon="copy-outline" label="Copy" onPress={action(onCopy)} last={!onUnsend} /> : null}
+          {onUnsend ? <Row icon="arrow-undo-outline" label="Unsend" onPress={action(onUnsend)} danger last /> : null}
         </View>
       </Pressable>
     </Modal>

@@ -8,15 +8,18 @@ import { AuthScreen } from '@/components/auth/auth-screen';
 import { NumericKeypad } from '@/components/auth/numeric-keypad';
 import { OtpInput } from '@/components/auth/otp-input';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 
 const CODE_LENGTH = 4;
 const RESEND_SECONDS = 24;
 
 export default function VerifyCodeScreen() {
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, purpose } = useLocalSearchParams<{ email?: string; purpose?: 'login' | 'reset' }>();
+  const { confirmSignInOtp, resendOtp } = useAuth();
   const [code, setCode] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (secondsLeft === 0) return;
@@ -27,6 +30,7 @@ export default function VerifyCodeScreen() {
   const isComplete = code.length === CODE_LENGTH;
 
   const handlePressDigit = (digit: string) => {
+    setError(null);
     setCode((prev) => (prev.length >= CODE_LENGTH ? prev : prev + digit));
   };
 
@@ -34,21 +38,34 @@ export default function VerifyCodeScreen() {
     setCode((prev) => prev.slice(0, -1));
   };
 
-  const handleResend = () => {
-    if (secondsLeft > 0) return;
+  const handleResend = async () => {
+    if (secondsLeft > 0 || !email) return;
     setSecondsLeft(RESEND_SECONDS);
     setCode('');
-    // TODO: trigger real resend-code API call once backend integration begins.
+    setError(null);
+    try {
+      await resendOtp(email);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to resend code.');
+    }
   };
 
-  const handleContinue = () => {
-    if (!isComplete) return;
+  const handleContinue = async () => {
+    if (!isComplete || !email) return;
     setVerifying(true);
-    // TODO: replace with real code-verification API call once backend integration begins.
-    setTimeout(() => {
-      setVerifying(false);
+    setError(null);
+    try {
+      if (purpose === 'reset') {
+        router.push({ pathname: '/(auth)/reset-password', params: { email, code } });
+        return;
+      }
+      await confirmSignInOtp(email, code);
       router.replace('/home');
-    }, 400);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Invalid or expired code.');
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
@@ -71,6 +88,8 @@ export default function VerifyCodeScreen() {
       <View style={styles.otpSection}>
         <OtpInput length={CODE_LENGTH} value={code} />
       </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Text style={styles.resendText}>
         Don&apos;t see it?{' '}
@@ -108,6 +127,11 @@ const styles = StyleSheet.create({
   },
   otpSection: {
     marginTop: 32,
+  },
+  error: {
+    color: AppColors.danger,
+    fontSize: 13,
+    marginTop: 12,
   },
   resendText: {
     color: AppColors.textSecondary,
