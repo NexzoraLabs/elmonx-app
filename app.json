@@ -13,6 +13,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "This lets you view collectables in augmented reality using your camera.",
         "NSPhotoLibraryUsageDescription": "This lets you choose a photo for your profile picture and cover image.",
+        "NSMicrophoneUsageDescription": "This lets you record videos of your collectables in 3D and AR with sound.",
         "LSApplicationQueriesSchemes": [
           "metamask",
           "trust",
