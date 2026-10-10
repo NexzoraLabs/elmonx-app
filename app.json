@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "package": "com.elmonx.app",
+      "package": "com.elmonx.app.dev",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

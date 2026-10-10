@@ -10,7 +10,7 @@ type UnityBridgeNativeModule = {
 const { UnityBridgeModule } = NativeModules as { UnityBridgeModule?: UnityBridgeNativeModule };
 
 export function isUnityViewerAvailable(): boolean {
-  return Platform.OS === 'ios' && UnityBridgeModule != null;
+  return (Platform.OS === 'ios' || Platform.OS === 'android') && UnityBridgeModule != null;
 }
 
 export function presentUnityViewer(entry: UnityAssetEntry, asset: UnityAssetFile): void {
