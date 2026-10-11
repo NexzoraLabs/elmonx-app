@@ -1,76 +1,161 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { LogoMark } from '@/components/auth/logo-mark';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
-import type { DropItem } from '@/data/home-mock';
+import type { CollectionGridItem } from '@/data/collections-mock';
 
-export function DropCard({ item }: { item: DropItem }) {
+export function DropCard({ item }: { item: CollectionGridItem }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.thumbWrapper}>
+    <Pressable
+      style={styles.card}
+      onPress={() => router.push({ pathname: '/drop/[id]', params: { id: item.id } })}>
+      <View style={styles.imageOuter}>
         {item.imageUrl ? (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={styles.thumb}
-            contentFit="contain"
-            transition={150}
-          />
+          <>
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={[StyleSheet.absoluteFill, styles.ambientGlow]}
+              contentFit="cover"
+              blurRadius={22}
+            />
+            <View style={styles.thumbInner}>
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={StyleSheet.absoluteFill}
+                contentFit="contain"
+                transition={150}
+              />
+            </View>
+          </>
         ) : (
-          <PlaceholderThumb color={item.color} icon="sparkles-outline" iconSize={30} style={styles.thumb} />
+          <PlaceholderThumb color={item.color} icon="sparkles-outline" iconSize={28} style={StyleSheet.absoluteFill} />
         )}
-        <View style={styles.logoOverlay}>
-          <LogoMark size={9} />
-        </View>
+        {item.isUpcoming ? (
+          <View style={styles.upcomingBadge}>
+            <View style={styles.upcomingDot} />
+            <Text style={styles.upcomingText}>Upcoming</Text>
+          </View>
+        ) : null}
       </View>
-      <Pressable style={styles.notifyButton}>
-        <Text style={styles.notifyLabel}>Notify Me</Text>
-      </Pressable>
-      <Text style={styles.expected}>Expected {item.expected}</Text>
-    </View>
+
+      <View style={styles.body}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {item.title.toUpperCase()}
+          </Text>
+          <View style={styles.arrowCircle}>
+            <Ionicons
+              name="arrow-forward-outline"
+              size={11}
+              color={AppColors.textPrimary}
+              style={styles.arrowIcon}
+            />
+          </View>
+        </View>
+        {item.dropDate ? (
+          <View style={styles.dateRow}>
+            <Ionicons name="calendar-outline" size={11} color={AppColors.textSecondary} />
+            <Text style={styles.dateText}>{item.dropDate}</Text>
+          </View>
+        ) : null}
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 150,
-  },
-  thumbWrapper: {
-    width: 150,
-    height: 150,
-    borderRadius: 16,
+    width: 160,
     backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: AppColors.border,
     overflow: 'hidden',
   },
-  thumb: {
-    width: 150,
-    height: 150,
-    borderRadius: 16,
+  imageOuter: {
+    margin: 8,
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#111212',
   },
-  logoOverlay: {
+  ambientGlow: {
+    opacity: 0.38,
+    transform: [{ scale: 1.25 }],
+  },
+  thumbInner: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    top: 14,
+    left: 14,
+    right: 14,
+    bottom: 14,
   },
-  notifyButton: {
-    marginTop: 10,
-    alignSelf: 'flex-start',
-    backgroundColor: AppColors.surface,
-    borderWidth: 1,
-    borderColor: AppColors.buttonSecondaryBorder,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  upcomingBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
-  notifyLabel: {
+  upcomingDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#34D399',
+  },
+  upcomingText: {
+    color: '#34D399',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  body: {
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 10,
+    gap: 5,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  title: {
+    flex: 1,
     color: AppColors.textPrimary,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  expected: {
+  arrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  arrowIcon: {
+    transform: [{ rotate: '-45deg' }],
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dateText: {
     color: AppColors.textSecondary,
     fontSize: 11,
-    marginTop: 8,
   },
 });

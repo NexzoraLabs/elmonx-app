@@ -11,6 +11,14 @@ export type CollectionGridItem = {
   dismissible?: boolean;
   imageUrl?: string;
   isBlindBox?: boolean;
+  description?: string;
+  isUpcoming?: boolean;
+  price?: number;
+  priceKind?: 'xcoin' | 'gbp' | 'airdrop';
+  totalEditions?: number;
+  consumedEditions?: number;
+  isSoldOut?: boolean;
+  dropEdition?: string;
 };
 
 const COLLECTIONS_ONLY: CollectionGridItem[] = [

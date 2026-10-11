@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
@@ -12,13 +11,13 @@ type SectionHeaderProps = {
 export function SectionHeader({ title, eyebrow, onPressSeeAll }: SectionHeaderProps) {
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.textGroup}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text style={styles.title}>{title}</Text>
       </View>
       {onPressSeeAll ? (
         <Pressable hitSlop={8} onPress={onPressSeeAll}>
-          <Ionicons name="chevron-forward" size={20} color={AppColors.textSecondary} />
+          <Text style={styles.viewAll}>View All</Text>
         </Pressable>
       ) : null}
     </View>
@@ -33,6 +32,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 12,
   },
+  textGroup: {
+    flex: 1,
+  },
   eyebrow: {
     color: AppColors.textSecondary,
     fontSize: 11,
@@ -42,8 +44,15 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AppColors.textPrimary,
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: '700',
     marginTop: 2,
+  },
+  viewAll: {
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '400',
+    textDecorationLine: 'underline',
+    opacity: 0.85,
   },
 });

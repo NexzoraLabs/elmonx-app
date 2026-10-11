@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArPhotoTile } from '@/components/home/ar-photo-item';
-import { CategoryTabs } from '@/components/home/category-tabs';
 import { CollectibleCard } from '@/components/home/collectible-card';
 import { CollectorTile } from '@/components/home/collector-item';
 import { CommunityPostCard } from '@/components/home/community-post-card';
@@ -19,21 +19,47 @@ import { WorldCategoryCard } from '@/components/home/world-category-card';
 import { AppColors } from '@/constants/app-colors';
 import {
   AR_PHOTOS,
-  COLLECTIBLES,
   COLLECTION_FILTERS,
   COMMUNITY_POSTS,
   ELITE_COLLECTORS,
   EXPLORE_COLLECTIONS,
-  FEATURED_BANNERS,
-  FEATURED_DROPS,
   ICONIC_WORLDS,
   LEAVING_SOON,
-  UPCOMING_DROPS,
   type CollectionItem,
 } from '@/data/home-mock';
+import type { CollectionGridItem } from '@/data/collections-mock';
+import type { HomeBanner } from '@/services/home-api';
+import { fetchStoreItems } from '@/services/home-api';
+import { dropToGridItem } from '@/services/drops-api';
 
 export default function HomeScreen() {
   const [collectionFilter, setCollectionFilter] = useState<CollectionItem['category']>('Art');
+
+  const [banners, setBanners] = useState<HomeBanner[]>([]);
+  const [upcoming, setUpcoming] = useState<CollectionGridItem[]>([]);
+  const [featured, setFeatured] = useState<CollectionGridItem[]>([]);
+  const [collectibles, setCollectibles] = useState<CollectionGridItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreItems()
+      .then((items) => {
+        if (cancelled) return;
+        setBanners(items.banners);
+        setUpcoming(items.upcoming.map((d) => dropToGridItem(d, 'Collectibles')));
+        setFeatured(items.featured.map((d) => dropToGridItem(d, 'Collectibles')));
+        setCollectibles(items.collectibles.map((d) => dropToGridItem(d, 'Collectibles')));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredCollections = EXPLORE_COLLECTIONS.filter(
     (item) => item.category === collectionFilter
@@ -44,42 +70,72 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <HomeHeader />
 
-        <FeaturedCarousel banners={FEATURED_BANNERS} />
+        {loading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={AppColors.textSecondary} />
+          </View>
+        ) : (
+          <>
+            {banners.length > 0 ? <FeaturedCarousel banners={banners} /> : null}
 
+            {upcoming.length > 0 ? (
+              <View style={styles.section}>
+                <SectionHeader title="Upcoming Drops" onPressSeeAll={() => {}} />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalList}>
+                  {upcoming.map((item) => (
+                    <DropCard key={item.id} item={item} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {featured.length > 0 ? (
+              <View style={styles.section}>
+                <SectionHeader eyebrow="Featured Drop" title="Discover New Drops" onPressSeeAll={() => {}} />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalList}>
+                  {featured.map((item) => (
+                    <FeaturedDropCard key={item.id} item={item} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {collectibles.length > 0 ? (
+              <View style={styles.section}>
+                <SectionHeader title="Collectibles" onPressSeeAll={() => {}} />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalList}>
+                  {collectibles.map((item) => (
+                    <CollectibleCard key={item.id} item={item} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+          </>
+        )}
+
+        {/* ElmonX 101 — content not shown in app; View All opens website */}
         <View style={styles.section}>
-          <SectionHeader title="Upcoming Drops" onPressSeeAll={() => {}} />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}>
-            {UPCOMING_DROPS.map((item) => (
-              <DropCard key={item.id} item={item} />
-            ))}
-          </ScrollView>
+          <SectionHeader
+            title="ElmonX 101"
+            onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/articles')}
+          />
         </View>
 
+        {/* News — content not shown in app; View All opens website */}
         <View style={styles.section}>
-          <SectionHeader eyebrow="Featured Drop" title="Discover New Drops" onPressSeeAll={() => {}} />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}>
-            {FEATURED_DROPS.map((item) => (
-              <FeaturedDropCard key={item.id} item={item} />
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Collectibles" onPressSeeAll={() => {}} />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}>
-            {COLLECTIBLES.map((item) => (
-              <CollectibleCard key={item.id} item={item} />
-            ))}
-          </ScrollView>
+          <SectionHeader
+            title="News"
+            onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/news')}
+          />
         </View>
 
         <View style={styles.section}>
@@ -165,12 +221,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
+  loadingRow: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
   section: {
-    marginTop: 28,
+    marginTop: 32,
   },
   horizontalList: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
     paddingHorizontal: 20,
   },
   grid: {

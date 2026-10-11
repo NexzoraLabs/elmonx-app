@@ -232,15 +232,17 @@ export function slugify(value: string): string {
   return (value || 'untitled').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 }
 
-export function formatDropDate(isoDate: string): string {
+export function formatDropDate(isoDate: string, withTime = false): string {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
   const day = date.toLocaleDateString('en-GB', { day: '2-digit' });
   const month = date.toLocaleDateString('en-GB', { month: 'short' });
-  const year = date.toLocaleDateString('en-GB', { year: '2-digit' });
-  return `${day} ${month} ${year}`;
+  const year = date.toLocaleDateString('en-GB', { year: 'numeric' });
+  if (!withTime) return `${day} ${month} ${year}`;
+  const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${day} ${month} ${year} · ${time}`;
 }
 
 /** Picks the platform-appropriate Unity asset (iOS build vs Android build) for the "View in 3D" viewer. */
@@ -252,13 +254,24 @@ export function getPlatformUnityAsset(drop: Drop): UnityAssetFile | undefined {
 }
 
 export function dropToGridItem(drop: Drop, category: CollectionCategory = 'Collectibles'): CollectionGridItem {
+  const isSoldOut = drop.is_sold === true || (drop.total_editions > 0 && drop.consumed_editions >= drop.total_editions);
+  const priceKind: CollectionGridItem['priceKind'] =
+    drop.type === 'Layer_2' ? 'xcoin' : drop.price === 0 ? 'airdrop' : 'gbp';
   return {
     id: drop._id,
     title: drop.title,
-    dropDate: formatDropDate(drop.release_date),
+    description: drop.description,
+    dropDate: formatDropDate(drop.release_date, true),
+    isUpcoming: drop.release_date ? new Date(drop.release_date) > new Date() : false,
     color: '#1B1F2E',
     category,
     imageUrl: drop.images[0]?.original_url,
     isBlindBox: drop.is_blind_box,
+    price: drop.price,
+    priceKind,
+    totalEditions: drop.total_editions,
+    consumedEditions: drop.consumed_editions,
+    isSoldOut,
+    dropEdition: drop.drop_edition,
   };
 }

@@ -87,12 +87,13 @@ export type FeaturedDropItem = {
   title: string;
   date: string;
   color: string;
+  imageUrl?: string;
 };
 
 export const FEATURED_DROPS: FeaturedDropItem[] = [
-  { id: 'fd-1', title: 'Excessive Incarceration', date: '22 Jul 27', color: '#B4442E' },
-  { id: 'fd-2', title: 'Riot', date: '22 Jul 27', color: '#2E5FB4' },
-  { id: 'fd-3', title: 'T206', date: '22 Jul 27', color: '#C79A3A' },
+  { id: 'fd-1', title: 'Excessive Incarceration', date: '22 Jul 27', color: '#B4442E', imageUrl: 'https://assets.elmonx.com/drops/1789583054319_883137848.webp' },
+  { id: 'fd-2', title: 'Riot', date: '22 Jul 27', color: '#2E5FB4', imageUrl: 'https://assets.elmonx.com/drops/1789583176853_744986190.webp' },
+  { id: 'fd-3', title: 'T206', date: '22 Jul 27', color: '#C79A3A', imageUrl: 'https://assets.elmonx.com/drops/1789582916156_421505741.webp' },
 ];
 
 export type CollectibleItem = {

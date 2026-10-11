@@ -48,7 +48,9 @@ export function collectionListItemToGridItem(item: CollectionListItem): Collecti
   return {
     id: item._id,
     title: item.title,
+    description: item.description,
     dropDate: formatDropDate(item.nearest_release_date),
+    isUpcoming: item.nearest_release_date ? new Date(item.nearest_release_date) > new Date() : false,
     color: '#1B1F2E',
     category: 'Collections',
     imageUrl: item.image,
