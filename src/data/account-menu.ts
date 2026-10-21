@@ -21,6 +21,8 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     rows: [
       { key: 'personal-information', label: 'Personal Information', icon: 'id-card-outline' },
       { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+      { key: 'connections', label: 'Connections', icon: 'people-outline' },
+      { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' },
     ],
   },
   {
@@ -36,6 +38,7 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     rows: [
       { key: 'my-wallet-collectables', label: 'My Wallet Collectables', icon: 'layers-outline' },
       { key: 'my-vault-collectables', label: 'My Vault Collectables', icon: 'shield-checkmark-outline' },
+      { key: 'my-auction-wins', label: 'My Auction Wins', icon: 'trophy-outline' },
       { key: 'doodles-physicals', label: 'Doodles Physicals', icon: 'cube-outline' },
     ],
   },

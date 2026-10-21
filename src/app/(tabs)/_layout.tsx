@@ -28,6 +28,10 @@ export default function AppShellLayout() {
         <Stack.Screen name="doodles-physicals" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="create-post" options={{ presentation: 'modal' }} />
         <Stack.Screen name="user-search" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="auctions" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="auction/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="connections" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </ChatProvider>
   );

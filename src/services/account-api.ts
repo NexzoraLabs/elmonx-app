@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {
   status?: number;
@@ -98,4 +98,26 @@ export async function setEmailPreference(token: string, enabled: boolean): Promi
     body: JSON.stringify({ email_preference: enabled }),
   });
   assertSuccess(envelope);
+}
+
+export async function updatePassword(token: string, payload: { old_password: string; new_password: string; confirm_password: string }): Promise<void> {
+  const envelope = await request<unknown>('/user/update_password', token, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  assertSuccess(envelope);
+}
+
+export async function deleteAccount(token: string): Promise<void> {
+  await request<unknown>('/user/soft_delete', token);
+}
+
+export type UserBalance = {
+  xp_points: number;
+  x_coins: number;
+};
+
+export async function getUserBalance(token: string): Promise<UserBalance> {
+  const envelope = await request<UserBalance>('/user/balance', token);
+  return assertSuccess(envelope) ?? { xp_points: 0, x_coins: 0 };
 }

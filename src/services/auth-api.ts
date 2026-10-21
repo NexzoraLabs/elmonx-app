@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 
 export type UserData = {
   first_name: string;

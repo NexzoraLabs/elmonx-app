@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +10,7 @@ import { UserAvatar } from '@/components/account/user-avatar';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_SECTIONS } from '@/data/account-menu';
+import { getUserBalance, type UserBalance } from '@/services/account-api';
 
 const ROW_ROUTES: Record<string, Href> = {
   'personal-information': '/personal-info',
@@ -21,10 +23,19 @@ const ROW_ROUTES: Record<string, Href> = {
   'my-vault-collectables': { pathname: '/collectibles', params: { tab: 'app' } },
   'my-wallet-collectables': { pathname: '/collectibles', params: { tab: 'web' } },
   'doodles-physicals': '/doodles-physicals',
+  connections: '/connections',
+  notifications: '/notifications',
+  'my-auction-wins': { pathname: '/collectibles', params: { tab: 'auctions' } },
 };
 
 export default function AccountScreen() {
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
+  const [balance, setBalance] = useState<UserBalance>({ xp_points: 0, x_coins: 0 });
+
+  useEffect(() => {
+    if (!token) return;
+    getUserBalance(token).then(setBalance).catch(() => {});
+  }, [token]);
 
   const handlePressRow = (key: string) => {
     const route = ROW_ROUTES[key];
@@ -62,16 +73,13 @@ export default function AccountScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.statsRow}>
           <StatCard
-            icon="diamond-outline"
-            iconColor={AppColors.rarityRare}
-            label="Total Rewards Earned"
-            value="20.00"
+            label="XP Balance"
+            value={`${balance.xp_points.toLocaleString()} XP`}
           />
           <StatCard
-            icon="logo-bitcoin"
-            iconColor={AppColors.gold}
-            label="Wallet Balance"
-            value="99.99"
+            imageIcon={require('../../../assets/coin_icon.webp')}
+            label="X-Coins Balance"
+            value={balance.x_coins.toLocaleString()}
           />
         </View>
 

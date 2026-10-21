@@ -8,6 +8,7 @@ import { UserAvatar } from '@/components/account/user-avatar';
 import { feedRowToItem, type FeedItem } from '@/components/feed/post-card';
 import { PostList } from '@/components/feed/post-list';
 import { SuggestedUsersStrip } from '@/components/feed/suggested-users-strip';
+import { HomeHeader } from '@/components/home/home-header';
 import { SegmentTabs } from '@/components/social/segment-tabs';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
@@ -117,6 +118,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <HomeHeader />
       <View style={styles.topBar}>
         <Text style={styles.title}>Feed</Text>
         <View style={styles.topActions}>

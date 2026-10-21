@@ -1,16 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import type { DrawerNavigationProp } from 'expo-router/drawer';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LogoMark } from '@/components/auth/logo-mark';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
+import { useAuth } from '@/context/auth-context';
 import { CURRENT_USER_ID, PROFILES } from '@/data/profile-mock';
+import { getUnreadCount } from '@/services/notifications-api';
 
 export function HomeHeader() {
   const navigation = useNavigation<DrawerNavigationProp<Record<string, object | undefined>>>();
   const currentUser = PROFILES[CURRENT_USER_ID];
+  const { token } = useAuth();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!token) return;
+    getUnreadCount(token)
+      .then(setUnread)
+      .catch(() => {});
+  }, [token]);
 
   return (
     <View style={styles.row}>
@@ -25,11 +37,19 @@ export function HomeHeader() {
       <LogoMark size={14} />
 
       <View style={styles.actions}>
-        <Pressable accessibilityRole="button" hitSlop={8}>
-          <Ionicons name="search-outline" size={22} color={AppColors.textPrimary} />
-        </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={8}>
-          <Ionicons name="notifications-outline" size={22} color={AppColors.textPrimary} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          hitSlop={8}
+          onPress={() => { router.push('/notifications'); setUnread(0); }}>
+          <View>
+            <Ionicons name="notifications-outline" size={22} color={AppColors.textPrimary} />
+            {unread > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unread > 99 ? '99+' : String(unread)}</Text>
+              </View>
+            )}
+          </View>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -65,5 +85,23 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: AppColors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 12,
   },
 });

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { compactCount, postToItem, userRepostToItem, type FeedItem } from '@/components/feed/post-card';
 import { PostList } from '@/components/feed/post-list';
+import { HomeHeader } from '@/components/home/home-header';
 import { CoverBanner } from '@/components/profile/cover-banner';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
@@ -192,8 +193,16 @@ export default function ProfileTabScreen() {
 
         <View style={styles.statsRow}>
           <Stat value={compactCount(header?.postsCount)} label="Post" />
-          <Stat value={compactCount(header?.followersCount)} label="Followers" />
-          <Stat value={compactCount(header?.followingCount)} label="Followings" />
+          <Stat
+            value={compactCount(header?.followersCount)}
+            label="Followers"
+            onPress={() => router.push({ pathname: '/connections', params: { tab: 'followers' } })}
+          />
+          <Stat
+            value={compactCount(header?.followingCount)}
+            label="Followings"
+            onPress={() => router.push({ pathname: '/connections', params: { tab: 'following' } })}
+          />
         </View>
 
         <View style={styles.actionsRow}>
@@ -240,17 +249,7 @@ export default function ProfileTabScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.topBar}>
-        <Text style={styles.title}>Profile</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Settings"
-          hitSlop={8}
-          onPress={() => router.push('/settings')}
-          style={({ pressed }) => [styles.iconPill, pressed && styles.pressed]}>
-          <Ionicons name="settings-outline" size={20} color={AppColors.textPrimary} />
-        </Pressable>
-      </View>
+      <HomeHeader />
 
       <PostList
         items={items}
@@ -280,7 +279,15 @@ export default function ProfileTabScreen() {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label, onPress }: { value: string; label: string; onPress?: () => void }) {
+  if (onPress) {
+    return (
+      <Pressable style={({ pressed }) => [styles.stat, pressed && styles.pressed]} onPress={onPress}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </Pressable>
+    );
+  }
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>

@@ -4,11 +4,13 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArtistsTabPage } from '@/components/collections/artists-tab-page';
+import { AuctionsTabPage } from '@/components/collections/auctions-tab-page';
 import { CollectionsHeader } from '@/components/collections/collections-header';
 import { CollectionsPager, type CollectionsPage } from '@/components/collections/collections-pager';
 import { FiltersModal } from '@/components/collections/filters-modal';
 import { PaginatedGridPage } from '@/components/collections/paginated-grid-page';
 import { CategoryTabs } from '@/components/home/category-tabs';
+import { HomeHeader } from '@/components/home/home-header';
 import { AppColors } from '@/constants/app-colors';
 import { COLLECTIONS_CATEGORY_TABS } from '@/data/collections-mock';
 import {
@@ -71,7 +73,8 @@ export default function CollectionsScreen() {
   const [categories, setCategories] = useState<FilterOption[]>([]);
 
   const currentTab = COLLECTIONS_CATEGORY_TABS[pageIndex];
-  const catalogTab: CatalogTab | null = currentTab === 'Artists' ? null : currentTab;
+  const catalogTab: CatalogTab | null =
+    currentTab === 'Artists' || currentTab === 'Auctions' ? null : currentTab;
 
   // Website: 300ms debounce, server-side search sent as `filter`.
   useEffect(() => {
@@ -139,6 +142,10 @@ export default function CollectionsScreen() {
       ),
     },
     {
+      key: 'Auctions',
+      element: <AuctionsTabPage />,
+    },
+    {
       key: 'Partners',
       element: (
         <PaginatedGridPage
@@ -164,9 +171,10 @@ export default function CollectionsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <HomeHeader />
       <CollectionsHeader
         searchActive={searchOpen}
-        onPressSearch={handleToggleSearch}
+        onPressSearch={catalogTab ? handleToggleSearch : undefined}
         onPressFilter={catalogTab ? () => setFiltersVisible(true) : undefined}
         activeFilterCount={chips.length}
       />

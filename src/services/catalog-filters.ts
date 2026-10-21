@@ -99,7 +99,7 @@ export function appendCatalogParams(
 
 // ---- Option lists (same endpoints as the website) ----
 
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 const EXCLUDED_CATEGORY_ID = '6560e333566936cc1c70e25f';
 
 export type FilterOption = { _id: string; title: string };

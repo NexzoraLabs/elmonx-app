@@ -1,4 +1,4 @@
-export const COLLECTIONS_CATEGORY_TABS = ['Collections', 'Collectibles', 'Partners', 'Artists'] as const;
+export const COLLECTIONS_CATEGORY_TABS = ['Collections', 'Collectibles', 'Auctions', 'Partners', 'Artists'] as const;
 
 export type CollectionCategory = 'Collections' | 'Collectibles' | 'Partners';
 

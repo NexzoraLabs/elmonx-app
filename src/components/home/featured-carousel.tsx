@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image, type ImageLoadEventData } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
@@ -15,7 +15,9 @@ import { AppColors } from '@/constants/app-colors';
 import type { HomeBanner } from '@/services/home-api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SLIDE_WIDTH = SCREEN_WIDTH - 40;
+const SLIDE_INNER = SCREEN_WIDTH - 40;
+// Fallback aspect ratio while image loads (roughly square-ish)
+const FALLBACK_RATIO = 1;
 
 function handleBannerPress(banner: HomeBanner) {
   if (banner.collectionId) {
@@ -24,12 +26,40 @@ function handleBannerPress(banner: HomeBanner) {
   }
 }
 
+function BannerSlide({ banner, onPress }: { banner: HomeBanner; onPress: () => void }) {
+  const imageUrl = banner.mobileImageUrl ?? banner.desktopImageUrl;
+  const [ratio, setRatio] = useState<number>(FALLBACK_RATIO);
+
+  const handleLoad = (e: ImageLoadEventData) => {
+    const { width, height } = e.source;
+    if (width && height) setRatio(width / height);
+  };
+
+  return (
+    <Pressable style={styles.page} onPress={onPress}>
+      <View style={[styles.slide, { height: SLIDE_INNER / ratio }]}>
+        {imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={StyleSheet.absoluteFill}
+            contentFit="contain"
+            transition={200}
+            onLoad={handleLoad}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.placeholder]} />
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 export function FeaturedCarousel({ banners }: { banners: HomeBanner[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
   const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / (SLIDE_WIDTH + 12));
+    const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
     setActiveIndex(index);
   };
 
@@ -42,32 +72,15 @@ export function FeaturedCarousel({ banners }: { banners: HomeBanner[] }) {
         horizontal
         pagingEnabled
         decelerationRate="fast"
-        snapToInterval={SLIDE_WIDTH + 12}
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumEnd}
-        contentContainerStyle={styles.scrollContent}>
-        {banners.map((banner) => {
-          const imageUrl = banner.mobileImageUrl ?? banner.desktopImageUrl;
-          return (
-            <Pressable
-              key={banner.id}
-              style={styles.slideWrapper}
-              onPress={() => handleBannerPress(banner)}>
-              <View style={styles.slide}>
-                {imageUrl ? (
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                ) : (
-                  <View style={[StyleSheet.absoluteFill, styles.placeholder]} />
-                )}
-              </View>
-            </Pressable>
-          );
-        })}
+        onMomentumScrollEnd={handleMomentumEnd}>
+        {banners.map((banner) => (
+          <BannerSlide
+            key={banner.id}
+            banner={banner}
+            onPress={() => handleBannerPress(banner)}
+          />
+        ))}
       </ScrollView>
 
       {banners.length > 1 ? (
@@ -82,15 +95,12 @@ export function FeaturedCarousel({ banners }: { banners: HomeBanner[] }) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  page: {
+    width: SCREEN_WIDTH,
     paddingHorizontal: 20,
-    gap: 12,
-  },
-  slideWrapper: {
-    width: SLIDE_WIDTH,
   },
   slide: {
-    height: 190,
+    width: SLIDE_INNER,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: AppColors.surface,

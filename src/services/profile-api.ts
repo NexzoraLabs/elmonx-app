@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 
 // Same fallbacks the website uses when a user has no avatar/cover.
 const DEFAULT_AVATAR_PATH = 'images/avatar/default.png';

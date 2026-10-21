@@ -5,8 +5,9 @@ import { AppColors } from '@/constants/app-colors';
 
 type CollectionsHeaderProps = {
   searchActive: boolean;
-  onPressSearch: () => void;
-  /** Hidden on the Artists tab, which has no filters on the website. */
+  /** Hidden on Artists and Auctions tabs. */
+  onPressSearch?: () => void;
+  /** Hidden on the Artists and Auctions tabs, which have no filters on the website. */
   onPressFilter?: () => void;
   activeFilterCount: number;
 };
@@ -16,18 +17,20 @@ export function CollectionsHeader({ searchActive, onPressSearch, onPressFilter, 
     <View style={styles.row}>
       <Text style={styles.title}>Collections</Text>
       <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Search"
-          hitSlop={8}
-          style={[styles.button, searchActive && styles.buttonActive]}
-          onPress={onPressSearch}>
-          <Ionicons
-            name={searchActive ? 'close' : 'search-outline'}
-            size={18}
-            color={searchActive ? AppColors.buttonPrimaryText : AppColors.textPrimary}
-          />
-        </Pressable>
+        {onPressSearch ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            hitSlop={8}
+            style={[styles.button, searchActive && styles.buttonActive]}
+            onPress={onPressSearch}>
+            <Ionicons
+              name={searchActive ? 'close' : 'search-outline'}
+              size={18}
+              color={searchActive ? AppColors.buttonPrimaryText : AppColors.textPrimary}
+            />
+          </Pressable>
+        ) : null}
         {onPressFilter ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Filters" hitSlop={8} style={styles.button} onPress={onPressFilter}>
             <Ionicons name="options-outline" size={18} color={AppColors.textPrimary} />

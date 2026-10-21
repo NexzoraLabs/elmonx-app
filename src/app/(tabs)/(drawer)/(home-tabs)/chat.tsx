@@ -9,6 +9,7 @@ import { ChatFilterTabs, type ChatFilter } from '@/components/chat/chat-filter-t
 import { ChatSearchBar } from '@/components/chat/chat-search-bar';
 import { ConversationRow } from '@/components/chat/conversation-row';
 import { MessagesHeader } from '@/components/chat/messages-header';
+import { HomeHeader } from '@/components/home/home-header';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
@@ -61,6 +62,7 @@ export default function ChatListScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <HomeHeader />
       <MessagesHeader onPressCompose={() => router.push('/chat/new')} />
       <ChatSearchBar value={query} onChangeText={setQuery} />
       <ChatFilterTabs selected={filter} onSelect={setFilter} unreadCount={unreadCount} />

@@ -1,6 +1,5 @@
-const API_BASE_URL = 'https://api.elmonx.com/api';
-/** Socket server (website `environment.socketUrl` for production) — default `/socket.io` path. */
-export const CHAT_SOCKET_URL = 'https://api.elmonx.com';
+import { API_BASE_URL, SOCKET_URL } from '@/config/env';
+export { SOCKET_URL as CHAT_SOCKET_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {
   status?: number;

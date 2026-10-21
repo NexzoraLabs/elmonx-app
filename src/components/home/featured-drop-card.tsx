@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
@@ -14,22 +17,12 @@ export function FeaturedDropCard({ item }: { item: CollectionGridItem }) {
       onPress={() => router.push({ pathname: '/drop/[id]', params: { id: item.id } })}>
       <View style={styles.imageOuter}>
         {item.imageUrl ? (
-          <>
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={[StyleSheet.absoluteFill, styles.ambientGlow]}
-              contentFit="cover"
-              blurRadius={22}
-            />
-            <View style={styles.thumbInner}>
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={StyleSheet.absoluteFill}
-                contentFit="contain"
-                transition={150}
-              />
-            </View>
-          </>
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={150}
+          />
         ) : (
           <PlaceholderThumb color={item.color} icon="body-outline" iconSize={28} style={StyleSheet.absoluteFill} />
         )}
@@ -62,7 +55,7 @@ export function FeaturedDropCard({ item }: { item: CollectionGridItem }) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 160,
+    width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
     borderRadius: 16,
     borderWidth: 1,
@@ -71,21 +64,10 @@ const styles = StyleSheet.create({
   },
   imageOuter: {
     margin: 8,
-    aspectRatio: 1,
+    aspectRatio: 660 / 870,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#111212',
-  },
-  ambientGlow: {
-    opacity: 0.38,
-    transform: [{ scale: 1.25 }],
-  },
-  thumbInner: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    right: 14,
-    bottom: 14,
+    backgroundColor: AppColors.surface,
   },
   body: {
     paddingHorizontal: 10,

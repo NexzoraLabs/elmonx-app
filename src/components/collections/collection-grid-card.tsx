@@ -99,23 +99,12 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
               blurRadius={22}
             />
             {/* Main image */}
-            {isSingle ? (
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                transition={150}
-              />
-            ) : (
-              <View style={styles.thumbInner}>
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="contain"
-                  transition={150}
-                />
-              </View>
-            )}
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={150}
+            />
           </>
         ) : (
           <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
@@ -192,9 +181,19 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
           </View>
         ) : null}
 
+        {/* Description — single layout only */}
+        {isSingle && item.description ? (
+          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+        ) : null}
+
         {/* Date bar */}
         {item.dropDate ? (
           <View style={styles.dateBar}>
+            <View style={[styles.statusDot, item.isUpcoming ? styles.dotUpcoming : styles.dotPast]} />
+            <Text style={[styles.statusLabel, item.isUpcoming ? styles.statusLabelUpcoming : styles.statusLabelPast]}>
+              {item.isUpcoming ? 'Dropping' : 'Dropped'}
+            </Text>
+            <View style={styles.dateSpacer} />
             <Ionicons name="calendar-outline" size={11} color={AppColors.textSecondary} />
             <Text style={styles.dateText}>{item.dropDate}</Text>
           </View>
@@ -224,26 +223,23 @@ const styles = StyleSheet.create({
     margin: 8,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#111212',
+    backgroundColor: AppColors.surface,
   },
   imageOuterGrid: {
-    aspectRatio: 1,
+    aspectRatio: 660 / 870,
   },
   imageOuterSingle: {
-    aspectRatio: 1.55,
+    aspectRatio: 3 / 2,
+    margin: 0,
+    borderRadius: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   ambientGlow: {
     opacity: 0.4,
     transform: [{ scale: 1.25 }],
   },
-  /* Fixed-pixel inset wrapper — guarantees true center for grid images */
-  thumbInner: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    right: 14,
-    bottom: 14,
-  },
+
 
   editionBadge: {
     flexDirection: 'row',
@@ -288,10 +284,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   body: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     gap: 7,
+  },
+  description: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: -3,
   },
 
   /* Title */
@@ -384,6 +386,32 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.07)',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  dotUpcoming: {
+    backgroundColor: '#34D399',
+  },
+  dotPast: {
+    backgroundColor: AppColors.textSecondary,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  statusLabelUpcoming: {
+    color: '#34D399',
+  },
+  statusLabelPast: {
+    color: AppColors.textSecondary,
+  },
+  dateSpacer: {
+    flex: 1,
   },
   dateText: {
     color: AppColors.textSecondary,

@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import type { CollectionCategory, CollectionGridItem } from '@/data/collections-mock';
 import { appendCatalogParams, DEFAULT_CATALOG_FILTERS, type CatalogFilters } from '@/services/catalog-filters';
 
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 const ITEMS_PER_PAGE = 15;
 
 export type PagedResult<T> = {

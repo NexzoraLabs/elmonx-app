@@ -28,6 +28,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 28,
+    justifyContent: 'center',
   },
   slot: {
     width: 28,

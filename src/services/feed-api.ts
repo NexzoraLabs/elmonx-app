@@ -1,6 +1,6 @@
 import type { Post, PostAuthor } from '@/services/profile-api';
 
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {
   status?: number;
@@ -214,4 +214,71 @@ export async function getPublicProfile(token: string | null, username: string): 
 
 export async function getPublicProfileStats(token: string | null, username: string): Promise<PublicProfileStats> {
   return (await request<PublicProfileStats>(`/profile/${encodeURIComponent(username)}/stats`, token)) ?? {};
+}
+
+// ---- Connections (followers / following / blocked / requests) ----
+
+export type FollowListItem = {
+  _id: string;
+  user: {
+    _id: string;
+    user_name: string;
+    profile_avatar?: string;
+    profile_avatar_url?: string;
+    profile_privacy?: 'Public' | 'Private';
+  };
+  created_at: string;
+};
+
+export type FollowRequestItem = {
+  _id: string;
+  user: {
+    _id: string;
+    user_name: string;
+    profile_avatar?: string;
+    profile_avatar_url?: string;
+  };
+  created_at: string;
+};
+
+export type BlockedListItem = {
+  _id: string;
+  user: {
+    _id: string;
+    user_name: string;
+    profile_avatar?: string;
+    profile_avatar_url?: string;
+  };
+  created_at: string;
+};
+
+type PagedResponse<T> = {
+  status?: number;
+  data?: T[];
+  current_page?: number;
+  total_count?: number;
+};
+
+export async function getFollowers(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
+  return (await request<PagedResponse<FollowListItem>>(`/follow/followers/${userId}?page=${page}&limit=${limit}`, token)) ?? {};
+}
+
+export async function getFollowing(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
+  return (await request<PagedResponse<FollowListItem>>(`/follow/following/${userId}?page=${page}&limit=${limit}`, token)) ?? {};
+}
+
+export async function getFollowRequests(token: string, page = 1, limit = 50): Promise<{ status?: number; data?: FollowRequestItem[] }> {
+  return (await request<{ status?: number; data?: FollowRequestItem[] }>(`/follow/requests?page=${page}&limit=${limit}`, token)) ?? {};
+}
+
+export async function acceptFollowRequest(token: string, userId: string): Promise<{ status?: number; message?: string }> {
+  return (await request<{ status?: number; message?: string }>(`/follow/${userId}/accept`, token, { method: 'POST' })) ?? {};
+}
+
+export async function rejectFollowRequest(token: string, userId: string): Promise<{ status?: number; message?: string }> {
+  return (await request<{ status?: number; message?: string }>(`/follow/${userId}/reject`, token, { method: 'POST' })) ?? {};
+}
+
+export async function getBlockedUsers(token: string, page = 1, limit = 20): Promise<PagedResponse<BlockedListItem>> {
+  return (await request<PagedResponse<BlockedListItem>>(`/block/list?page=${page}&limit=${limit}`, token)) ?? {};
 }

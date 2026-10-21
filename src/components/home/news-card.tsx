@@ -1,0 +1,78 @@
+import * as WebBrowser from 'expo-web-browser';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { AppColors } from '@/constants/app-colors';
+import type { NewsItem } from '@/services/home-api';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = (SCREEN_WIDTH - 40) / 1.2;
+
+function formatDate(iso: string): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  } catch {
+    return '';
+  }
+}
+
+export function NewsCard({ item }: { item: NewsItem }) {
+  return (
+    <Pressable
+      style={styles.card}
+      onPress={() => WebBrowser.openBrowserAsync(`https://elmonx.com/news`)}>
+      <View style={styles.header}>
+        <View style={styles.sourcePill}>
+          <Text style={styles.source}>{item.source || item.category}</Text>
+        </View>
+        <Text style={styles.date}>{formatDate(item.created_at)}</Text>
+      </View>
+      <Text style={styles.title} numberOfLines={3}>{item.name}</Text>
+      {item.summary ? <Text style={styles.summary} numberOfLines={2}>{item.summary}</Text> : null}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    width: CARD_WIDTH,
+    minHeight: 160,
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sourcePill: {
+    backgroundColor: AppColors.border,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  source: {
+    color: AppColors.textSecondary,
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  date: {
+    color: AppColors.textSecondary,
+    fontSize: 11,
+  },
+  title: {
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  summary: {
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+});

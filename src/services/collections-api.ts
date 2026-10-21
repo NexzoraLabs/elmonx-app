@@ -6,7 +6,7 @@ import {
 import type { CollectionGridItem } from '@/data/collections-mock';
 import { formatDropDate, type PagedResult } from '@/services/drops-api';
 
-const API_BASE_URL = 'https://api.elmonx.com/api';
+import { API_BASE_URL } from '@/config/env';
 const ITEMS_PER_PAGE = 9;
 
 export type CollectionListItem = {
