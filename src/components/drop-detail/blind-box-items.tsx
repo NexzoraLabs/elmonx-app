@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 import { isSpecialDrop, type BlindBoxItemData, type Drop } from '@/services/drops-api';
+
+const CARD_WIDTH = 180;
 
 type RarityStyle = { label: string; colors: [string, string] };
 
@@ -29,7 +32,7 @@ function oddsText(drop: Drop, item: BlindBoxItemData): string {
 }
 
 export function BlindBoxItems({ drop }: { drop: Drop }) {
-  const items = drop.blind_box_items_data ?? [];
+  const items = Array.isArray(drop.blind_box_items_data) ? drop.blind_box_items_data : [];
   if (items.length === 0) return null;
   const special = isSpecialDrop(drop._id);
   const isLayer2 = drop.type === 'Layer_2';
@@ -43,38 +46,54 @@ export function BlindBoxItems({ drop }: { drop: Drop }) {
           const rarity = special ? null : rarityStyle(item.rarity);
           const image = item.image?.[0]?.url;
           return (
-            <View key={item._id} style={styles.card}>
+            <Pressable
+              key={item._id}
+              style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+              onPress={() =>
+                router.push({ pathname: '/blindbox-item/[dropId]/[itemId]', params: { dropId: drop._id, itemId: item._id } })
+              }>
+              {/* Image area */}
               <View style={styles.thumbBox}>
                 {image ? (
                   <Image source={{ uri: image }} style={styles.thumb} contentFit="contain" transition={150} />
                 ) : (
-                  <Ionicons name="cube-outline" size={28} color={AppColors.textSecondary} />
-                )}
-                {rarity ? (
-                  <LinearGradient colors={rarity.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.rarity}>
-                    <Text style={styles.rarityText}>{rarity.label}</Text>
-                  </LinearGradient>
-                ) : null}
-              </View>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {drop.title}
-              </Text>
-              <Text style={styles.meta}>{oddsText(drop, item)}</Text>
-              <View style={styles.footerRow}>
-                <Text style={styles.meta}>{itemRemaining} left</Text>
-                {isLayer2 ? (
-                  <View style={styles.priceRow}>
-                    <Ionicons name="logo-bitcoin" size={12} color={AppColors.gold} />
-                    <Text style={styles.price}>{drop.price || 0}</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.price}>£{drop.price || 0}</Text>
+                  <Ionicons name="cube-outline" size={36} color={AppColors.textSecondary} />
                 )}
               </View>
-            </View>
+
+              {/* Content area — matches web's separated content section */}
+              <View style={styles.content}>
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {drop.title}
+                </Text>
+                <Text style={styles.title} numberOfLines={1}>
+                  {item.title}
+                </Text>
+
+                <View style={styles.oddsRow}>
+                  <Text style={styles.meta}>{oddsText(drop, item)}</Text>
+                  <Text style={styles.meta}>{itemRemaining} left</Text>
+                </View>
+
+                <View style={styles.footerRow}>
+                  {rarity ? (
+                    <LinearGradient colors={rarity.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.rarityBadge}>
+                      <Text style={styles.rarityText}>{rarity.label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View />
+                  )}
+                  {isLayer2 ? (
+                    <View style={styles.priceRow}>
+                      <Image source={require('../../../assets/coin_icon.webp')} style={styles.coinIcon} contentFit="contain" />
+                      <Text style={styles.price}>{drop.price || 0}</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.price}>£{drop.price || 0}</Text>
+                  )}
+                </View>
+              </View>
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -98,47 +117,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
-    width: 150,
+    width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
     borderRadius: 16,
-    padding: 10,
-    gap: 3,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: AppColors.border,
   },
   thumbBox: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
+    width: CARD_WIDTH,
+    height: CARD_WIDTH,
     backgroundColor: AppColors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    marginBottom: 6,
+    padding: 16,
   },
   thumb: {
     width: '100%',
     height: '100%',
   },
-  rarity: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  rarityText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  title: {
-    color: AppColors.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
+  content: {
+    padding: 12,
+    gap: 6,
   },
   subtitle: {
     color: AppColors.textSecondary,
-    fontSize: 11,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  title: {
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  oddsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   meta: {
     color: AppColors.textSecondary,
@@ -150,14 +167,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 2,
   },
+  rarityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  rarityText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
+  },
+  coinIcon: {
+    width: 14,
+    height: 14,
   },
   price: {
     color: AppColors.textPrimary,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

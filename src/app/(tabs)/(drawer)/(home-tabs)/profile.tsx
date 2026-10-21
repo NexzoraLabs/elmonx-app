@@ -9,11 +9,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { compactCount, postToItem, userRepostToItem, type FeedItem } from '@/components/feed/post-card';
 import { PostList } from '@/components/feed/post-list';
 import { HomeHeader } from '@/components/home/home-header';
+import { LevelRankCard } from '@/components/rewards/level-rank-card';
 import { CoverBanner } from '@/components/profile/cover-banner';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import * as profileApi from '@/services/profile-api';
 import type { MyProfileHeader } from '@/services/profile-api';
+import * as rewardsApi from '@/services/rewards-api';
+import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
 
 type Tab = 'posts' | 'reposts';
 
@@ -36,6 +39,9 @@ export default function ProfileTabScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [uploading, setUploading] = useState<'avatar' | 'cover' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [level, setLevel] = useState<ProfileLevel | null>(null);
+  const [tier, setTier] = useState<ProfileTier | null>(null);
+  const [isLoadingLevel, setIsLoadingLevel] = useState(false);
   // Drops responses from a tab the user has already switched away from.
   const listRequest = useRef(0);
 
@@ -44,6 +50,13 @@ export default function ProfileTabScreen() {
     try {
       const data = await profileApi.getMyProfileHeader(token);
       setHeader(data);
+      if (data.userName) {
+        setIsLoadingLevel(true);
+        rewardsApi.getProfileStats(token, data.userName)
+          .then((stats) => { setLevel(stats.level); setTier(stats.tier); })
+          .catch(() => {})
+          .finally(() => setIsLoadingLevel(false));
+      }
       return data;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to load your profile.');
@@ -204,6 +217,12 @@ export default function ProfileTabScreen() {
             onPress={() => router.push({ pathname: '/connections', params: { tab: 'following' } })}
           />
         </View>
+
+        {(isLoadingLevel || level) ? (
+          <View style={styles.levelCardWrap}>
+            <LevelRankCard loading={isLoadingLevel} level={level} tier={tier} />
+          </View>
+        ) : null}
 
         <View style={styles.actionsRow}>
           <Pressable
@@ -392,10 +411,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
+  levelCardWrap: {
+    marginTop: 16,
+  },
   actionsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 18,
+    marginTop: 16,
     marginBottom: 16,
   },
   actionButton: {

@@ -80,12 +80,17 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
   return (
     <Pressable
       style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}
-      onPress={() =>
-        router.push({
-          pathname: item.category === 'Collections' ? '/collection/[id]' : '/drop/[id]',
-          params: { id: item.id },
-        })
-      }>
+      onPress={() => {
+        if (item.parentDropId) {
+          // Individual blind box item — open its detail page
+          router.push({ pathname: '/blindbox-item/[dropId]/[itemId]', params: { dropId: item.parentDropId, itemId: item.id } });
+        } else {
+          router.push({
+            pathname: item.category === 'Collections' ? '/collection/[id]' : '/drop/[id]',
+            params: { id: item.id },
+          });
+        }
+      }}>
 
       {/* ── Image area ── */}
       <View style={[styles.imageOuter, isSingle ? styles.imageOuterSingle : styles.imageOuterGrid]}>
@@ -115,17 +120,10 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
       {/* ── Card body ── */}
       <View style={styles.body}>
 
-        {/* Edition badge + price badge row */}
-        {(item.dropEdition || item.isBlindBox || item.priceKind) ? (
+        {/* Edition badge row */}
+        {item.dropEdition ? (
           <View style={styles.badgeRow}>
-            {item.dropEdition ? <EditionBadge edition={item.dropEdition} /> : null}
-            {item.isBlindBox ? (
-              <View style={[styles.editionBadge, { backgroundColor: AppColors.gold }]}>
-                <Text style={[styles.editionBadgeText, { color: AppColors.background }]}>BLIND BOX</Text>
-              </View>
-            ) : null}
-            <View style={styles.badgeSpacer} />
-            <PriceBadge item={item} />
+            <EditionBadge edition={item.dropEdition} />
           </View>
         ) : null}
 

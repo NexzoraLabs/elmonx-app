@@ -26,8 +26,6 @@ export default function RewardsScreen() {
 
   const [totalEarned, setTotalEarned] = useState(0);
   const [totalEarnedCount, setTotalEarnedCount] = useState(0);
-  const [totalRedeemed, setTotalRedeemed] = useState(0);
-  const [totalRedeemedCount, setTotalRedeemedCount] = useState(0);
   const [netBalance, setNetBalance] = useState(0);
   const [transactions, setTransactions] = useState<PointsTransaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,8 +46,6 @@ export default function RewardsScreen() {
         const data = await rewardsApi.getUserPoints(token, { current_page: page, items_per_page: ITEMS_PER_PAGE });
         setTotalEarned(data.total_earned);
         setTotalEarnedCount(data.total_earned_count);
-        setTotalRedeemed(data.total_redeemed);
-        setTotalRedeemedCount(data.total_redeemed_count);
         setNetBalance(data.net_balance);
         setTransactions((prev) => (append ? [...prev, ...(data.transactions || [])] : data.transactions || []));
         setTotalPages(data.pagination?.total_pages || 1);
@@ -130,14 +126,6 @@ export default function RewardsScreen() {
             subtext={`From ${totalEarnedCount} activities`}
             icon="trending-up"
             tone="up"
-            loading={isLoading}
-          />
-          <StatBlock
-            title="Total Redeemed"
-            value={totalRedeemed}
-            subtext={`${totalRedeemedCount} redemptions`}
-            icon="trending-down"
-            tone="down"
             loading={isLoading}
           />
           <StatBlock

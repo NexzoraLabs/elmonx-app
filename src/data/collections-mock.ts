@@ -11,6 +11,8 @@ export type CollectionGridItem = {
   dismissible?: boolean;
   imageUrl?: string;
   isBlindBox?: boolean;
+  /** Set for individual blind box items returned by individual=True API; id = blindbox item _id, parentDropId = parent drop _id */
+  parentDropId?: string;
   description?: string;
   isUpcoming?: boolean;
   price?: number;

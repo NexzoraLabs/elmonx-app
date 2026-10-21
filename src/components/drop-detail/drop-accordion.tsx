@@ -41,7 +41,7 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const toggle = (key: string) => setOpen((prev) => (prev === key ? null : key));
 
-  const blindBoxItems = drop.blind_box_items_data ?? [];
+  const blindBoxItems = Array.isArray(drop.blind_box_items_data) ? drop.blind_box_items_data : [];
   const contract = drop.contract_address;
   const hideRarity = isSpecialDrop(drop._id);
 

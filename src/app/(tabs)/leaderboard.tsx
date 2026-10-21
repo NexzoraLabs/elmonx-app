@@ -5,13 +5,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
 import * as rewardsApi from '@/services/rewards-api';
 import type { LeaderboardUser } from '@/services/rewards-api';
 
 const ITEMS_PER_PAGE = 10;
-const RANK_COLORS = ['#F5B400', '#B5B8C0', '#C97B3D'];
+const RANK_COLORS = ['#F5B400', '#B5B8C0', '#C97B3D'] as const;
 
 function levelLabel(user: LeaderboardUser): string {
   if (!user.level) return '';
@@ -50,8 +49,6 @@ export default function LeaderboardScreen() {
     if (currentPage < totalPages) load(currentPage + 1, true);
   };
 
-  const podium = currentPage === 1 ? rankings.slice(0, 3) : [];
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -75,8 +72,6 @@ export default function LeaderboardScreen() {
           <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
         ) : (
           <>
-            {podium.length === 3 ? <Podium users={podium} /> : null}
-
             <View style={styles.card}>
               {rankings.map((player, index) => (
                 <View key={player._id || player.user_id}>
@@ -106,16 +101,12 @@ export default function LeaderboardScreen() {
 }
 
 function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
-  const highlight = rank <= 3;
+  const isTop3 = rank <= 3;
   return (
-    <View
-      style={[
-        styles.row,
-        highlight && { backgroundColor: `${RANK_COLORS[rank - 1]}1A`, borderColor: `${RANK_COLORS[rank - 1]}40` },
-      ]}>
+    <View style={styles.row}>
       <View style={styles.rowLeft}>
         <View style={styles.rankSlot}>
-          {highlight ? (
+          {isTop3 ? (
             <View style={[styles.rankBadge, { backgroundColor: RANK_COLORS[rank - 1] }]}>
               <Text style={styles.rankBadgeText}>{rank}</Text>
             </View>
@@ -129,7 +120,9 @@ function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
           {user.avatar ? (
             <Image source={{ uri: user.avatar }} style={styles.avatar} contentFit="cover" />
           ) : (
-            <PlaceholderThumb color={AppColors.border} icon="person-outline" style={styles.avatar} iconSize={18} />
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Ionicons name="person-outline" size={18} color={AppColors.textSecondary} />
+            </View>
           )}
           <View>
             <Text style={styles.userName} numberOfLines={1}>
@@ -140,39 +133,6 @@ function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
         </Pressable>
       </View>
       <Text style={styles.points}>{user.points || 0} XP</Text>
-    </View>
-  );
-}
-
-function Podium({ users }: { users: LeaderboardUser[] }) {
-  const [first, second, third] = users;
-  return (
-    <View style={styles.podiumRow}>
-      <PodiumSlot user={second} rank={2} height={72} />
-      <PodiumSlot user={first} rank={1} height={96} />
-      <PodiumSlot user={third} rank={3} height={60} />
-    </View>
-  );
-}
-
-function PodiumSlot({ user, rank, height }: { user: LeaderboardUser; rank: number; height: number }) {
-  return (
-    <View style={styles.podiumSlot}>
-      <View style={[styles.podiumAvatarRing, { borderColor: RANK_COLORS[rank - 1] }]}>
-        {user.avatar ? (
-          <Image source={{ uri: user.avatar }} style={styles.podiumAvatar} contentFit="cover" />
-        ) : (
-          <PlaceholderThumb color={AppColors.border} icon="person-outline" style={styles.podiumAvatar} iconSize={22} />
-        )}
-        <View style={[styles.podiumRankBadge, { backgroundColor: RANK_COLORS[rank - 1] }]}>
-          <Text style={styles.podiumRankText}>{rank}</Text>
-        </View>
-      </View>
-      <Text style={styles.podiumName} numberOfLines={1}>
-        {user.user_name || 'Unknown'}
-      </Text>
-      <Text style={styles.podiumPoints}>{user.points || 0} XP</Text>
-      <View style={[styles.podiumBar, { height, backgroundColor: `${RANK_COLORS[rank - 1]}26` }]} />
     </View>
   );
 }
@@ -223,64 +183,6 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     paddingVertical: 40,
-  },
-  podiumRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 24,
-  },
-  podiumSlot: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  podiumAvatarRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  podiumAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  podiumRankBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: AppColors.background,
-  },
-  podiumRankText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  podiumName: {
-    color: AppColors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-    maxWidth: 90,
-  },
-  podiumPoints: {
-    color: AppColors.success,
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  podiumBar: {
-    width: '100%',
-    borderRadius: 8,
   },
   card: {
     backgroundColor: AppColors.surface,
@@ -339,6 +241,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: AppColors.border,
+  },
+  avatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   userName: {
     color: AppColors.textPrimary,

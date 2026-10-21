@@ -53,10 +53,7 @@ export default function HomeTabsLayout() {
       />
       <Tabs.Screen
         name="showroom"
-        options={{
-          title: 'Showroom',
-          tabBarIcon: ({ color, size }) => <Ionicons name="easel-outline" size={size} color={color} />,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="chat"

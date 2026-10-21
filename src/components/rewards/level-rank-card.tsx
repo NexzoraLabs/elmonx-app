@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
@@ -16,6 +18,8 @@ type Props = {
 };
 
 export function LevelRankCard({ loading, level, tier }: Props) {
+  const [infoOpen, setInfoOpen] = useState<'level' | 'rank' | null>(null);
+
   if (loading) {
     return (
       <View style={styles.card}>
@@ -30,33 +34,71 @@ export function LevelRankCard({ loading, level, tier }: Props) {
 
   if (!level || !tier) return null;
 
+  const toggleInfo = (key: 'level' | 'rank') =>
+    setInfoOpen((prev) => (prev === key ? null : key));
+
   return (
     <View style={styles.card}>
       <View style={styles.badgeRow}>
+        {/* Level */}
         <View style={styles.badgeCol}>
           <View style={styles.levelBadge}>
             <Text style={styles.levelBadgeText}>{level.level}</Text>
           </View>
           <View style={styles.badgeTextCol}>
-            <Text style={styles.badgeLabel}>Level</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.badgeLabel}>LEVEL</Text>
+              <Pressable hitSlop={8} onPress={() => toggleInfo('level')}>
+                <Ionicons
+                  name={infoOpen === 'level' ? 'information-circle' : 'information-circle-outline'}
+                  size={14}
+                  color={AppColors.textSecondary}
+                />
+              </Pressable>
+            </View>
             <Text style={styles.badgeSubtext}>
               {level.is_max_level ? 'Max level reached' : `${level.xp_to_next_level} XP to Level ${level.level + 1}`}
             </Text>
           </View>
         </View>
 
-        <View style={styles.badgeCol}>
+        {/* Rank */}
+        <View style={[styles.badgeCol, styles.badgeColRight]}>
+          <View style={styles.badgeTextColRight}>
+            <View style={styles.labelRowRight}>
+              <Pressable hitSlop={8} onPress={() => toggleInfo('rank')}>
+                <Ionicons
+                  name={infoOpen === 'rank' ? 'information-circle' : 'information-circle-outline'}
+                  size={14}
+                  color={AppColors.textSecondary}
+                />
+              </Pressable>
+              <Text style={styles.badgeLabel}>RANK</Text>
+            </View>
+            <Text style={[styles.badgeSubtext, styles.textRight]}>{tier.name}</Text>
+            <Text style={[styles.badgeSubtext, styles.textRight]}>Level {tier.min_level}–{tier.max_level}</Text>
+          </View>
           <View style={[styles.levelBadge, styles.tierBadge]}>
             <Text style={styles.levelBadgeText}>{tierNumeral(tier.tier)}</Text>
           </View>
-          <View style={styles.badgeTextCol}>
-            <Text style={styles.badgeLabel}>{tier.name}</Text>
-            <Text style={styles.badgeSubtext}>
-              Level {tier.min_level}–{tier.max_level}
-            </Text>
-          </View>
         </View>
       </View>
+
+      {/* Info dropdowns */}
+      {infoOpen === 'level' ? (
+        <View style={styles.infoBubble}>
+          <Text style={styles.infoText}>
+            Your XP level increases as you earn XP by completing activities. Each level requires more XP to progress.
+          </Text>
+        </View>
+      ) : null}
+      {infoOpen === 'rank' ? (
+        <View style={styles.infoBubble}>
+          <Text style={styles.infoText}>
+            Your rank tier is determined by your current level. Progress through levels to advance to higher rank tiers and unlock more rewards.
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(0, level.progress_percent))}%` }]} />
@@ -76,11 +118,12 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     borderRadius: 16,
     padding: 16,
-    gap: 14,
+    gap: 12,
   },
   badgeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   badgeCol: {
     flexDirection: 'row',
@@ -88,9 +131,12 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
+  badgeColRight: {
+    justifyContent: 'flex-end',
+  },
   levelBadge: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: 'rgba(61,139,255,0.15)',
     alignItems: 'center',
@@ -102,20 +148,51 @@ const styles = StyleSheet.create({
   levelBadgeText: {
     color: AppColors.textPrimary,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 16,
   },
   badgeTextCol: {
     flexShrink: 1,
   },
-  badgeLabel: {
-    color: AppColors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
+  badgeTextColRight: {
+    alignItems: 'flex-end',
+    flexShrink: 1,
   },
-  badgeSubtext: {
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  labelRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  badgeLabel: {
     color: AppColors.textSecondary,
     fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  badgeSubtext: {
+    color: AppColors.textPrimary,
+    fontSize: 11,
+    fontWeight: '600',
     marginTop: 2,
+  },
+  textRight: {
+    textAlign: 'right',
+  },
+  infoBubble: {
+    backgroundColor: 'rgba(61,139,255,0.1)',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(61,139,255,0.2)',
+  },
+  infoText: {
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
   },
   progressTrack: {
     height: 6,
@@ -143,7 +220,7 @@ const styles = StyleSheet.create({
   },
   skeletonBadge: {
     flex: 1,
-    height: 40,
+    height: 44,
     borderRadius: 12,
     backgroundColor: AppColors.border,
   },

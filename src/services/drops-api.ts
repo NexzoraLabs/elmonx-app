@@ -44,6 +44,7 @@ export type BlindBoxItemData = {
   rarity: string;
   image: { name: string; key: string; url: string }[];
   artist: string | null;
+  unity_assets?: UnityAssetEntry[];
 };
 
 export type Drop = {
@@ -65,7 +66,11 @@ export type Drop = {
   is_blind_box: boolean;
   is_sale_closed: boolean;
   is_open_drop: boolean;
-  blind_box_items_data: BlindBoxItemData[];
+  /**
+   * Normal drop: array of all blind box items.
+   * individual=True response: single object — the specific blind box item for this card.
+   */
+  blind_box_items_data: BlindBoxItemData[] | BlindBoxItemData;
   // Fields the website's drop page reads.
   collection_id?: string;
   sale_title?: 'Private' | 'Public' | string;
@@ -104,6 +109,7 @@ export async function fetchFeaturedDrops(
   params.append('access', 'open');
   params.append('status', 'Featured');
   params.append('is_deleted', 'False');
+  params.append('individual', 'True');
   params.append('current_page', String(page));
   params.append('items_per_page', String(ITEMS_PER_PAGE));
   // Adds `type` (defaults to Eth_Product/Layer_2/Polygon) plus search and filters.
@@ -129,6 +135,7 @@ export async function fetchPartnerDrops(
   params.append('orderBy_field', 'sort_no');
   params.append('orderBy_mode', 'Asc');
   params.append('is_deleted', 'False');
+  params.append('individual', 'True');
   params.append('current_page', String(page));
   params.append('items_per_page', String(ITEMS_PER_PAGE));
   appendCatalogParams(params, 'Partners', filters, search);
@@ -257,20 +264,32 @@ export function dropToGridItem(drop: Drop, category: CollectionCategory = 'Colle
   const isSoldOut = drop.is_sold === true || (drop.total_editions > 0 && drop.consumed_editions >= drop.total_editions);
   const priceKind: CollectionGridItem['priceKind'] =
     drop.type === 'Layer_2' ? 'xcoin' : drop.price === 0 ? 'airdrop' : 'gbp';
+
+  // When individual=True, blind_box_items_data is a single object (not an array).
+  // That single object is the specific blind box item for this card.
+  const bbSingle =
+    drop.is_blind_box && !Array.isArray(drop.blind_box_items_data)
+      ? (drop.blind_box_items_data as BlindBoxItemData)
+      : null;
+
   return {
-    id: drop._id,
-    title: drop.title,
+    // Use the blind box item's own _id as the card id so keys stay unique across cards.
+    id: bbSingle ? bbSingle._id : drop._id,
+    title: bbSingle ? bbSingle.title : drop.title,
     description: drop.description,
     dropDate: formatDropDate(drop.release_date, true),
     isUpcoming: drop.release_date ? new Date(drop.release_date) > new Date() : false,
     color: '#1B1F2E',
     category,
-    imageUrl: drop.images[0]?.original_url,
-    isBlindBox: drop.is_blind_box,
+    // Use blind box item's own image; fall back to parent drop image.
+    imageUrl: bbSingle ? (bbSingle.image?.[0]?.url ?? drop.images?.[0]?.original_url) : drop.images?.[0]?.original_url,
+    isBlindBox: Boolean(bbSingle) || drop.is_blind_box,
+    // parentDropId set only for individual blind box items; navigation uses it as dropId.
+    parentDropId: bbSingle ? drop._id : undefined,
     price: drop.price,
     priceKind,
-    totalEditions: drop.total_editions,
-    consumedEditions: drop.consumed_editions,
+    totalEditions: bbSingle ? bbSingle.total_editions : drop.total_editions,
+    consumedEditions: bbSingle ? bbSingle.consumed_editions : drop.consumed_editions,
     isSoldOut,
     dropEdition: drop.drop_edition,
   };
