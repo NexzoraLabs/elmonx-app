@@ -26,7 +26,9 @@ export default function AppShellLayout() {
         <Stack.Screen name="personal-info" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="collectibles" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="doodles-physicals" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="create-post" options={{ presentation: 'modal' }} />
+        {/* Full screen, not a page sheet: KeyboardAvoidingView mis-measures inside an iOS page sheet
+            (the toolbar ended up under the keyboard). */}
+        <Stack.Screen name="create-post" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="user-search" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="auctions" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="auction/[id]" options={{ animation: 'slide_from_right' }} />

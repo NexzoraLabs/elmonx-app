@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { appendLocalFile } from '@/services/upload-file';
 export { SOCKET_URL as CHAT_SOCKET_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {
@@ -103,9 +104,7 @@ export async function uploadChatImage(
   image: { uri: string; mimeType?: string; fileName?: string | null }
 ): Promise<{ attachment_url: string; attachment_type: AttachmentType }> {
   const form = new FormData();
-  const name = image.fileName || image.uri.split('/').pop() || 'image.jpg';
-  // React Native's FormData accepts a { uri, name, type } file descriptor; field name is `media`.
-  form.append('media', { uri: image.uri, name, type: image.mimeType || 'image/jpeg' } as unknown as Blob);
+  appendLocalFile(form, 'media', image.uri);
   return request<{ attachment_url: string; attachment_type: AttachmentType }>('/message/upload-media', token, {
     method: 'POST',
     body: form,

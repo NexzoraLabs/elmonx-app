@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { appendLocalFile } from '@/services/upload-file';
 
 // Same fallbacks the website uses when a user has no avatar/cover.
 const DEFAULT_AVATAR_PATH = 'images/avatar/default.png';
@@ -156,20 +157,18 @@ export async function deleteRepost(token: string, repostId: string): Promise<voi
 
 // ---- Avatar / cover upload (multipart) ----
 
-async function uploadImage(token: string, path: string, field: string, uri: string, mimeType?: string) {
-  const name = uri.split('/').pop() || `${field}.jpg`;
+async function uploadImage(token: string, path: string, field: string, uri: string) {
   const form = new FormData();
-  // React Native's FormData accepts a { uri, name, type } file descriptor.
-  form.append(field, { uri, name, type: mimeType || 'image/jpeg' } as unknown as Blob);
+  appendLocalFile(form, field, uri);
   return request<Record<string, string>>(path, token, { method: 'POST', body: form });
 }
 
-export async function uploadAvatar(token: string, uri: string, mimeType?: string): Promise<string> {
-  const data = await uploadImage(token, '/user/avatar_update', 'profile_avatar', uri, mimeType);
+export async function uploadAvatar(token: string, uri: string): Promise<string> {
+  const data = await uploadImage(token, '/user/avatar_update', 'profile_avatar', uri);
   return data.profile_avatar;
 }
 
-export async function uploadCover(token: string, uri: string, mimeType?: string): Promise<string> {
-  const data = await uploadImage(token, '/user/cover_image_update', 'cover_image', uri, mimeType);
+export async function uploadCover(token: string, uri: string): Promise<string> {
+  const data = await uploadImage(token, '/user/cover_image_update', 'cover_image', uri);
   return data.cover_image;
 }

@@ -20,7 +20,24 @@ import * as notifApi from '@/services/notifications-api';
 import type { AppNotification } from '@/services/notifications-api';
 
 const ITEMS_PER_PAGE = 10;
-const LOGO_URL = 'https://assets.elmonx.com/elmonx-logo-black.png';
+// Fallback for notifications without an NFT/drop image: the white ELMONX header wordmark on a dark
+// tile. Bundled locally — the old assets.elmonx.com logo URL returns 403.
+const ELMONX_WORDMARK = require('@/assets/images/elmonx-wordmark.png');
+const WORDMARK_RATIO = 644 / 83;
+
+function ElmonxLogoTile({ size }: { size: number }) {
+  const width = size * 0.8;
+  return (
+    <View style={[styles.logoTile, { width: size, height: size }]}>
+      <Image
+        source={ELMONX_WORDMARK}
+        style={{ width, height: width / WORDMARK_RATIO }}
+        contentFit="contain"
+        accessibilityLabel="ElmonX"
+      />
+    </View>
+  );
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -156,7 +173,7 @@ function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => voi
         {img ? (
           <Image source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="contain" transition={100} />
         ) : (
-          <Image source={{ uri: LOGO_URL }} style={styles.logoThumb} contentFit="contain" />
+          <ElmonxLogoTile size={44} />
         )}
       </View>
       <View style={styles.rowBody}>
@@ -197,7 +214,7 @@ function NotifDetailModal({
               {img ? (
                 <Image source={{ uri: img }} style={styles.dialogImg} contentFit="contain" />
               ) : (
-                <Image source={{ uri: LOGO_URL }} style={styles.dialogImg} contentFit="contain" />
+                <ElmonxLogoTile size={80} />
               )}
             </View>
 
@@ -360,9 +377,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  logoThumb: {
-    width: 28,
-    height: 28,
+  logoTile: {
+    borderRadius: 10,
+    backgroundColor: AppColors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rowBody: {
     flex: 1,

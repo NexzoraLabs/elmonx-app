@@ -1,6 +1,7 @@
 import type { Post, PostAuthor } from '@/services/profile-api';
 
 import { API_BASE_URL } from '@/config/env';
+import { appendLocalFile } from '@/services/upload-file';
 
 type ApiEnvelope<T> = {
   status?: number;
@@ -77,11 +78,7 @@ export type LocalImage = { uri: string; mimeType?: string; fileName?: string | n
 
 export async function uploadPostImages(token: string, images: LocalImage[]): Promise<string[]> {
   const form = new FormData();
-  images.forEach((image, index) => {
-    const name = image.fileName || image.uri.split('/').pop() || `image-${index}.jpg`;
-    // React Native's FormData accepts a { uri, name, type } file descriptor.
-    form.append('images', { uri: image.uri, name, type: image.mimeType || 'image/jpeg' } as unknown as Blob);
-  });
+  images.forEach((image) => appendLocalFile(form, 'images', image.uri));
   const data = await request<{ images: string[] }>('/post/upload-image', token, { method: 'POST', body: form });
   return data.images ?? [];
 }

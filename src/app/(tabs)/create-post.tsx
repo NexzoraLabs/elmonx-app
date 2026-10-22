@@ -2,11 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -15,42 +17,108 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import EmojiPicker, { type EmojiType } from 'rn-emoji-keyboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UserAvatar } from '@/components/account/user-avatar';
+import { GiphyPickerSheet } from '@/components/feed/giphy-picker-sheet';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { LocalImage } from '@/services/feed-api';
 import { emitFeedChanged } from '@/services/feed-events';
+import type { GiphyGif } from '@/services/giphy-api';
+
+const PICKER_QUALITY = 0.85;
+
+const toLocalImage = (asset: ImagePicker.ImagePickerAsset): LocalImage => ({
+  uri: asset.uri,
+  mimeType: asset.mimeType,
+  fileName: asset.fileName,
+});
 
 export default function CreatePostScreen() {
   const { token, user } = useAuth();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<LocalImage[]>([]);
+  // A Giphy pick is already hosted on Giphy's CDN — it never goes through the upload step.
+  const [gif, setGif] = useState<GiphyGif | null>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showGifs, setShowGifs] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Caret position, so emoji go where the user is typing (like the website's insertEmoji).
+  const selection = useRef({ start: 0, end: 0 });
 
   const remaining = feedApi.MAX_POST_CONTENT - content.length;
-  const canPost = (content.trim().length > 0 || images.length > 0) && remaining >= 0 && !isPosting;
+  // Website rule (same as X): a GIF is exclusive — one GIF and no photos beside it.
+  const canAddImages = !isPosting && !gif && images.length < feedApi.MAX_POST_IMAGES;
+  const canAddGif = !isPosting && !gif && images.length === 0;
+  const canPost = (content.trim().length > 0 || images.length > 0 || !!gif) && remaining >= 0 && !isPosting;
 
+  const addImages = (assets: ImagePicker.ImagePickerAsset[]) => {
+    setImages((prev) => [...prev, ...assets.map(toLocalImage)].slice(0, feedApi.MAX_POST_IMAGES));
+  };
+
+  // System photo picker: runs out-of-process and only hands back what the user picks,
+  // so it needs no photo-library permission (and we don't ask for one).
   const handlePickImages = async () => {
     const slots = feedApi.MAX_POST_IMAGES - images.length;
-    if (slots <= 0) return;
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to add images to your post.');
-      return;
-    }
+    if (!canAddImages || slots <= 0) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
       selectionLimit: slots,
-      quality: 0.85,
+      quality: PICKER_QUALITY,
     });
-    if (result.canceled) return;
-    const picked = result.assets.map((asset) => ({ uri: asset.uri, mimeType: asset.mimeType, fileName: asset.fileName }));
-    setImages((prev) => [...prev, ...picked].slice(0, feedApi.MAX_POST_IMAGES));
+    if (!result.canceled) addImages(result.assets);
+  };
+
+  const handleTakePhoto = async () => {
+    if (!canAddImages) return;
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Camera access needed',
+        'Allow camera access in Settings to take a photo for your post.',
+        permission.canAskAgain
+          ? [{ text: 'OK' }]
+          : [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+            ],
+      );
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: PICKER_QUALITY });
+    if (!result.canceled) addImages(result.assets);
+  };
+
+  const openGifPicker = () => {
+    if (!canAddGif) return;
+    Keyboard.dismiss();
+    setShowGifs(true);
+  };
+
+  const openEmojiPicker = () => {
+    if (isPosting) return;
+    Keyboard.dismiss();
+    setShowEmoji(true);
+  };
+
+  const handleGifSelected = (picked: GiphyGif) => {
+    setGif(picked);
+    setShowGifs(false);
+  };
+
+  const handleEmojiSelected = (emoji: EmojiType) => {
+    const value = emoji.emoji;
+    if (content.length + value.length > feedApi.MAX_POST_CONTENT) return;
+    const start = Math.min(selection.current.start, content.length);
+    const end = Math.min(selection.current.end, content.length);
+    setContent(content.slice(0, start) + value + content.slice(end));
+    const caret = start + value.length;
+    selection.current = { start: caret, end: caret };
   };
 
   const handlePost = async () => {
@@ -58,11 +126,12 @@ export default function CreatePostScreen() {
     setIsPosting(true);
     setError(null);
     try {
-      const uploaded = images.length > 0 ? await feedApi.uploadPostImages(token, images) : [];
+      // Giphy URL goes into `images` directly, exactly where an uploaded path would (website does the same).
+      const media = gif ? [gif.url] : images.length > 0 ? await feedApi.uploadPostImages(token, images) : [];
       const text = content.trim();
       await feedApi.createPost(token, {
         ...(text ? { content: text } : {}),
-        ...(uploaded.length > 0 ? { images: uploaded } : {}),
+        ...(media.length > 0 ? { images: media } : {}),
       });
       emitFeedChanged();
       router.back();
@@ -100,10 +169,14 @@ export default function CreatePostScreen() {
             <TextInput
               value={content}
               onChangeText={setContent}
+              onSelectionChange={(event) => {
+                selection.current = event.nativeEvent.selection;
+              }}
               placeholder="What's new?"
               placeholderTextColor={AppColors.textPlaceholder}
               multiline
               autoFocus
+              maxLength={feedApi.MAX_POST_CONTENT}
               style={styles.input}
             />
           </View>
@@ -113,44 +186,136 @@ export default function CreatePostScreen() {
               {images.map((image, index) => (
                 <View key={`${image.uri}-${index}`}>
                   <Image source={{ uri: image.uri }} style={styles.preview} contentFit="cover" />
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Remove image"
-                    hitSlop={6}
+                  <RemoveButton
+                    label="Remove image"
+                    disabled={isPosting}
                     onPress={() => setImages((prev) => prev.filter((_, i) => i !== index))}
-                    style={styles.removeImage}>
-                    <Ionicons name="close" size={14} color={AppColors.textPrimary} />
-                  </Pressable>
+                  />
                 </View>
               ))}
             </ScrollView>
+          ) : null}
+
+          {gif ? (
+            <View style={styles.gifPreviewWrap}>
+              <Image
+                source={{ uri: gif.url }}
+                style={[styles.gifPreview, { aspectRatio: gif.width && gif.height ? gif.width / gif.height : 1 }]}
+                contentFit="contain"
+                accessibilityLabel={gif.title}
+              />
+              <View style={styles.gifBadge}>
+                <Text style={styles.gifBadgeLabel}>GIF</Text>
+              </View>
+              <RemoveButton label="Remove GIF" disabled={isPosting} onPress={() => setGif(null)} />
+            </View>
           ) : null}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>
 
         <View style={styles.toolbar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add photos"
-            disabled={images.length >= feedApi.MAX_POST_IMAGES}
-            onPress={handlePickImages}
-            style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
-            <Ionicons
-              name="image-outline"
-              size={22}
-              color={images.length >= feedApi.MAX_POST_IMAGES ? AppColors.textPlaceholder : AppColors.textPrimary}
-            />
-            <Text style={styles.toolLabel}>
-              {images.length}/{feedApi.MAX_POST_IMAGES}
-            </Text>
-          </Pressable>
+          <View style={styles.tools}>
+            <ToolButton icon="image-outline" label="Add photos" disabled={!canAddImages} onPress={handlePickImages} />
+            <ToolButton icon="camera-outline" label="Take photo" disabled={!canAddImages} onPress={handleTakePhoto} />
+            <ToolButton label="Add GIF" disabled={!canAddGif} onPress={openGifPicker}>
+              <View style={[styles.gifIcon, !canAddGif && styles.gifIconDisabled]}>
+                <Text style={[styles.gifIconLabel, !canAddGif && styles.toolDisabledText]}>GIF</Text>
+              </View>
+            </ToolButton>
+            <ToolButton icon="happy-outline" label="Add emoji" disabled={isPosting} onPress={openEmojiPicker} />
+            {images.length > 0 ? (
+              <Text style={styles.toolLabel}>
+                {images.length}/{feedApi.MAX_POST_IMAGES}
+              </Text>
+            ) : null}
+          </View>
           <Text style={[styles.counter, remaining < 0 && styles.counterOver]}>{remaining}</Text>
         </View>
+
+        <GiphyPickerSheet visible={showGifs} onClose={() => setShowGifs(false)} onSelect={handleGifSelected} />
       </KeyboardAvoidingView>
+
+      <EmojiPicker
+        open={showEmoji}
+        onClose={() => setShowEmoji(false)}
+        onEmojiSelected={handleEmojiSelected}
+        allowMultipleSelections
+        enableSearchBar
+        enableRecentlyUsed
+        categoryPosition="bottom"
+        theme={EMOJI_THEME}
+      />
     </SafeAreaView>
   );
 }
+
+function ToolButton({
+  icon,
+  label,
+  disabled,
+  onPress,
+  children,
+}: {
+  icon?: keyof typeof Ionicons.glyphMap;
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  children?: ReactNode;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
+      {children ??
+        (icon ? (
+          <Ionicons name={icon} size={22} color={disabled ? AppColors.textPlaceholder : AppColors.textPrimary} />
+        ) : null)}
+    </Pressable>
+  );
+}
+
+function RemoveButton({ label, disabled, onPress }: { label: string; disabled: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={styles.removeImage}>
+      <Ionicons name="close" size={14} color={AppColors.textPrimary} />
+    </Pressable>
+  );
+}
+
+const EMOJI_THEME = {
+  backdrop: AppColors.overlay,
+  knob: AppColors.border,
+  container: AppColors.surface,
+  header: AppColors.textSecondary,
+  skinTonesContainer: AppColors.background,
+  category: {
+    icon: AppColors.textPlaceholder,
+    iconActive: AppColors.textPrimary,
+    container: AppColors.background,
+    containerActive: AppColors.border,
+  },
+  search: {
+    background: AppColors.background,
+    text: AppColors.textPrimary,
+    placeholder: AppColors.textPlaceholder,
+    icon: AppColors.textPlaceholder,
+  },
+  emoji: {
+    selected: AppColors.border,
+  },
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -221,6 +386,29 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: AppColors.surface,
   },
+  gifPreviewWrap: {
+    alignSelf: 'flex-start',
+    width: '75%',
+  },
+  gifPreview: {
+    width: '100%',
+    borderRadius: 14,
+    backgroundColor: AppColors.surface,
+  },
+  gifBadge: {
+    position: 'absolute',
+    left: 8,
+    bottom: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+  },
+  gifBadgeLabel: {
+    color: AppColors.textPrimary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   removeImage: {
     position: 'absolute',
     top: 6,
@@ -245,10 +433,34 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: AppColors.border,
   },
-  toolButton: {
+  tools: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 18,
+  },
+  toolButton: {
+    minWidth: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gifIcon: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: AppColors.textPrimary,
+  },
+  gifIconDisabled: {
+    borderColor: AppColors.textPlaceholder,
+  },
+  gifIconLabel: {
+    color: AppColors.textPrimary,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  toolDisabledText: {
+    color: AppColors.textPlaceholder,
   },
   toolLabel: {
     color: AppColors.textSecondary,

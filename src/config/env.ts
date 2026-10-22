@@ -21,6 +21,12 @@ export const API_BASE_URL = ACTIVE_ENV.apiUrl;
 export const SOCKET_URL = ACTIVE_ENV.socketUrl;
 export const IS_DEV = ACTIVE_ENV === dev;
 
+// Giphy — same key + channel as the website (`lmnx-st_ng` environment.ts). A Giphy API key is a
+// public client key (it already ships in the web bundle). Channel set = trending shows only
+// @elmonx's own GIFs; search still covers all of Giphy.
+export const GIPHY_API_KEY = 'MQvE3dEUDWumomsSkimU0ycQF9sJwHox';
+export const GIPHY_CHANNEL = 'elmonx';
+
 // Sentry project DSN (Sentry → Project Settings → Client Keys). Empty = crash reporting off.
 // A DSN is a public client key, safe to ship in the app.
 export const SENTRY_DSN = '';

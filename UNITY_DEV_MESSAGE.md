@@ -22,6 +22,7 @@ Naya Unity build chahiye ElmonX app ke liye. Dono platforms ke liye please:
   - IL2CPP scripting backend
   - Development Build: OFF (Release build)
   - Strip Engine Code: OFF
+  - Show Splash Screen: OFF (Player Settings > Splash Image — "Made with Unity" nahi aana chahiye; Unity 6 Personal mein free/allowed hai)
 - ARCore/ARKit enabled rakhna
 - Firebase included rakhna
 
@@ -33,6 +34,7 @@ Naya Unity build chahiye ElmonX app ke liye. Dono platforms ke liye please:
   - IL2CPP scripting backend
   - Minify: OFF (both Release and Debug)
   - Development Build: OFF
+  - Show Splash Screen: OFF (Player Settings > Splash Image — "Made with Unity" nahi aana chahiye; Unity 6 Personal mein free/allowed hai)
   - Export as Gradle Project: YES (important — APK nahi chahiye, Gradle project chahiye)
 - ARCore enabled rakhna
 - Firebase included rakhna

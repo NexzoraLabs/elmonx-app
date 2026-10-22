@@ -142,11 +142,11 @@ export default function ProfileTabScreen() {
     setUploading(kind);
     try {
       if (kind === 'avatar') {
-        const url = await profileApi.uploadAvatar(token, asset.uri, asset.mimeType);
+        const url = await profileApi.uploadAvatar(token, asset.uri);
         setHeader((prev) => (prev ? { ...prev, avatar: url } : prev));
         await updateUser({ profile_avatar: url, profile_avatar_url: url });
       } else {
-        const url = await profileApi.uploadCover(token, asset.uri, asset.mimeType);
+        const url = await profileApi.uploadCover(token, asset.uri);
         setHeader((prev) => (prev ? { ...prev, cover: url } : prev));
       }
     } catch (e) {

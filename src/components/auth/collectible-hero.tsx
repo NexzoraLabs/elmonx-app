@@ -1,23 +1,24 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 
-/**
- * Placeholder for the Figma hero illustration (fanned collectible cards).
- * Swap for the exported artwork once available.
- */
+// Welcome-screen artwork: three real drop images fanned out (front, left, right).
+const FRONT_IMAGE = 'https://assets.elmonx.com/drops/1792071914968_760944894.webp';
+const LEFT_IMAGE = 'https://assets.elmonx.com/drops/1776862843984_576666441.webp';
+const RIGHT_IMAGE = 'https://assets.elmonx.com/drops/1780316209621_577398966.webp';
+
 export function CollectibleHero() {
   return (
     <View style={styles.container}>
-      <View style={[styles.sideCard, styles.leftCard]} />
-      <View style={[styles.sideCard, styles.rightCard]} />
-      <View style={styles.centerCard}>
-        <View style={styles.centerCardInner}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            T206 Honus Wagner
-          </Text>
-          <Text style={styles.cardSubtitle}>PR 1</Text>
-        </View>
+      <View style={[styles.card, styles.sideCard, styles.leftCard]}>
+        <Image source={{ uri: LEFT_IMAGE }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+      </View>
+      <View style={[styles.card, styles.sideCard, styles.rightCard]}>
+        <Image source={{ uri: RIGHT_IMAGE }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+      </View>
+      <View style={[styles.card, styles.centerCard]}>
+        <Image source={{ uri: FRONT_IMAGE }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
       </View>
     </View>
   );
@@ -29,6 +30,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  card: {
+    overflow: 'hidden',
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
   sideCard: {
     position: 'absolute',
     width: 120,
@@ -36,35 +43,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   leftCard: {
-    backgroundColor: '#7B3FF2',
     transform: [{ rotate: '-14deg' }, { translateX: -70 }],
   },
   rightCard: {
-    backgroundColor: '#2AB3A6',
     transform: [{ rotate: '14deg' }, { translateX: 70 }],
   },
   centerCard: {
     width: 140,
     height: 190,
     borderRadius: 16,
-    backgroundColor: AppColors.surface,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: 10,
-  },
-  centerCardInner: {
-    alignItems: 'center',
-  },
-  cardTitle: {
-    color: AppColors.textPrimary,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardSubtitle: {
-    color: AppColors.textSecondary,
-    fontSize: 10,
-    marginTop: 2,
   },
 });

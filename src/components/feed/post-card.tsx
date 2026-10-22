@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/app-colors';
 import type { FeedRow } from '@/services/feed-api';
+import { isGifUrl } from '@/services/giphy-api';
 import { resolveAvatar, type Post, type PostAuthor, type UserRepost } from '@/services/profile-api';
 
 export type FeedItem =
@@ -115,9 +116,27 @@ function ContentText({ content }: { content: string }) {
   );
 }
 
+// Website rule (`isSingleGif`): a lone GIF shows at its natural aspect ratio, never cropped.
+function SingleGif({ uri }: { uri: string }) {
+  const [aspectRatio, setAspectRatio] = useState(1);
+  return (
+    <Image
+      source={{ uri }}
+      style={[styles.imageSingle, { aspectRatio }]}
+      contentFit="contain"
+      transition={150}
+      onLoad={(event) => {
+        const { width, height } = event.source;
+        if (width > 0 && height > 0) setAspectRatio(width / height);
+      }}
+    />
+  );
+}
+
 function PostImages({ images }: { images?: string[] }) {
   if (!images || images.length === 0) return null;
   if (images.length === 1) {
+    if (isGifUrl(images[0])) return <SingleGif uri={images[0]} />;
     return <Image source={{ uri: images[0] }} style={styles.imageSingle} contentFit="cover" transition={150} />;
   }
   return (

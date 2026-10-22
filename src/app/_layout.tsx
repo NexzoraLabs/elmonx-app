@@ -9,11 +9,11 @@ import { StyleSheet, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { WagmiProvider } from 'wagmi';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AnimatedSplash } from '@/components/app/animated-splash';
 import { AppErrorScreen } from '@/components/app/app-error-screen';
 import { OfflineBanner } from '@/components/app/offline-banner';
 import { UpdateBanner } from '@/components/app/update-banner';
-import { AuthProvider } from '@/context/auth-context';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 import { initCrashReporting, wrapRootComponent } from '@/services/crash-reporting';
 import { installSessionGuard } from '@/services/session-guard';
 
@@ -34,13 +34,13 @@ function RootLayout() {
           <AppKitProvider instance={appKit}>
             <AuthProvider>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <AnimatedSplashOverlay />
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(tabs)" />
                 </Stack>
                 <OfflineBanner />
                 <UpdateBanner />
+                <AppSplash />
               </ThemeProvider>
             </AuthProvider>
             {/* Expo Router needs the modal in an absolute overlay to render above the stack. */}
@@ -52,4 +52,10 @@ function RootLayout() {
       </WagmiProvider>
     </GestureHandlerRootView>
   );
+}
+
+/** Animated splash on top of everything until the saved session has been restored. */
+function AppSplash() {
+  const { isLoading } = useAuth();
+  return <AnimatedSplash ready={!isLoading} />;
 }
