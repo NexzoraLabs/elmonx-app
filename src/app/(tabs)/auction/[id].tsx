@@ -34,6 +34,7 @@ import {
 } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
+import { haptic } from '@/components/motion';
 
 type BidGate = 'cancelled' | 'ended' | 'upcoming' | 'logged_out' | 'no_wallet' | 'banned' | 'unverified' | 'limit' | 'open';
 
@@ -251,6 +252,7 @@ export default function AuctionDetailScreen() {
       }
       setPending(null);
       if (res.status === 200 && res.data?.auction) {
+        haptic('success');
         setRaisingBidId(null);
         applyView(res.data.auction, auction);
         Alert.alert('', pending.kind === 'bid' ? t('Bid of {{amount}} X-coins placed.', { amount: pending.amount }) : t('Bid raised to {{amount}} X-coins.', { amount: pending.amount }));

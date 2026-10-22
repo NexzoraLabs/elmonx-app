@@ -19,6 +19,7 @@ import * as rewardsApi from '@/services/rewards-api';
 import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
+import { TabIndicator } from '@/components/motion';
 
 type Tab = 'posts' | 'reposts';
 
@@ -253,7 +254,7 @@ export default function ProfileTabScreen() {
             />
             <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>{t('Posts')}</Text>
           </View>
-          <View style={[styles.tabIndicator, tab === 'posts' && styles.tabIndicatorActive]} />
+          <TabIndicator active={tab === 'posts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
         </Pressable>
         <Pressable style={styles.tab} onPress={() => handleSelectTab('reposts')}>
           <View style={styles.tabContent}>
@@ -263,7 +264,7 @@ export default function ProfileTabScreen() {
               color={tab === 'reposts' ? AppColors.textPrimary : AppColors.textSecondary}
             />
           </View>
-          <View style={[styles.tabIndicator, tab === 'reposts' && styles.tabIndicatorActive]} />
+          <TabIndicator active={tab === 'reposts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
         </Pressable>
       </View>
     </View>

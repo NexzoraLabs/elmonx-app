@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { makeStyles } from '@/context/theme-context';
 import { useTranslation } from 'react-i18next';
+import { haptic, TabIndicator } from '@/components/motion';
 
 type SegmentTabsProps = {
   options: readonly string[];
@@ -17,9 +18,12 @@ export function SegmentTabs({ options, selected, onSelect }: SegmentTabsProps) {
       {options.map((option) => {
         const isActive = option === selected;
         return (
-          <Pressable key={option} style={styles.tab} onPress={() => onSelect(option)}>
+          <Pressable key={option} style={styles.tab} onPress={() => {
+            if (!isActive) haptic('selection');
+            onSelect(option);
+          }}>
             <Text style={[styles.label, isActive && styles.labelActive]}>{t(option)}</Text>
-            <View style={[styles.underline, isActive && styles.underlineActive]} />
+            <TabIndicator active={isActive} style={[styles.underline, styles.underlineActive]} />
           </Pressable>
         );
       })}

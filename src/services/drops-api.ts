@@ -301,5 +301,7 @@ export function dropToGridItem(drop: Drop, category: CollectionCategory = 'Colle
     consumedEditions: bbSingle ? bbSingle.consumed_editions : drop.consumed_editions,
     isSoldOut,
     dropEdition: drop.drop_edition,
+    // Website nft-card: rarity only for individual blind box items, never on SPECIAL_DROP_IDS.
+    rarity: bbSingle && !isSpecialDrop(drop._id) ? bbSingle.rarity || undefined : undefined,
   };
 }

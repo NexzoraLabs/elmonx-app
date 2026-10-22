@@ -11,6 +11,7 @@ import type { CommentTarget } from '@/services/feed-api';
 import * as profileApi from '@/services/profile-api';
 import type { PostAuthor } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
+import { Appear } from '@/components/motion';
 
 const SITE_URL = 'https://elmonx.com';
 
@@ -184,7 +185,8 @@ export function PostList({
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         ListFooterComponent={isLoadingMore ? <ActivityIndicator style={styles.footerLoading} color={AppColors.link} /> : null}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
+          <Appear index={index}>
           <PostCard
             item={item}
             currentUserId={currentUserId}
@@ -196,6 +198,7 @@ export function PostList({
             onMore={handleMore}
             onPressAuthor={handlePressAuthor}
           />
+          </Appear>
         )}
         onEndReachedThreshold={0.4}
         onEndReached={onEndReached}

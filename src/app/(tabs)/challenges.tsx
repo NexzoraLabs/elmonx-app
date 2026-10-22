@@ -15,6 +15,7 @@ import { DROP_ACTION_KEYS, FOLLOWER_TIERS, FOLLOW_TIERS, SOCIAL_ACTION_KEYS } fr
 import * as rewardsApi from '@/services/rewards-api';
 import type { RewardStatus, RewardTasks, SocialActionProgress } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
+import { haptic } from '@/components/motion';
 
 function statusOf(tasks: RewardTasks, key: string): RewardStatus {
   const value = tasks[key];
@@ -46,6 +47,7 @@ export default function ChallengesScreen() {
 
   const showBanner = useCallback((type: 'success' | 'error', message: string) => {
     if (bannerTimer.current) clearTimeout(bannerTimer.current);
+    haptic(type);
     setBanner({ type, message });
     bannerTimer.current = setTimeout(() => setBanner(null), 3000);
   }, []);

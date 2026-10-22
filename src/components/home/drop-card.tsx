@@ -43,14 +43,6 @@ export function DropCard({ item }: { item: CollectionGridItem }) {
           <Text style={styles.title} numberOfLines={1}>
             {item.title.toUpperCase()}
           </Text>
-          <View style={styles.arrowCircle}>
-            <Ionicons
-              name="arrow-forward-outline"
-              size={11}
-              color={AppColors.textPrimary}
-              style={styles.arrowIcon}
-            />
-          </View>
         </View>
         {item.dropDate ? (
           <View style={styles.dateRow}>
@@ -122,18 +114,6 @@ const useStyles = makeStyles((AppColors) => ({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-  arrowCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: AppColors.subtleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  arrowIcon: {
-    transform: [{ rotate: '-45deg' }],
   },
   dateRow: {
     flexDirection: 'row',

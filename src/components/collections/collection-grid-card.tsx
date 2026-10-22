@@ -1,44 +1,36 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { CardImageBadges } from '@/components/collections/card-image-badges';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
 import { useTranslation } from 'react-i18next';
+import Animated from 'react-native-reanimated';
+
+import { enterAt, PressableScale } from '@/components/motion';
 
 type CollectionGridCardProps = {
   item: CollectionGridItem;
   layout?: 'single' | 'grid';
+  /** Position in its list — plays the standard staggered entrance. */
+  index?: number;
 };
 
-// Same edition checks as the website's nft-card.
-function EditionBadge({ edition }: { edition: string }) {
-  const styles = useStyles();
-  const lower = edition.toLowerCase();
-  const isDigitalProof = edition === 'Digital Proof';
-  const isArtistProof = lower === 'artist proof' || lower === 'artist_proof';
-  const isStudyEdition = edition === 'Study';
+// Collection banners: start at 3:2 until the image reports its size; keep extreme shapes sane.
+const DEFAULT_BANNER_RATIO = 3 / 2;
+const MIN_BANNER_RATIO = 0.8;
+const MAX_BANNER_RATIO = 3;
 
-  if (!isDigitalProof && !isArtistProof && !isStudyEdition) return null;
-
-  const bg = isDigitalProof ? '#0245c3' : isArtistProof ? '#FF6D00' : '#EC407A';
-  const label = isDigitalProof ? 'DIGITAL PROOF' : isArtistProof ? 'ARTIST PROOF' : 'STUDY';
-
-  return (
-    <View style={[styles.editionBadge, { backgroundColor: bg }]}>
-      <Ionicons name="star" size={8} color="#fff" />
-      <Text style={styles.editionBadgeText}>{label}</Text>
-    </View>
-  );
-}
-
-export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCardProps) {
+export function CollectionGridCard({ item, layout = 'grid', index }: CollectionGridCardProps) {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   const isSingle = layout === 'single';
+  const [bannerRatio, setBannerRatio] = useState(DEFAULT_BANNER_RATIO);
 
   const total = item.totalEditions ?? 0;
   const consumed = item.consumedEditions ?? 0;
@@ -52,9 +44,15 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
       ? '#F97316'
       : '#8B5CF6';
 
+  // The wrapper owns the grid width + entrance (a transform); the pressable inside owns the press
+  // scale (also a transform) — on one view the two animations would overwrite each other.
   return (
-    <Pressable
-      style={[styles.card, isSingle ? styles.cardSingle : styles.cardGrid]}
+    <Animated.View
+      entering={index === undefined ? undefined : enterAt(index)}
+      style={isSingle ? styles.cardSingle : styles.cardGrid}>
+    <PressableScale
+      pressScale="card"
+      style={styles.card}
       onPress={() => {
         if (item.parentDropId) {
           // Individual blind box item — open its detail page
@@ -67,46 +65,50 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
         }
       }}>
 
-      {/* ── Image area ── whole artwork, centred, nothing painted behind it (drop images
-           carry their own transparent margin around the frame). */}
-      <View style={isSingle ? undefined : styles.imagePad}>
+      {/* ── Image area ── a very faint well (`imageWell`) running edge to edge across the top of
+           the card (VeVe-style; the card's own radius rounds its top corners, the bottom stays
+           square), with the whole artwork centred and inset inside it. */}
+      <View>
         <View style={[styles.imageOuter, isSingle ? styles.imageOuterSingle : styles.imageOuterGrid]}>
-          {item.imageUrl ? (
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="contain"
-              transition={150}
-            />
+          {isSingle ? (
+            // Collection banner: the frame takes the image's own shape, so the whole banner shows
+            // (no crop) with the same 12pt gap on all four sides.
+            <View style={[styles.bannerFrame, { aspectRatio: bannerRatio }]}>
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="contain"
+                  transition={150}
+                  onLoad={(event) => {
+                    const { width, height } = event.source;
+                    if (width > 0 && height > 0) {
+                      setBannerRatio(Math.min(MAX_BANNER_RATIO, Math.max(MIN_BANNER_RATIO, width / height)));
+                    }
+                  }}
+                />
+              ) : (
+                <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
+              )}
+            </View>
+          ) : item.imageUrl ? (
+            // Drop artwork is shown whole (contain) — it carries its own transparent margin.
+            <Image source={{ uri: item.imageUrl }} style={styles.artInset} contentFit="contain" transition={150} />
           ) : (
             <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
           )}
+          <CardImageBadges item={item} />
         </View>
       </View>
 
       {/* ── Card body ── */}
       <View style={styles.body}>
 
-        {/* Edition badge row */}
-        {item.dropEdition ? (
-          <View style={styles.badgeRow}>
-            <EditionBadge edition={item.dropEdition} />
-          </View>
-        ) : null}
-
         {/* Title + arrow */}
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>
             {item.title.toUpperCase()}
           </Text>
-          <View style={styles.arrowCircle}>
-            <Ionicons
-              name="arrow-forward-outline"
-              size={11}
-              color={AppColors.textPrimary}
-              style={styles.arrowIcon}
-            />
-          </View>
         </View>
 
         {/* Edition count row */}
@@ -154,17 +156,13 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
         {/* Date bar */}
         {item.dropDate ? (
           <View style={styles.dateBar}>
-            <View style={[styles.statusDot, item.isUpcoming ? styles.dotUpcoming : styles.dotPast]} />
-            <Text style={[styles.statusLabel, item.isUpcoming ? styles.statusLabelUpcoming : styles.statusLabelPast]}>
-              {item.isUpcoming ? t('Dropping') : t('Dropped')}
-            </Text>
-            <View style={styles.dateSpacer} />
             <Ionicons name="calendar-outline" size={11} color={AppColors.textSecondary} />
             <Text style={styles.dateText}>{item.dropDate}</Text>
           </View>
         ) : null}
       </View>
-    </Pressable>
+    </PressableScale>
+    </Animated.View>
   );
 }
 
@@ -184,52 +182,35 @@ const useStyles = makeStyles((AppColors) => ({
   },
 
   /* Image area */
-  imagePad: {
-    padding: 8,
+  /** Artwork sits inset in the edge-to-edge well, so it never touches the card edges. */
+  artInset: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    bottom: 12,
+    left: 12,
+  },
+  bannerFrame: {
+    width: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   imageOuter: {
     // Explicit full width: with a margin + aspectRatio, Yoga sized this box from its height
     // instead, leaving it narrower than the card and stuck to the left.
     width: '100%',
-    borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: AppColors.imageWell,
   },
   imageOuterGrid: {
     aspectRatio: 660 / 870,
   },
   imageOuterSingle: {
-    aspectRatio: 3 / 2,
-    borderRadius: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    padding: 12,
   },
 
-
-  editionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  editionBadgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
 
   /* Body */
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  badgeSpacer: {
-    flex: 1,
-  },
   body: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -256,18 +237,6 @@ const useStyles = makeStyles((AppColors) => ({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.4,
-  },
-  arrowCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: AppColors.subtleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  arrowIcon: {
-    transform: [{ rotate: '-45deg' }],
   },
 
   /* Edition row */
@@ -333,32 +302,6 @@ const useStyles = makeStyles((AppColors) => ({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: AppColors.subtleFill,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  dotUpcoming: {
-    backgroundColor: '#34D399',
-  },
-  dotPast: {
-    backgroundColor: AppColors.textSecondary,
-  },
-  statusLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  statusLabelUpcoming: {
-    color: '#34D399',
-  },
-  statusLabelPast: {
-    color: AppColors.textSecondary,
-  },
-  dateSpacer: {
-    flex: 1,
   },
   dateText: {
     color: AppColors.textSecondary,

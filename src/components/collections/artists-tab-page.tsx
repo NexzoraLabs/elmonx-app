@@ -6,6 +6,7 @@ import { ArtistSkeletonList } from '@/components/collections/artist-skeleton-lis
 import { makeStyles } from '@/context/theme-context';
 import { fetchBrands, type Brand } from '@/services/brands-api';
 import { useTranslation } from 'react-i18next';
+import { Appear } from '@/components/motion';
 
 /** Parent remounts this (via `key`) when the search changes, so it loads once per search. */
 export function ArtistsTabPage({ search = '' }: { search?: string }) {
@@ -65,7 +66,11 @@ export function ArtistsTabPage({ search = '' }: { search?: string }) {
       keyExtractor={(item) => item._id}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content}
-      renderItem={({ item }) => <ArtistListRow brand={item} />}
+      renderItem={({ item, index }) => (
+        <Appear index={index}>
+          <ArtistListRow brand={item} />
+        </Appear>
+      )}
     />
   );
 }

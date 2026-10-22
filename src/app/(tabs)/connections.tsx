@@ -25,6 +25,7 @@ import type {
   FollowRequestItem,
 } from '@/services/feed-api';
 import { useTranslation } from 'react-i18next';
+import { TabIndicator } from '@/components/motion';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const TABS: Tab[] = ['followers', 'following', 'blocked'];
@@ -81,7 +82,7 @@ export default function ConnectionsScreen() {
           return (
             <Pressable key={key} style={styles.tab} onPress={() => goToTab(i)}>
               <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t(label)}</Text>
-              <View style={[styles.tabIndicator, active && styles.tabIndicatorActive]} />
+              <TabIndicator active={active} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
             </Pressable>
           );
         })}

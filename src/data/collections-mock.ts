@@ -21,6 +21,8 @@ export type CollectionGridItem = {
   consumedEditions?: number;
   isSoldOut?: boolean;
   dropEdition?: string;
+  /** Individual blind box item's rarity (Regular / Rare / Secret Rare / Legendary) — hidden for special drops. */
+  rarity?: string;
 };
 
 const COLLECTIONS_ONLY: CollectionGridItem[] = [

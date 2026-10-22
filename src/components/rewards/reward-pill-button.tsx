@@ -1,7 +1,8 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { AppColor } from '@/constants/app-colors';
 import { useAppColors } from '@/context/theme-context';
+import { PressableScale } from '@/components/motion';
 
 type Tone = 'claimable' | 'done' | 'pending' | 'disabled';
 
@@ -19,7 +20,8 @@ export function RewardPillButton({ label, tone, onPress, disabled, loading, styl
   const isPressable = !disabled && !loading && tone === 'claimable';
 
   return (
-    <Pressable
+    <PressableScale
+      pressScale="button" haptic="light"
       disabled={!isPressable}
       onPress={onPress}
       style={({ pressed }) => [styles.pill, styles[tone], pressed && isPressable && styles.pressed, style]}>
@@ -30,7 +32,7 @@ export function RewardPillButton({ label, tone, onPress, disabled, loading, styl
           {label}
         </Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

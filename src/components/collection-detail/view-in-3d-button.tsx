@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useTranslation } from 'react-i18next';
+import { PressableScale } from '@/components/motion';
 
 /** "View in 3D" pill — centred under the artwork on drop / blind box detail pages. */
 export function ViewIn3DButton({ onPress, loading = false }: { onPress: () => void; loading?: boolean }) {
@@ -10,7 +11,8 @@ export function ViewIn3DButton({ onPress, loading = false }: { onPress: () => vo
   const AppColors = useAppColors();
   const styles = useStyles();
   return (
-    <Pressable
+    <PressableScale
+      pressScale="button" haptic="light"
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       onPress={onPress}
       disabled={loading}
@@ -24,7 +26,7 @@ export function ViewIn3DButton({ onPress, loading = false }: { onPress: () => vo
         <Ionicons name="cube-outline" size={18} color={AppColors.textPrimary} />
       )}
       <Text style={styles.label}>{t('View in 3D')}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

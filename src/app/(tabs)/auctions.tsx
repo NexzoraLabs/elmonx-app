@@ -22,6 +22,7 @@ import {
   type AuctionList,
 } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
+import { Appear } from '@/components/motion';
 
 type AuctionTab = 'live' | 'upcoming' | 'ended';
 
@@ -196,7 +197,11 @@ export default function AuctionsScreen() {
           data={auctions}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <AuctionListCard auction={item} now={clockNow} />}
+          renderItem={({ item, index }) => (
+            <Appear index={index}>
+              <AuctionListCard auction={item} now={clockNow} />
+            </Appear>
+          )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}
           ListFooterComponent={

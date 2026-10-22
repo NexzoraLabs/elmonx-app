@@ -1,7 +1,8 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
 
 import { makeStyles } from '@/context/theme-context';
 import { useTranslation } from 'react-i18next';
+import { haptic, TabIndicator } from '@/components/motion';
 
 type CategoryTabsProps = {
   categories: readonly string[];
@@ -22,10 +23,13 @@ export function CategoryTabs({ categories, selected, onSelect, underline }: Cate
       {categories.map((category) => {
         const isActive = category === selected;
         return (
-          <Pressable key={category} onPress={() => onSelect(category)} hitSlop={4} style={styles.tab}>
+          <Pressable key={category} onPress={() => {
+            if (!isActive) haptic('selection');
+            onSelect(category);
+          }} hitSlop={4} style={styles.tab}>
             <Text style={[styles.label, isActive && styles.labelActive]}>{t(category)}</Text>
             {underline ? (
-              <View style={[styles.underline, isActive && styles.underlineActive]} />
+              <TabIndicator active={isActive} style={[styles.underline, styles.underlineActive]} />
             ) : null}
           </Pressable>
         );

@@ -28,6 +28,8 @@ export const DarkColors = {
   overlay: 'rgba(0,0,0,0.6)',
   /** Faint fill/hairline on top of `surface` (chips, inactive tracks, pressed rows). */
   subtleFill: 'rgba(255,255,255,0.08)',
+  /** Very faint well behind artwork on cards — marks the image area without tinting the art. */
+  imageWell: 'rgba(255,255,255,0.04)',
   /** Text/icons drawn on top of photos, video or a dark scrim — white in both themes. */
   onMedia: '#FFFFFF',
   /** Dark translucent backing behind badges/buttons that sit on photos — same in both themes. */
@@ -61,6 +63,7 @@ export const LightColors: Palette = {
   rarityUltraRare: '#E68A00',
   overlay: 'rgba(0,0,0,0.4)',
   subtleFill: 'rgba(0,0,0,0.05)',
+  imageWell: 'rgba(0,0,0,0.035)',
   onMedia: '#FFFFFF',
   mediaScrim: 'rgba(0,0,0,0.65)',
 };

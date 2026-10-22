@@ -28,6 +28,7 @@ import * as collectiblesApi from '@/services/collectibles-api';
 import { shortenAddress, type CollectibleCardData } from '@/services/collectibles-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
+import { Appear, TabIndicator } from '@/components/motion';
 
 type Tab = 'app' | 'web' | 'auctions';
 
@@ -86,7 +87,7 @@ export default function CollectiblesScreen() {
           return (
             <Pressable key={item.key} style={styles.tab} onPress={() => setTab(item.key)}>
               <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t(item.label)}</Text>
-              <View style={[styles.tabIndicator, active && styles.tabIndicatorActive]} />
+              <TabIndicator active={active} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
             </Pressable>
           );
         })}
@@ -289,7 +290,8 @@ function CollectibleGrid({
       ListFooterComponent={isLoadingMore ? <ActivityIndicator style={styles.footerLoading} color={AppColors.link} /> : null}
       onEndReachedThreshold={0.4}
       onEndReached={onEndReached}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
+        <Appear index={index}>
         <NftGridCard
           width={cardWidth}
           name={item.name}
@@ -300,6 +302,7 @@ function CollectibleGrid({
             { label: t('Owner Wallet'), value: shortenAddress(item.ownerWallet) },
           ]}
         />
+        </Appear>
       )}
     />
   );

@@ -6,6 +6,7 @@ import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { slugify, toggleDropLike, type Drop } from '@/services/drops-api';
 import { useTranslation } from 'react-i18next';
+import { haptic, PopIcon } from '@/components/motion';
 
 type Props = {
   drop: Drop;
@@ -55,8 +56,18 @@ export function DropSocialActions({ drop, commentsCount, onOpenComments }: Props
 
   return (
     <View style={styles.row}>
-      <Pressable style={styles.item} hitSlop={6} onPress={handleLike} accessibilityRole="button" accessibilityLabel={liked ? t('Unlike') : t('Like')}>
-        <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={liked ? AppColors.danger : AppColors.textPrimary} />
+      <Pressable
+        style={styles.item}
+        hitSlop={6}
+        onPress={() => {
+          haptic('light');
+          handleLike();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={liked ? t('Unlike') : t('Like')}>
+        <PopIcon active={liked}>
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={liked ? AppColors.danger : AppColors.textPrimary} />
+        </PopIcon>
         <Text style={styles.count}>{likes}</Text>
       </Pressable>
       <Pressable

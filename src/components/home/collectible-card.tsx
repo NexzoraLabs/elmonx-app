@@ -1,18 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
+import { CardImageBadges } from '@/components/collections/card-image-badges';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
-import { useTranslation } from 'react-i18next';
+import { PressableScale } from '@/components/motion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 function PriceLabel({ item }: { item: CollectionGridItem }) {
-  const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   if (!item.priceKind) return null;
@@ -21,14 +21,6 @@ function PriceLabel({ item }: { item: CollectionGridItem }) {
       <View style={styles.priceBadge}>
         <Ionicons name="logo-bitcoin" size={11} color={AppColors.gold} />
         <Text style={styles.priceBadgeText}>{item.price?.toLocaleString()}</Text>
-      </View>
-    );
-  }
-  if (item.priceKind === 'airdrop') {
-    return (
-      <View style={styles.priceBadge}>
-        <Ionicons name="gift-outline" size={11} color="#fff" />
-        <Text style={styles.priceBadgeText}>{t('Airdrop')}</Text>
       </View>
     );
   }
@@ -48,20 +40,23 @@ export function CollectibleCard({ item }: { item: CollectionGridItem }) {
   const AppColors = useAppColors();
   const styles = useStyles();
   return (
-    <Pressable
+    <PressableScale
+      pressScale="card"
       style={styles.card}
       onPress={() => router.push({ pathname: '/drop/[id]', params: { id: item.id } })}>
       <View style={styles.imageOuter}>
         {item.imageUrl ? (
           <Image
             source={{ uri: item.imageUrl }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
+            style={styles.artInset}
+            contentFit="contain"
             transition={150}
           />
         ) : (
           <PlaceholderThumb color={item.color} icon="diamond-outline" iconSize={28} style={StyleSheet.absoluteFill} />
         )}
+        {/* Same badges as the Collections grid (edition, blind box rarity, Airdrop). */}
+        <CardImageBadges item={item} />
       </View>
 
       <View style={styles.body}>
@@ -69,14 +64,6 @@ export function CollectibleCard({ item }: { item: CollectionGridItem }) {
           <Text style={styles.title} numberOfLines={1}>
             {item.title.toUpperCase()}
           </Text>
-          <View style={styles.arrowCircle}>
-            <Ionicons
-              name="arrow-forward-outline"
-              size={11}
-              color={AppColors.textPrimary}
-              style={styles.arrowIcon}
-            />
-          </View>
         </View>
 
         <View style={styles.bottomRow}>
@@ -89,7 +76,7 @@ export function CollectibleCard({ item }: { item: CollectionGridItem }) {
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -102,12 +89,19 @@ const useStyles = makeStyles((AppColors) => ({
     borderColor: AppColors.border,
     overflow: 'hidden',
   },
+  // Edge-to-edge well across the top of the card (the card's radius rounds its top corners).
   imageOuter: {
-    margin: 8,
     aspectRatio: 660 / 870,
-    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.imageWell,
+  },
+  /** Artwork sits inset in the edge-to-edge well, so it never touches the card edges. */
+  artInset: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    bottom: 12,
+    left: 12,
   },
   body: {
     paddingHorizontal: 10,
@@ -127,18 +121,6 @@ const useStyles = makeStyles((AppColors) => ({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-  arrowCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: AppColors.subtleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  arrowIcon: {
-    transform: [{ rotate: '-45deg' }],
   },
   bottomRow: {
     flexDirection: 'row',

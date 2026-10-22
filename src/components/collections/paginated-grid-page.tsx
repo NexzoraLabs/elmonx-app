@@ -63,7 +63,7 @@ export function PaginatedGridPage({
       columnWrapperStyle={layout === 'grid' ? styles.columnWrapper : undefined}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content}
-      renderItem={({ item }) => <CollectionGridCard item={item} layout={layout} />}
+      renderItem={({ item, index }) => <CollectionGridCard item={item} layout={layout} index={index} />}
       onEndReachedThreshold={0.4}
       onEndReached={loadMore}
       ItemSeparatorComponent={layout === 'single' ? () => <View style={styles.separator} /> : undefined}

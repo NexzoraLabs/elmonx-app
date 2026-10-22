@@ -19,6 +19,7 @@ import {
   WALLET_ADDRESS_RE,
 } from '@/services/purchase-api';
 import { useTranslation } from 'react-i18next';
+import { haptic } from '@/components/motion';
 
 type WalletSource = 'enter' | 'saved';
 
@@ -113,6 +114,7 @@ function Checkout({ drop, remaining, onClose, onPurchased }: Props & { drop: Dro
         onClose();
         // The new NFT is in the Vault now; the next View in 3D / Multi-Viewer must see it as owned.
         clearOwnedCollectiblesCache();
+        haptic('success');
         onPurchased();
         Alert.alert(t('Successful Purchase!'), t('{{name}} has been assigned to you.', { name: result.nftName || drop.title }));
         return;

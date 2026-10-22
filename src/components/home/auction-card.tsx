@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { type AuctionCard as AuctionCardData, auctionImage, formatCountdown } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
+import { PressableScale } from '@/components/motion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Show 2 full cards + gap in the scroll view (20px padding each side, 12px gap between)
@@ -39,7 +40,8 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
   const price = auction.status === 'Ended' ? auction.clearing_price : auction.current_price;
 
   return (
-    <Pressable
+    <PressableScale
+      pressScale="card"
       style={styles.card}
       onPress={() => router.push({ pathname: '/auction/[id]', params: { id: auction._id } })}>
       <View style={styles.imageWrap}>
@@ -73,7 +75,7 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -29,7 +29,7 @@ export function NftGridCard({ width, name, image, fields }: Props) {
         {image ? (
           <Image
             source={{ uri: image }}
-            style={StyleSheet.absoluteFill}
+            style={styles.artInset}
             contentFit="cover"
             transition={150}
           />
@@ -46,14 +46,6 @@ export function NftGridCard({ width, name, image, fields }: Props) {
           <Text style={styles.name} numberOfLines={1}>
             {name.toUpperCase()}
           </Text>
-          <View style={styles.arrowCircle}>
-            <Ionicons
-              name="arrow-forward-outline"
-              size={11}
-              color={AppColors.textPrimary}
-              style={styles.arrowIcon}
-            />
-          </View>
         </View>
 
         {fields.length > 0 && (
@@ -85,12 +77,19 @@ const useStyles = makeStyles((AppColors) => ({
     borderColor: AppColors.border,
     overflow: 'hidden',
   },
+  // Edge-to-edge well across the top of the card (the card's radius rounds its top corners).
   imageOuter: {
-    margin: 8,
     aspectRatio: 660 / 870,
-    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.imageWell,
+  },
+  /** Artwork sits inset in the edge-to-edge well, so it never touches the card edges. */
+  artInset: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    bottom: 12,
+    left: 12,
   },
   imagePlaceholder: {
     alignItems: 'center',
@@ -114,18 +113,6 @@ const useStyles = makeStyles((AppColors) => ({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-  arrowCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: AppColors.subtleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  arrowIcon: {
-    transform: [{ rotate: '-45deg' }],
   },
   fieldsRow: {
     flexDirection: 'row',

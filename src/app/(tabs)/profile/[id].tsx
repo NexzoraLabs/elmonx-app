@@ -18,6 +18,7 @@ import type { PublicProfile, PublicProfileStats, RelationshipStatus } from '@/se
 import * as profileApi from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 import { appLocale } from '@/i18n';
+import { TabIndicator } from '@/components/motion';
 
 type Tab = 'posts' | 'reposts';
 const SITE_URL = 'https://elmonx.com';
@@ -351,13 +352,13 @@ export default function PublicProfileScreen() {
               <Ionicons name="reader-outline" size={18} color={tab === 'posts' ? AppColors.textPrimary : AppColors.textSecondary} />
               <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>{t('Posts')}</Text>
             </View>
-            <View style={[styles.tabIndicator, tab === 'posts' && styles.tabIndicatorActive]} />
+            <TabIndicator active={tab === 'posts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
           </Pressable>
           <Pressable style={styles.tab} onPress={() => handleSelectTab('reposts')}>
             <View style={styles.tabContent}>
               <Ionicons name="repeat-outline" size={20} color={tab === 'reposts' ? AppColors.textPrimary : AppColors.textSecondary} />
             </View>
-            <View style={[styles.tabIndicator, tab === 'reposts' && styles.tabIndicatorActive]} />
+            <TabIndicator active={tab === 'reposts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
           </Pressable>
         </View>
       ) : null}

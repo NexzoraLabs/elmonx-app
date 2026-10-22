@@ -9,6 +9,7 @@ import { isGifUrl } from '@/services/giphy-api';
 import { resolveAvatar, type Post, type PostAuthor, type UserRepost } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { haptic, PopIcon } from '@/components/motion';
 
 export type FeedItem =
   | { kind: 'post'; key: string; post: Post; repostedByMe?: boolean }
@@ -266,12 +267,20 @@ export function PostCard({
       )}
 
       <View style={styles.engagementRow}>
-        <Pressable style={styles.engagementItem} hitSlop={6} onPress={() => onToggleLike(item)}>
-          <Ionicons
-            name={isLiked ? 'heart' : 'heart-outline'}
-            size={18}
-            color={isLiked ? AppColors.danger : AppColors.textSecondary}
-          />
+        <Pressable
+          style={styles.engagementItem}
+          hitSlop={6}
+          onPress={() => {
+            haptic('light');
+            onToggleLike(item);
+          }}>
+          <PopIcon active={isLiked}>
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isLiked ? AppColors.danger : AppColors.textSecondary}
+            />
+          </PopIcon>
           <Text style={styles.engagementLabel}>{compactCount(likesCount)}</Text>
         </Pressable>
         <Pressable style={styles.engagementItem} hitSlop={6} onPress={() => onComment(item)}>

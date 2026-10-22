@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Text, type ViewStyle } from 'react-native';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
+import { PressableScale } from '@/components/motion';
 
 type AuthButtonVariant = 'primary' | 'secondary';
 
@@ -30,7 +31,8 @@ export function AuthButton({
   const isPrimary = variant === 'primary';
 
   return (
-    <Pressable
+    <PressableScale
+      pressScale="button" haptic="light"
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       onPress={onPress}
@@ -59,7 +61,7 @@ export function AuthButton({
           </Text>
         </>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

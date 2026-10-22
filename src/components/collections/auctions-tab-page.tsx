@@ -6,6 +6,7 @@ import { makeStyles, useAppColors } from '@/context/theme-context';
 import { type AuctionCard, fetchAuctions } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { Appear } from '@/components/motion';
 
 const PAGE_SIZE = 12;
 const STATUS_FILTERS = ['All', 'Live', 'Upcoming', 'Ended'] as const;
@@ -98,7 +99,11 @@ export function AuctionsTabPage() {
           onEndReachedThreshold={0.4}
           onEndReached={() => { if (!loadingMore && page < totalPages) load(page + 1, status, true); }}
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={AppColors.link} /> : null}
-          renderItem={({ item }) => <AuctionCardHome auction={item} now={now} />}
+          renderItem={({ item, index }) => (
+            <Appear index={index}>
+              <AuctionCardHome auction={item} now={now} />
+            </Appear>
+          )}
         />
       )}
     </View>

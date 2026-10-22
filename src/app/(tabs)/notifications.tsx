@@ -21,6 +21,7 @@ import * as notifApi from '@/services/notifications-api';
 import type { AppNotification } from '@/services/notifications-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
+import { Appear } from '@/components/motion';
 
 const ITEMS_PER_PAGE = 10;
 // Website fallback for notifications without an NFT/drop image: black ElmonX logo on a white tile
@@ -148,10 +149,10 @@ export default function NotificationsScreen() {
             const prev = index > 0 ? items[index - 1] : null;
             const groupHeader = !prev || dayBucket(prev.created_at, now) !== bucket ? bucket : null;
             return (
-              <>
+              <Appear index={index}>
                 {groupHeader ? <GroupLabel label={groupHeader} /> : null}
                 <NotifRow item={item} onPress={() => setSelected(item)} />
-              </>
+              </Appear>
             );
           }}
         />
