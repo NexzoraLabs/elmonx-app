@@ -11,12 +11,14 @@ import { PostList } from '@/components/feed/post-list';
 import { HomeHeader } from '@/components/home/home-header';
 import { LevelRankCard } from '@/components/rewards/level-rank-card';
 import { CoverBanner } from '@/components/profile/cover-banner';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as profileApi from '@/services/profile-api';
 import type { MyProfileHeader } from '@/services/profile-api';
 import * as rewardsApi from '@/services/rewards-api';
 import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 type Tab = 'posts' | 'reposts';
 
@@ -24,10 +26,13 @@ const SITE_URL = 'https://elmonx.com';
 
 function formatMemberSince(iso?: string): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(appLocale('en-GB'), { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 export default function ProfileTabScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, updateUser } = useAuth();
   const [header, setHeader] = useState<MyProfileHeader | null>(null);
   const [tab, setTab] = useState<Tab>('posts');
@@ -59,7 +64,7 @@ export default function ProfileTabScreen() {
       }
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to load your profile.');
+      setError(e instanceof Error ? e.message : i18n.t('Unable to load your profile.'));
       return null;
     }
   }, [token]);
@@ -82,7 +87,7 @@ export default function ProfileTabScreen() {
         setPage(nextPage);
         setHasMore(batch.length === profileApi.POSTS_PAGE_SIZE);
       } catch (e) {
-        if (requestId === listRequest.current) setError(e instanceof Error ? e.message : 'Unable to load posts.');
+        if (requestId === listRequest.current) setError(e instanceof Error ? e.message : i18n.t('Unable to load posts.'));
       } finally {
         if (requestId === listRequest.current) {
           setIsLoadingList(false);
@@ -128,7 +133,7 @@ export default function ProfileTabScreen() {
     if (!token || uploading) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to change your picture.');
+      Alert.alert(t('Permission needed'), t('Allow photo access to change your picture.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -150,7 +155,7 @@ export default function ProfileTabScreen() {
         setHeader((prev) => (prev ? { ...prev, cover: url } : prev));
       }
     } catch (e) {
-      Alert.alert('Upload failed', e instanceof Error ? e.message : 'Please try again.');
+      Alert.alert(t('Upload failed'), e instanceof Error ? e.message : t('Please try again.'));
     } finally {
       setUploading(null);
     }
@@ -167,14 +172,14 @@ export default function ProfileTabScreen() {
       <CoverBanner uri={header?.cover}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Change cover image"
+          accessibilityLabel={t('Change cover image')}
           hitSlop={8}
           onPress={() => pickAndUpload('cover')}
           style={({ pressed }) => [styles.coverEdit, pressed && styles.pressed]}>
           {uploading === 'cover' ? (
-            <ActivityIndicator size="small" color={AppColors.textPrimary} />
+            <ActivityIndicator size="small" color={AppColors.onMedia} />
           ) : (
-            <Ionicons name="pencil" size={14} color={AppColors.textPrimary} />
+            <Ionicons name="pencil" size={14} color={AppColors.onMedia} />
           )}
         </Pressable>
       </CoverBanner>
@@ -182,7 +187,7 @@ export default function ProfileTabScreen() {
       <View style={styles.info}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Change profile picture"
+          accessibilityLabel={t('Change profile picture')}
           onPress={() => pickAndUpload('avatar')}
           style={styles.avatarWrap}>
           <Image
@@ -201,19 +206,19 @@ export default function ProfileTabScreen() {
 
         <Text style={styles.name}>{header?.userName ?? ''}</Text>
         {header?.createdAt ? (
-          <Text style={styles.memberSince}>Member since {formatMemberSince(header.createdAt)}</Text>
+          <Text style={styles.memberSince}>{t('Member since')}{' '}{formatMemberSince(header.createdAt)}</Text>
         ) : null}
 
         <View style={styles.statsRow}>
-          <Stat value={compactCount(header?.postsCount)} label="Post" />
+          <Stat value={compactCount(header?.postsCount)} label={t('Post')} />
           <Stat
             value={compactCount(header?.followersCount)}
-            label="Followers"
+            label={t('Followers')}
             onPress={() => router.push({ pathname: '/connections', params: { tab: 'followers' } })}
           />
           <Stat
             value={compactCount(header?.followingCount)}
-            label="Followings"
+            label={t('Followings')}
             onPress={() => router.push({ pathname: '/connections', params: { tab: 'following' } })}
           />
         </View>
@@ -228,12 +233,12 @@ export default function ProfileTabScreen() {
           <Pressable
             style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
             onPress={() => router.push('/personal-info')}>
-            <Text style={styles.actionLabel}>Edit Profile</Text>
+            <Text style={styles.actionLabel}>{t('Edit Profile')}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
             onPress={handleShareProfile}>
-            <Text style={styles.actionLabel}>Share Profile</Text>
+            <Text style={styles.actionLabel}>{t('Share Profile')}</Text>
           </Pressable>
         </View>
       </View>
@@ -246,7 +251,7 @@ export default function ProfileTabScreen() {
               size={18}
               color={tab === 'posts' ? AppColors.textPrimary : AppColors.textSecondary}
             />
-            <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>Posts</Text>
+            <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>{t('Posts')}</Text>
           </View>
           <View style={[styles.tabIndicator, tab === 'posts' && styles.tabIndicatorActive]} />
         </Pressable>
@@ -264,7 +269,7 @@ export default function ProfileTabScreen() {
     </View>
   );
 
-  const emptyText = tab === 'posts' ? "You haven't posted anything yet." : "You haven't reposted anything yet.";
+  const emptyText = tab === 'posts' ? t("You haven't posted anything yet.") : t("You haven't reposted anything yet.");
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -299,6 +304,7 @@ export default function ProfileTabScreen() {
 }
 
 function Stat({ value, label, onPress }: { value: string; label: string; onPress?: () => void }) {
+  const styles = useStyles();
   if (onPress) {
     return (
       <Pressable style={({ pressed }) => [styles.stat, pressed && styles.pressed]} onPress={onPress}>
@@ -315,7 +321,7 @@ function Stat({ value, label, onPress }: { value: string; label: string; onPress
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -482,4 +488,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 40,
   },
-});
+}));

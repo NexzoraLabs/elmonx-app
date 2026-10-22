@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
   fetchAuctions,
   formatCountdown,
@@ -21,6 +21,7 @@ import {
   type AuctionCard,
   type AuctionList,
 } from '@/services/auction-api';
+import { useTranslation } from 'react-i18next';
 
 type AuctionTab = 'live' | 'upcoming' | 'ended';
 
@@ -33,6 +34,9 @@ const TABS: { key: AuctionTab; label: string }[] = [
 const LIMIT = 12;
 
 function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const img = auctionImage(auction.drop);
   const isLive = auction.status === 'Live';
   const isUpcoming = auction.status === 'Upcoming';
@@ -42,12 +46,12 @@ function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }
   else if (isUpcoming) timeLeft = formatCountdown(new Date(auction.start_time).getTime() - now);
 
   const priceLabel = isUpcoming
-    ? 'Starting bid'
+    ? t('Starting bid')
     : auction.status === 'Ended'
-    ? (auction.clearing_price != null ? 'Sold at' : 'Ended')
+    ? (auction.clearing_price != null ? t('Sold at') : t('Ended'))
     : auction.total_bids > 0
-    ? 'Current bid'
-    : 'Starting bid';
+    ? t('Current bid')
+    : t('Starting bid');
 
   const price = auction.status === 'Ended' ? auction.clearing_price : auction.current_price;
 
@@ -64,23 +68,23 @@ function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }
         {isLive && (
           <View style={styles.livePill}>
             <View style={styles.liveDot} />
-            <Text style={styles.livePillText}>Live</Text>
+            <Text style={styles.livePillText}>{t('Live')}</Text>
           </View>
         )}
       </View>
       <View style={styles.listInfo}>
         <Text style={styles.listTitle} numberOfLines={2}>{auction.drop?.title ?? '—'}</Text>
         {timeLeft ? (
-          <Text style={styles.listTime}>{isLive ? 'Ends in ' : 'Starts in '}{timeLeft}</Text>
+          <Text style={styles.listTime}>{isLive ? t('Ends in ') : t('Starts in ')}{timeLeft}</Text>
         ) : null}
         <View style={styles.listPriceRow}>
           <Text style={styles.listPriceLabel}>{priceLabel}</Text>
           {price != null ? (
-            <Text style={styles.listPrice}>{price.toLocaleString()} X</Text>
+            <Text style={styles.listPrice}>{price.toLocaleString()}{' '}{t('X')}</Text>
           ) : null}
         </View>
         <Text style={styles.listEditions}>
-          {auction.editions === 1 ? '1 of 1' : `${auction.editions} editions`}
+          {auction.editions === 1 ? t('1 of 1') : t('{{n}} editions', { n: auction.editions })}
         </Text>
       </View>
     </Pressable>
@@ -88,6 +92,9 @@ function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }
 }
 
 export default function AuctionsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [activeTab, setActiveTab] = useState<AuctionTab>('live');
   const [auctions, setAuctions] = useState<AuctionCard[]>([]);
   const [total, setTotal] = useState(0);
@@ -157,14 +164,14 @@ export default function AuctionsScreen() {
         <Pressable hitSlop={8} onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Auctions</Text>
+        <Text style={styles.headerTitle}>{t('Auctions')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
-        {TABS.map((t) => (
-          <Pressable key={t.key} onPress={() => selectTab(t.key)} style={[styles.tab, activeTab === t.key && styles.tabActive]}>
-            <Text style={[styles.tabText, activeTab === t.key && styles.tabTextActive]}>{t.label}</Text>
+        {TABS.map((tab) => (
+          <Pressable key={tab.key} onPress={() => selectTab(tab.key)} style={[styles.tab, activeTab === tab.key && styles.tabActive]}>
+            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>{t(tab.label)}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -175,14 +182,14 @@ export default function AuctionsScreen() {
         </View>
       ) : error ? (
         <View style={styles.centered}>
-          <Text style={styles.errorText}>Failed to load auctions</Text>
+          <Text style={styles.errorText}>{t('Failed to load auctions')}</Text>
           <Pressable onPress={() => load(activeTab)} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>{t('Retry')}</Text>
           </Pressable>
         </View>
       ) : auctions.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No {activeTab} auctions</Text>
+          <Text style={styles.emptyText}>{t('No')}{' '}{activeTab}{' '}{t('auctions')}</Text>
         </View>
       ) : (
         <FlatList
@@ -201,7 +208,7 @@ export default function AuctionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safe: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -357,4 +364,4 @@ const styles = StyleSheet.create({
   moreSpinner: {
     marginVertical: 16,
   },
-});
+}));

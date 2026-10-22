@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "Permet de prendre des photos pour vos publications et de voir vos objets de collection en réalité augmentée avec l'appareil photo.",
+    "NSMicrophoneUsageDescription": "Permet d'enregistrer des vidéos de vos objets de collection en 3D et en RA avec le son.",
+    "NSPhotoLibraryAddUsageDescription": "Permet d'enregistrer les photos et vidéos de vos objets de collection dans votre photothèque.",
+    "NSPhotoLibraryUsageDescription": "Permet de choisir une photo pour votre photo de profil et votre image de couverture."
+  }
+}

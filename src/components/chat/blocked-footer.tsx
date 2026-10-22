@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type BlockedFooterProps = {
   username: string;
@@ -9,23 +10,25 @@ type BlockedFooterProps = {
 };
 
 export function BlockedFooter({ username, onUnblock, onDelete }: BlockedFooterProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>You blocked {username}</Text>
-      <Text style={styles.subtitle}>You can&apos;t message this profile unless you unblock them.</Text>
+      <Text style={styles.title}>{t('You blocked')}{' '}{username}</Text>
+      <Text style={styles.subtitle}>{t('You can\'t message this profile unless you unblock them.')}</Text>
       <View style={styles.buttonRow}>
         <Pressable style={[styles.button, styles.unblockButton]} onPress={onUnblock}>
-          <Text style={styles.unblockLabel}>Unblock</Text>
+          <Text style={styles.unblockLabel}>{t('Unblock')}</Text>
         </Pressable>
         <Pressable style={[styles.button, styles.deleteButton]} onPress={onDelete}>
-          <Text style={styles.deleteLabel}>Delete Chat</Text>
+          <Text style={styles.deleteLabel}>{t('Delete Chat')}</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -71,4 +74,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}));

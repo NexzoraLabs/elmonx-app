@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/config/env';
 import { appendLocalFile } from '@/services/upload-file';
+import i18n from '@/i18n';
 
 // Same fallbacks the website uses when a user has no avatar/cover.
 const DEFAULT_AVATAR_PATH = 'images/avatar/default.png';
@@ -22,7 +23,7 @@ class ProfileApiError extends Error {
 function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // HTTP 200 comes back even for logical failures; 201 in the body means a validation error here.
   if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new ProfileApiError(envelope.message || 'Something went wrong.');
+    throw new ProfileApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }

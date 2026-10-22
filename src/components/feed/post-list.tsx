@@ -5,11 +5,12 @@ import { ActivityIndicator, Alert, FlatList, RefreshControl, Share, StyleSheet }
 import { CommentsSheet } from '@/components/feed/comments-sheet';
 import { isOwnItem, PostCard, type FeedItem } from '@/components/feed/post-card';
 import { PostOptionsSheet, type PostOptionsTarget } from '@/components/feed/post-options-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import type { CommentTarget } from '@/services/feed-api';
 import * as profileApi from '@/services/profile-api';
 import type { PostAuthor } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
 
 const SITE_URL = 'https://elmonx.com';
 
@@ -40,6 +41,8 @@ export function PostList({
   onRefresh,
   onOwnPostDeleted,
 }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
   const { token } = useAuth();
   const [commentFor, setCommentFor] = useState<{ key: string; target: CommentTarget; viewPostId?: string } | null>(
     null
@@ -50,7 +53,7 @@ export function PostList({
     setItems((prev) => prev.map((item) => (item.key === key ? change(item) : item)));
 
   const showError = (e: unknown, fallback: string) =>
-    Alert.alert('Error', e instanceof Error ? e.message : fallback);
+    Alert.alert(t('Error'), e instanceof Error ? e.message : fallback);
 
   const handleToggleLike = async (item: FeedItem) => {
     if (!token) return;
@@ -69,7 +72,7 @@ export function PostList({
         );
       }
     } catch (e) {
-      showError(e, 'Unable to update like.');
+      showError(e, t('Unable to update like.'));
     }
   };
 
@@ -100,7 +103,7 @@ export function PostList({
           : current
       );
     } catch (e) {
-      showError(e, 'Unable to repost.');
+      showError(e, t('Unable to repost.'));
     }
   };
 
@@ -113,10 +116,10 @@ export function PostList({
   const handleDelete = (item: FeedItem) => {
     if (!token) return;
     const isRepost = item.kind === 'repost';
-    Alert.alert(isRepost ? 'Delete repost' : 'Delete post', 'Are you sure? This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(isRepost ? t('Delete repost') : t('Delete post'), t('Are you sure? This cannot be undone.'), [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('Delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -125,7 +128,7 @@ export function PostList({
             setItems((prev) => prev.filter((i) => i.key !== item.key));
             if (!isRepost) onOwnPostDeleted?.();
           } catch (e) {
-            showError(e, 'Unable to delete.');
+            showError(e, t('Unable to delete.'));
           }
         },
       },

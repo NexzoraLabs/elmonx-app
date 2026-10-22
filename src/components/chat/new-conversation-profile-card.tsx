@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   username: string;
@@ -12,21 +13,24 @@ type Props = {
 
 /** Empty thread (website: "No messages yet. Say hi!"). */
 export function NewConversationProfileCard({ username, avatarUrl, onViewProfile }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
       <Text style={styles.username}>@{username}</Text>
-      <Text style={styles.meta}>No messages yet. Say hi!</Text>
+      <Text style={styles.meta}>{t('No messages yet. Say hi!')}</Text>
 
       <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]} onPress={onViewProfile}>
         <Ionicons name="person-outline" size={16} color={AppColors.textPrimary} />
-        <Text style={styles.actionLabel}>View Profile</Text>
+        <Text style={styles.actionLabel}>{t('View Profile')}</Text>
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -69,4 +73,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-});
+}));

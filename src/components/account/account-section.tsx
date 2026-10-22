@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { AccountSection as AccountSectionData } from '@/data/account-menu';
 
 type AccountSectionProps = {
@@ -9,6 +10,8 @@ type AccountSectionProps = {
   onPressRow: (key: string) => void;
   toggleValues?: Record<string, boolean>;
   onToggleChange?: (key: string, value: boolean) => void;
+  /** Row that is busy (e.g. Multi-Viewer loading): spinner instead of the chevron, taps ignored. */
+  loadingKey?: string;
 };
 
 export function AccountSection({
@@ -16,21 +19,26 @@ export function AccountSection({
   onPressRow,
   toggleValues = {},
   onToggleChange,
+  loadingKey,
 }: AccountSectionProps) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{section.title}</Text>
+      <Text style={styles.title}>{t(section.title)}</Text>
       {section.rows.map((row) => {
         const isToggle = row.type === 'toggle';
+        const isLoading = row.key === loadingKey;
         return (
           <Pressable
             key={row.key}
             style={({ pressed }) => [styles.row, pressed && !isToggle && styles.rowPressed]}
-            disabled={isToggle}
+            disabled={isToggle || isLoading}
             onPress={() => onPressRow(row.key)}>
             <View style={styles.rowLeft}>
               <Ionicons name={row.icon} size={20} color={AppColors.textPrimary} />
-              <Text style={styles.label}>{row.label}</Text>
+              <Text style={styles.label}>{t(row.label)}</Text>
             </View>
             {isToggle ? (
               <Switch
@@ -39,6 +47,8 @@ export function AccountSection({
                 trackColor={{ false: AppColors.border, true: AppColors.buttonPrimaryBg }}
                 thumbColor={AppColors.textPrimary}
               />
+            ) : isLoading ? (
+              <ActivityIndicator size="small" color={AppColors.textSecondary} />
             ) : (
               <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
             )}
@@ -49,7 +59,7 @@ export function AccountSection({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     marginBottom: 24,
   },
@@ -81,4 +91,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-});
+}));

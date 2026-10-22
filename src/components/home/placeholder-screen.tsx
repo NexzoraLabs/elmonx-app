@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type PlaceholderScreenProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -10,6 +11,9 @@ type PlaceholderScreenProps = {
 };
 
 export function PlaceholderScreen({ icon, title }: PlaceholderScreenProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
@@ -17,13 +21,13 @@ export function PlaceholderScreen({ icon, title }: PlaceholderScreenProps) {
           <Ionicons name={icon} size={28} color={AppColors.textSecondary} />
         </View>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>This screen is coming soon.</Text>
+        <Text style={styles.subtitle}>{t('This screen is coming soon.')}</Text>
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -51,4 +55,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 13,
   },
-});
+}));

@@ -1,21 +1,23 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { ConversationItem } from '@/services/chat-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 export function formatChatTime(iso?: string): string {
   if (!iso) return '';
   const date = new Date(iso);
   const now = new Date();
   const sameDay = date.toDateString() === now.toDateString();
-  if (sameDay) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (sameDay) return date.toLocaleTimeString(appLocale('en-US'), { hour: 'numeric', minute: '2-digit' });
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  if (date.toDateString() === yesterday.toDateString()) return i18n.t('Yesterday');
+  return date.toLocaleDateString(appLocale('en-GB'), { day: '2-digit', month: 'short' });
 }
 
 type Props = {
@@ -25,11 +27,15 @@ type Props = {
 };
 
 export function ConversationRow({ conversation, online, typing }: Props) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const participant = conversation.participant;
   const unread = conversation.unread_count > 0;
   const preview = conversation.last_message
-    ? `${conversation.last_message_is_mine ? 'You: ' : ''}${conversation.last_message}`
-    : 'No messages yet';
+    ? conversation.last_message_is_mine
+      ? t('You: {{message}}', { message: conversation.last_message })
+      : conversation.last_message
+    : t('No messages yet');
 
   return (
     <Pressable
@@ -59,7 +65,7 @@ export function ConversationRow({ conversation, online, typing }: Props) {
           @{participant.user_name}
         </Text>
         <Text style={[styles.preview, typing && styles.typing, unread && styles.previewUnread]} numberOfLines={1}>
-          {typing ? 'typing…' : preview}
+          {typing ? t('typing…') : preview}
         </Text>
       </View>
 
@@ -75,7 +81,7 @@ export function ConversationRow({ conversation, online, typing }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,4 +154,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-});
+}));

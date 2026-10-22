@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 export type RankInfoTopic = 'level' | 'rank';
 
@@ -56,11 +57,14 @@ type Props = {
 };
 
 export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <BottomSheet visible={topic !== null} onClose={onClose}>
       <View style={styles.header}>
-        <Text style={styles.title}>{topic ? TITLES[topic] : ''}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose} style={styles.close}>
+        <Text style={styles.title}>{topic ? t(TITLES[topic]) : ''}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={onClose} style={styles.close}>
           <Ionicons name="close" size={18} color={AppColors.textPrimary} />
         </Pressable>
       </View>
@@ -69,20 +73,17 @@ export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
         {topic === 'level' ? (
           <>
             <Text style={styles.paragraph}>
-              You earn XP by completing daily actions and social quests — the more you do, the faster you level up. Each
-              level takes a little more XP than the one before, so progress is quick at first and stretches out the further
-              you climb.
+              {t('You earn XP by completing daily actions and social quests — the more you do, the faster you level up. Each level takes a little more XP than the one before, so progress is quick at first and stretches out the further you climb.')}
             </Text>
             <Text style={styles.paragraph}>
-              Your progress bar shows how close you are to the next level — once it fills up, you level up automatically and
-              the bar resets.
+              {t('Your progress bar shows how close you are to the next level — once it fills up, you level up automatically and the bar resets.')}
             </Text>
-            <Text style={styles.sectionLabel}>XP NEEDED BY LEVEL</Text>
+            <Text style={styles.sectionLabel}>{t('XP NEEDED BY LEVEL')}</Text>
             <View style={styles.grid}>
               {LEVEL_XP_TABLE.map((row) => (
                 <View key={row.level} style={styles.gridCell}>
-                  <Text style={styles.cellLevel}>LVL {row.level}</Text>
-                  <Text style={styles.cellXp}>{row.xp} XP</Text>
+                  <Text style={styles.cellLevel}>{t('LVL')}{' '}{row.level}</Text>
+                  <Text style={styles.cellXp}>{row.xp}{' '}{t('XP')}</Text>
                 </View>
               ))}
             </View>
@@ -90,31 +91,31 @@ export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
         ) : topic === 'rank' ? (
           <>
             <Text style={styles.paragraph}>
-              Your rank is based on your level — climb through ten ranks as you level up, from Viewing all the way to Canon.
+              {t('Your rank is based on your level — climb through ten ranks as you level up, from Viewing all the way to Canon.')}
             </Text>
             <View style={styles.tierList}>
-              {RANK_TIERS.map((t, i) => {
-                const isYou = t.tier === currentTier;
+              {RANK_TIERS.map((tier, i) => {
+                const isYou = tier.tier === currentTier;
                 return (
                   <View
-                    key={t.tier}
+                    key={tier.tier}
                     style={[styles.tierRow, i < RANK_TIERS.length - 1 && styles.tierDivider, isYou && styles.tierRowYou]}>
                     <View style={styles.tierNameWrap}>
-                      <Text style={styles.tierName}>{t.name}</Text>
+                      <Text style={styles.tierName}>{tier.name}</Text>
                       {isYou ? (
                         <View style={styles.youBadge}>
-                          <Text style={styles.youText}>YOU</Text>
+                          <Text style={styles.youText}>{t('YOU')}</Text>
                         </View>
                       ) : null}
                     </View>
                     <Text style={styles.tierRange}>
-                      Level {t.minLevel}–{t.maxLevel}
+                      {t('Level')}{' '}{tier.minLevel}–{tier.maxLevel}
                     </Text>
                   </View>
                 );
               })}
             </View>
-            <Text style={styles.note}>More rank perks are on the way — for now, your rank simply tracks your level.</Text>
+            <Text style={styles.note}>{t('More rank perks are on the way — for now, your rank simply tracks your level.')}</Text>
           </>
         ) : null}
       </ScrollView>
@@ -122,7 +123,7 @@ export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,7 +206,7 @@ const styles = StyleSheet.create({
     borderBottomColor: AppColors.border,
   },
   tierRowYou: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
   },
   tierNameWrap: {
     flexDirection: 'row',
@@ -239,4 +240,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-});
+}));

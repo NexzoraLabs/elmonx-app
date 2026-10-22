@@ -1,32 +1,24 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
-/**
- * Text placeholder for the ElmonX wordmark. Swap for the exported
- * logo asset (SVG/PNG) from Figma once available.
- */
+// White ELMONX wordmark (644×83 PNG, transparent), tinted to the theme's text colour.
+const WORDMARK = require('@/assets/images/elmonx-wordmark.png');
+const WORDMARK_RATIO = 644 / 83;
+
+/** The ElmonX wordmark used in headers. `size` is the logo's height in points. */
 export function LogoMark({ size = 16 }: { size?: number }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
   return (
-    <View style={styles.row}>
-      <Text style={[styles.glyph, { fontSize: size }]}>☰</Text>
-      <Text style={[styles.word, { fontSize: size }]}>LMONX</Text>
-    </View>
+    <Image
+      source={WORDMARK}
+      style={{ height: size, width: size * WORDMARK_RATIO }}
+      contentFit="contain"
+      tintColor={AppColors.textPrimary}
+      accessibilityRole="image"
+      accessibilityLabel={t('ElmonX')}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  glyph: {
-    color: AppColors.textPrimary,
-  },
-  word: {
-    color: AppColors.textPrimary,
-    fontWeight: '700',
-    letterSpacing: 3,
-  },
-});

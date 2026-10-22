@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type UnblockUserSheetProps = {
   visible: boolean;
@@ -11,13 +12,15 @@ type UnblockUserSheetProps = {
 };
 
 export function UnblockUserSheet({ visible, onClose, username, onConfirm }: UnblockUserSheetProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Unblock {username}</Text>
-      <Text style={styles.subtitle}>Are you sure you want to unblock this user.</Text>
+      <Text style={styles.title}>{t('Unblock')}{' '}{username}</Text>
+      <Text style={styles.subtitle}>{t('Are you sure you want to unblock this user.')}</Text>
       <View style={styles.buttonRow}>
         <Pressable style={[styles.button, styles.cancelButton]} onPress={onClose}>
-          <Text style={styles.cancelLabel}>Cancel</Text>
+          <Text style={styles.cancelLabel}>{t('Cancel')}</Text>
         </Pressable>
         <Pressable
           style={[styles.button, styles.confirmButton]}
@@ -25,14 +28,14 @@ export function UnblockUserSheet({ visible, onClose, username, onConfirm }: Unbl
             onConfirm();
             onClose();
           }}>
-          <Text style={styles.confirmLabel}>Unblock</Text>
+          <Text style={styles.confirmLabel}>{t('Unblock')}</Text>
         </Pressable>
       </View>
     </BottomSheet>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 17,
@@ -71,4 +74,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}));

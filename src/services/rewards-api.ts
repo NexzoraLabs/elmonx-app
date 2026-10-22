@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 type ApiEnvelope<T> = {
   status: number;
@@ -19,7 +20,7 @@ function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // This backend often responds with HTTP 200 regardless of logical outcome — the real
   // success/failure signal is `success`/`status` in the JSON body itself.
   if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new RewardsApiError(envelope.message || 'Something went wrong.');
+    throw new RewardsApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }

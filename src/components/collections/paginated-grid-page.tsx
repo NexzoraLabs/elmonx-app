@@ -1,8 +1,9 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 
 import { CollectionGridCard } from '@/components/collections/collection-grid-card';
 import { SkeletonGrid } from '@/components/collections/skeleton-grid';
-import { AppColors } from '@/constants/app-colors';
+import { useTranslation } from 'react-i18next';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
 import { usePaginatedList } from '@/hooks/use-paginated-list';
 import type { PagedResult } from '@/services/drops-api';
@@ -19,9 +20,14 @@ export function PaginatedGridPage({
   layout,
   fetchPage,
   skeletonCount = 6,
-  emptyMessage = 'Nothing here yet.',
-  errorMessage = "Couldn't load. Pull to try again later.",
+  emptyMessage,
+  errorMessage,
 }: PaginatedGridPageProps) {
+  const { t } = useTranslation();
+  emptyMessage ??= t('Nothing here yet.');
+  errorMessage ??= t("Couldn't load. Pull to try again later.");
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { items, loading, loadingMore, error, loadMore } = usePaginatedList(fetchPage);
 
   if (loading) {
@@ -72,7 +78,7 @@ export function PaginatedGridPage({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   flexFill: {
     flex: 1,
   },
@@ -107,4 +113,4 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-});
+}));

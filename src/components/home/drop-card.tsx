@@ -4,13 +4,17 @@ import { router } from 'expo-router';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 export function DropCard({ item }: { item: CollectionGridItem }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       style={styles.card}
@@ -29,7 +33,7 @@ export function DropCard({ item }: { item: CollectionGridItem }) {
         {item.isUpcoming ? (
           <View style={styles.upcomingBadge}>
             <View style={styles.upcomingDot} />
-            <Text style={styles.upcomingText}>Upcoming</Text>
+            <Text style={styles.upcomingText}>{t('Upcoming')}</Text>
           </View>
         ) : null}
       </View>
@@ -59,7 +63,7 @@ export function DropCard({ item }: { item: CollectionGridItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -140,4 +144,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 11,
   },
-});
+}));

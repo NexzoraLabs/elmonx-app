@@ -2,36 +2,41 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { isSpecialDrop, type BlindBoxItemData, type Drop } from '@/services/drops-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const CARD_WIDTH = 180;
 
 type RarityStyle = { label: string; colors: [string, string] };
 
 /** Website rarity-badge: substring match in this order. */
-function rarityStyle(rarity?: string): RarityStyle | null {
+function rarityStyle(rarity: string | undefined, fallbackColor: string): RarityStyle | null {
   if (!rarity) return null;
   const value = rarity.toLowerCase();
   if (value.includes('regular')) return { label: rarity, colors: ['#708090', '#4682b4'] };
   if (value.includes('secret')) return { label: 'Secret Rare', colors: ['#FFD700', '#B5A642'] };
   if (value.includes('legendary')) return { label: rarity, colors: ['#673AB7', '#3119bd'] };
   if (value.includes('rare')) return { label: rarity, colors: ['#228B22', '#50C878'] };
-  return { label: rarity, colors: [AppColors.border, AppColors.border] };
+  return { label: rarity, colors: [fallbackColor, fallbackColor] };
 }
 
 /** Website odds: dropRemaining / itemRemaining, "0 in X" once the item is sold out. */
 function oddsText(drop: Drop, item: BlindBoxItemData): string {
   const dropRemaining = (drop.total_editions || 0) - (drop.consumed_editions || 0);
   const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
-  if (item.total_editions === item.consumed_editions) return `Odds: 0 in ${dropRemaining}`;
+  if (item.total_editions === item.consumed_editions) return i18n.t('Odds: 0 in {{n}}', { n: dropRemaining });
   const calc = dropRemaining <= 0 || itemRemaining <= 0 ? '0' : (dropRemaining / itemRemaining).toFixed(2);
-  return `Odds: 1 in ${calc}`;
+  return i18n.t('Odds: 1 in {{n}}', { n: calc });
 }
 
 export function BlindBoxItems({ drop }: { drop: Drop }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const items = Array.isArray(drop.blind_box_items_data) ? drop.blind_box_items_data : [];
   if (items.length === 0) return null;
   const special = isSpecialDrop(drop._id);
@@ -39,11 +44,11 @@ export function BlindBoxItems({ drop }: { drop: Drop }) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Blind Box Items</Text>
+      <Text style={styles.heading}>{t('Blind Box Items')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.list}>
         {items.map((item) => {
           const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
-          const rarity = special ? null : rarityStyle(item.rarity);
+          const rarity = special ? null : rarityStyle(item.rarity, AppColors.border);
           const image = item.image?.[0]?.url;
           return (
             <Pressable
@@ -72,13 +77,13 @@ export function BlindBoxItems({ drop }: { drop: Drop }) {
 
                 <View style={styles.oddsRow}>
                   <Text style={styles.meta}>{oddsText(drop, item)}</Text>
-                  <Text style={styles.meta}>{itemRemaining} left</Text>
+                  <Text style={styles.meta}>{itemRemaining}{' '}{t('left')}</Text>
                 </View>
 
                 <View style={styles.footerRow}>
                   {rarity ? (
                     <LinearGradient colors={rarity.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.rarityBadge}>
-                      <Text style={styles.rarityText}>{rarity.label}</Text>
+                      <Text style={styles.rarityText}>{t(rarity.label)}</Text>
                     </LinearGradient>
                   ) : (
                     <View />
@@ -101,7 +106,7 @@ export function BlindBoxItems({ drop }: { drop: Drop }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   section: {
     marginTop: 20,
   },
@@ -191,4 +196,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

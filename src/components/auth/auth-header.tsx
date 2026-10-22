@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type AuthHeaderProps = {
   title?: string;
@@ -10,11 +11,14 @@ type AuthHeaderProps = {
 };
 
 export function AuthHeader({ title, onBack }: AuthHeaderProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('Go back')}
         onPress={onBack ?? (() => router.back())}
         hitSlop={8}
         style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -25,7 +29,7 @@ export function AuthHeader({ title, onBack }: AuthHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -47,4 +51,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-});
+}));

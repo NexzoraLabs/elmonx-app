@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 
 type Props = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -14,6 +14,8 @@ type Props = {
 };
 
 export function RewardIconRow({ icon, title, description, pointsLabel, extra, children }: Props) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -35,7 +37,7 @@ export function RewardIconRow({ icon, title, description, pointsLabel, extra, ch
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}));

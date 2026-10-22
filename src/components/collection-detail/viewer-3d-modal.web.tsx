@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -13,7 +13,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 const MIN_SCALE = 0.4;
 const MAX_SCALE = 4.5;
@@ -30,6 +31,9 @@ type Viewer3DModalProps = {
 // Web build: react-native-view-shot / expo-media-library have no web target,
 // so capture-to-Photos is unavailable here. Rotate + pinch-zoom still work.
 export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DModalProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [isPlaying, setIsPlaying] = useState(true);
 
   const rotation = useSharedValue(0);
@@ -108,21 +112,21 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
           <View style={styles.controls}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Zoom out"
+              accessibilityLabel={t('Zoom out')}
               style={styles.controlButton}
               onPress={() => zoomBy(-ZOOM_STEP)}>
               <Ionicons name="remove" size={20} color={AppColors.textPrimary} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? 'Pause rotation' : 'Resume rotation'}
+              accessibilityLabel={isPlaying ? t('Pause rotation') : t('Resume rotation')}
               style={styles.controlButton}
               onPress={() => setIsPlaying((prev) => !prev)}>
               <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color={AppColors.textPrimary} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Zoom in"
+              accessibilityLabel={t('Zoom in')}
               style={styles.controlButton}
               onPress={() => zoomBy(ZOOM_STEP)}>
               <Ionicons name="add" size={20} color={AppColors.textPrimary} />
@@ -134,7 +138,7 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -202,4 +206,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

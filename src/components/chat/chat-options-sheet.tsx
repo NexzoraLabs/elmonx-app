@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type ChatOptionsSheetProps = {
   visible: boolean;
@@ -25,6 +26,7 @@ export function ChatOptionsSheet({
   onBlockToggle,
   onDelete,
 }: ChatOptionsSheetProps) {
+  const { t } = useTranslation();
   const action = (fn: () => void) => () => {
     onClose();
     fn();
@@ -32,15 +34,15 @@ export function ChatOptionsSheet({
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Row icon="person-outline" label="View Profile" onPress={action(onViewProfile)} />
+      <Row icon="person-outline" label={t('View Profile')} onPress={action(onViewProfile)} />
       <Row
         icon="ban-outline"
-        label={isBlocked ? `Unblock @${username}` : `Block @${username}`}
+        label={isBlocked ? t('Unblock @{{username}}', { username }) : t('Block @{{username}}', { username })}
         onPress={action(onBlockToggle)}
         danger={!isBlocked}
         last={!canDelete}
       />
-      {canDelete ? <Row icon="trash-outline" label="Delete Chat" onPress={action(onDelete)} danger last /> : null}
+      {canDelete ? <Row icon="trash-outline" label={t('Delete Chat')} onPress={action(onDelete)} danger last /> : null}
     </BottomSheet>
   );
 }
@@ -58,6 +60,8 @@ function Row({
   danger?: boolean;
   last?: boolean;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       style={[styles.row, !last && styles.rowBorder]}
@@ -68,7 +72,7 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -87,4 +91,4 @@ const styles = StyleSheet.create({
   labelDanger: {
     color: AppColors.danger,
   },
-});
+}));

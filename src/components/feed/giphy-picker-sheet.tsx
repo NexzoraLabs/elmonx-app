@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
   GIPHY_PAGE_SIZE,
   getTrendingGifs,
@@ -22,6 +22,7 @@ import {
   trendingStartOffset,
   type GiphyGif,
 } from '@/services/giphy-api';
+import { useTranslation } from 'react-i18next';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const COLUMNS = 3;
@@ -41,12 +42,14 @@ type GiphyPickerSheetProps = {
  * so the sheet sits above the keyboard while searching.
  */
 export function GiphyPickerSheet({ visible, onClose, onSelect }: GiphyPickerSheetProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   // Mounted only while open, so every open starts fresh with new trending GIFs.
   if (!visible) return null;
   return (
     <View style={styles.overlay}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Dismiss" />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={t('Dismiss')} />
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.grabber} />
         <GiphyPickerBody onClose={onClose} onSelect={onSelect} />
@@ -56,6 +59,9 @@ export function GiphyPickerSheet({ visible, onClose, onSelect }: GiphyPickerShee
 }
 
 function GiphyPickerBody({ onClose, onSelect }: Omit<GiphyPickerSheetProps, 'visible'>) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const [gifs, setGifs] = useState<GiphyGif[]>([]);
@@ -123,10 +129,10 @@ function GiphyPickerBody({ onClose, onSelect }: Omit<GiphyPickerSheetProps, 'vis
   };
 
   const renderEmpty = () => {
-    if (!isGiphyConfigured) return <Text style={styles.message}>GIF search is unavailable right now.</Text>;
+    if (!isGiphyConfigured) return <Text style={styles.message}>{t('GIF search is unavailable right now.')}</Text>;
     if (loading) return <ActivityIndicator style={styles.message} color={AppColors.textSecondary} />;
     const term = query.trim();
-    return <Text style={styles.message}>{term ? `No GIFs found for “${term}”.` : 'No GIFs found.'}</Text>;
+    return <Text style={styles.message}>{term ? t('No GIFs found for “{{term}}”.', { term }) : t('No GIFs found.')}</Text>;
   };
 
   return (
@@ -137,20 +143,20 @@ function GiphyPickerBody({ onClose, onSelect }: Omit<GiphyPickerSheetProps, 'vis
           <TextInput
             value={query}
             onChangeText={handleQueryChange}
-            placeholder="Search GIFs"
+            placeholder={t('Search GIFs')}
             placeholderTextColor={AppColors.textPlaceholder}
             autoCorrect={false}
             returnKeyType="search"
             style={styles.searchInput}
-            accessibilityLabel="Search GIFs"
+            accessibilityLabel={t('Search GIFs')}
           />
           {query ? (
-            <Pressable hitSlop={8} onPress={() => handleQueryChange('')} accessibilityLabel="Clear search">
+            <Pressable hitSlop={8} onPress={() => handleQueryChange('')} accessibilityLabel={t('Clear search')}>
               <Ionicons name="close-circle" size={16} color={AppColors.textPlaceholder} />
             </Pressable>
           ) : null}
         </View>
-        <Pressable hitSlop={8} onPress={onClose} accessibilityLabel="Close GIF picker" style={styles.closeButton}>
+        <Pressable hitSlop={8} onPress={onClose} accessibilityLabel={t('Close GIF picker')} style={styles.closeButton}>
           <Ionicons name="close" size={22} color={AppColors.textPrimary} />
         </Pressable>
       </View>
@@ -172,7 +178,7 @@ function GiphyPickerBody({ onClose, onSelect }: Omit<GiphyPickerSheetProps, 'vis
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Select GIF: ${item.title}`}
+            accessibilityLabel={t('Select GIF: {{title}}', { title: item.title })}
             onPress={() => onSelect(item)}
             style={({ pressed }) => [styles.tile, { width: tileSize, height: tileSize }, pressed && styles.pressed]}>
             <Image source={{ uri: item.previewUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -182,14 +188,14 @@ function GiphyPickerBody({ onClose, onSelect }: Omit<GiphyPickerSheetProps, 'vis
 
       {/* Required by the GIPHY API terms wherever GIPHY content is shown. */}
       <View style={styles.attribution}>
-        <Text style={styles.poweredBy}>POWERED BY</Text>
-        <Text style={styles.giphy}>GIPHY</Text>
+        <Text style={styles.poweredBy}>{t('POWERED BY')}</Text>
+        <Text style={styles.giphy}>{t('GIPHY')}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   overlay: {
     position: 'absolute',
     top: 0,
@@ -290,4 +296,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
   },
-});
+}));

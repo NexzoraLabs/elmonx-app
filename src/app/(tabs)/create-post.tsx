@@ -22,12 +22,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UserAvatar } from '@/components/account/user-avatar';
 import { GiphyPickerSheet } from '@/components/feed/giphy-picker-sheet';
-import { AppColors } from '@/constants/app-colors';
+import type { Palette } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { LocalImage } from '@/services/feed-api';
 import { emitFeedChanged } from '@/services/feed-events';
 import type { GiphyGif } from '@/services/giphy-api';
+import { useTranslation } from 'react-i18next';
 
 const PICKER_QUALITY = 0.85;
 
@@ -38,6 +40,9 @@ const toLocalImage = (asset: ImagePicker.ImagePickerAsset): LocalImage => ({
 });
 
 export default function CreatePostScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, user } = useAuth();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<LocalImage[]>([]);
@@ -79,13 +84,13 @@ export default function CreatePostScreen() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        'Camera access needed',
-        'Allow camera access in Settings to take a photo for your post.',
+        t('Camera access needed'),
+        t('Allow camera access in Settings to take a photo for your post.'),
         permission.canAskAgain
-          ? [{ text: 'OK' }]
+          ? [{ text: t('OK') }]
           : [
-              { text: 'Not now', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+              { text: t('Not now'), style: 'cancel' },
+              { text: t('Open Settings'), onPress: () => void Linking.openSettings() },
             ],
       );
       return;
@@ -136,7 +141,7 @@ export default function CreatePostScreen() {
       emitFeedChanged();
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to create post.');
+      setError(e instanceof Error ? e.message : t('Unable to create post.'));
     } finally {
       setIsPosting(false);
     }
@@ -147,9 +152,9 @@ export default function CreatePostScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <Pressable hitSlop={8} onPress={() => router.back()}>
-            <Text style={styles.cancel}>Cancel</Text>
+            <Text style={styles.cancel}>{t('Cancel')}</Text>
           </Pressable>
-          <Text style={styles.title}>Create Post</Text>
+          <Text style={styles.title}>{t('Create Post')}</Text>
           <Pressable
             accessibilityRole="button"
             disabled={!canPost}
@@ -158,7 +163,7 @@ export default function CreatePostScreen() {
             {isPosting ? (
               <ActivityIndicator size="small" color={AppColors.buttonPrimaryText} />
             ) : (
-              <Text style={styles.postLabel}>Post</Text>
+              <Text style={styles.postLabel}>{t('Post')}</Text>
             )}
           </Pressable>
         </View>
@@ -172,7 +177,7 @@ export default function CreatePostScreen() {
               onSelectionChange={(event) => {
                 selection.current = event.nativeEvent.selection;
               }}
-              placeholder="What's new?"
+              placeholder={t('What\'s new?')}
               placeholderTextColor={AppColors.textPlaceholder}
               multiline
               autoFocus
@@ -187,7 +192,7 @@ export default function CreatePostScreen() {
                 <View key={`${image.uri}-${index}`}>
                   <Image source={{ uri: image.uri }} style={styles.preview} contentFit="cover" />
                   <RemoveButton
-                    label="Remove image"
+                    label={t('Remove image')}
                     disabled={isPosting}
                     onPress={() => setImages((prev) => prev.filter((_, i) => i !== index))}
                   />
@@ -205,9 +210,9 @@ export default function CreatePostScreen() {
                 accessibilityLabel={gif.title}
               />
               <View style={styles.gifBadge}>
-                <Text style={styles.gifBadgeLabel}>GIF</Text>
+                <Text style={styles.gifBadgeLabel}>{t('GIF')}</Text>
               </View>
-              <RemoveButton label="Remove GIF" disabled={isPosting} onPress={() => setGif(null)} />
+              <RemoveButton label={t('Remove GIF')} disabled={isPosting} onPress={() => setGif(null)} />
             </View>
           ) : null}
 
@@ -216,14 +221,14 @@ export default function CreatePostScreen() {
 
         <View style={styles.toolbar}>
           <View style={styles.tools}>
-            <ToolButton icon="image-outline" label="Add photos" disabled={!canAddImages} onPress={handlePickImages} />
-            <ToolButton icon="camera-outline" label="Take photo" disabled={!canAddImages} onPress={handleTakePhoto} />
-            <ToolButton label="Add GIF" disabled={!canAddGif} onPress={openGifPicker}>
+            <ToolButton icon="image-outline" label={t('Add photos')} disabled={!canAddImages} onPress={handlePickImages} />
+            <ToolButton icon="camera-outline" label={t('Take photo')} disabled={!canAddImages} onPress={handleTakePhoto} />
+            <ToolButton label={t('Add GIF')} disabled={!canAddGif} onPress={openGifPicker}>
               <View style={[styles.gifIcon, !canAddGif && styles.gifIconDisabled]}>
-                <Text style={[styles.gifIconLabel, !canAddGif && styles.toolDisabledText]}>GIF</Text>
+                <Text style={[styles.gifIconLabel, !canAddGif && styles.toolDisabledText]}>{t('GIF')}</Text>
               </View>
             </ToolButton>
-            <ToolButton icon="happy-outline" label="Add emoji" disabled={isPosting} onPress={openEmojiPicker} />
+            <ToolButton icon="happy-outline" label={t('Add emoji')} disabled={isPosting} onPress={openEmojiPicker} />
             {images.length > 0 ? (
               <Text style={styles.toolLabel}>
                 {images.length}/{feedApi.MAX_POST_IMAGES}
@@ -244,7 +249,7 @@ export default function CreatePostScreen() {
         enableSearchBar
         enableRecentlyUsed
         categoryPosition="bottom"
-        theme={EMOJI_THEME}
+        theme={emojiTheme(AppColors)}
       />
     </SafeAreaView>
   );
@@ -263,6 +268,8 @@ function ToolButton({
   onPress: () => void;
   children?: ReactNode;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -281,6 +288,8 @@ function ToolButton({
 }
 
 function RemoveButton({ label, disabled, onPress }: { label: string; disabled: boolean; onPress: () => void }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -289,12 +298,12 @@ function RemoveButton({ label, disabled, onPress }: { label: string; disabled: b
       hitSlop={6}
       onPress={onPress}
       style={styles.removeImage}>
-      <Ionicons name="close" size={14} color={AppColors.textPrimary} />
+      <Ionicons name="close" size={14} color={AppColors.onMedia} />
     </Pressable>
   );
 }
 
-const EMOJI_THEME = {
+const emojiTheme = (AppColors: Palette) => ({
   backdrop: AppColors.overlay,
   knob: AppColors.border,
   container: AppColors.surface,
@@ -315,9 +324,9 @@ const EMOJI_THEME = {
   emoji: {
     selected: AppColors.border,
   },
-};
+});
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -405,7 +414,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)',
   },
   gifBadgeLabel: {
-    color: AppColors.textPrimary,
+    color: AppColors.onMedia,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -477,4 +486,4 @@ const styles = StyleSheet.create({
   counterOver: {
     color: AppColors.danger,
   },
-});
+}));

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { SelectPill } from '@/components/collections/select-pill';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
   BLOCKCHAIN_OPTIONS,
   DEFAULT_CATALOG_FILTERS,
@@ -16,6 +16,7 @@ import {
   type CatalogTab,
   type FilterOption,
 } from '@/services/catalog-filters';
+import { useTranslation } from 'react-i18next';
 
 type FiltersModalProps = {
   visible: boolean;
@@ -53,6 +54,9 @@ function FiltersContent({
   brands,
   categories,
 }: Omit<FiltersModalProps, 'visible'>) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [draft, setDraft] = useState<CatalogFilters>(filters);
   const [artistOpen, setArtistOpen] = useState(false);
   const [artistQuery, setArtistQuery] = useState('');
@@ -72,7 +76,7 @@ function FiltersContent({
 
   const handleApply = () => {
     if ((draft.dateFrom && !isValidDate(draft.dateFrom)) || (draft.dateTo && !isValidDate(draft.dateTo))) {
-      setError('Dates must be in YYYY-MM-DD format.');
+      setError(t('Dates must be in YYYY-MM-DD format.'));
       return;
     }
     onApply(draft);
@@ -86,50 +90,50 @@ function FiltersContent({
   const selectedCategory = categories.find((c) => c._id === draft.categoryId);
   const artistLabel =
     draft.brandIds.length === 0
-      ? 'All Artists'
+      ? t('All Artists')
       : draft.brandIds.length === 1
-        ? (brands.find((b) => b._id === draft.brandIds[0])?.title ?? '1 selected')
-        : `${draft.brandIds.length} artists selected`;
+        ? (brands.find((b) => b._id === draft.brandIds[0])?.title ?? t('1 selected'))
+        : t('{{n}} artists selected', { n: draft.brandIds.length });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={onClose}>
           <View style={styles.closeButton}>
             <Ionicons name="close" size={20} color={AppColors.textPrimary} />
           </View>
         </Pressable>
-        <Text style={styles.headerTitle}>Filters</Text>
+        <Text style={styles.headerTitle}>{t('Filters')}</Text>
         <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setDraft(DEFAULT_CATALOG_FILTERS)}>
-          <Text style={styles.clearLabel}>Clear filters</Text>
+          <Text style={styles.clearLabel}>{t('Clear filters')}</Text>
         </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {!isPartners ? (
           <>
-            <Section title="Blockchain">
+            <Section title={t('Blockchain')}>
               <View style={styles.pillRow}>
                 {BLOCKCHAIN_OPTIONS.map((option) => (
-                  <SelectPill key={option} label={option} selected={draft.blockchain === option} onPress={() => set('blockchain', option)} />
+                  <SelectPill key={option} label={t(option)} selected={draft.blockchain === option} onPress={() => set('blockchain', option)} />
                 ))}
               </View>
             </Section>
 
-            <Section title="Where it goes">
+            <Section title={t('Where it goes')}>
               <View style={styles.pillRow}>
                 {DESTINATION_OPTIONS.map((option) => (
-                  <SelectPill key={option} label={option} selected={draft.destination === option} onPress={() => set('destination', option)} />
+                  <SelectPill key={option} label={t(option)} selected={draft.destination === option} onPress={() => set('destination', option)} />
                 ))}
               </View>
             </Section>
 
-            <Section title="Edition Type">
+            <Section title={t('Edition Type')}>
               <View style={styles.pillRow}>
                 {EDITION_OPTIONS.map((option) => (
                   <SelectPill
                     key={option}
-                    label={option === 'all' ? 'All' : option}
+                    label={option === 'all' ? t('All') : t(option)}
                     selected={draft.edition === option}
                     onPress={() => set('edition', option)}
                   />
@@ -139,7 +143,7 @@ function FiltersContent({
           </>
         ) : null}
 
-        <Section title="Artist">
+        <Section title={t('Artist')}>
           <Pressable style={styles.dropdown} onPress={() => setArtistOpen((prev) => !prev)}>
             <Text style={draft.brandIds.length ? styles.dropdownValue : styles.dropdownPlaceholder} numberOfLines={1}>
               {artistLabel}
@@ -148,7 +152,7 @@ function FiltersContent({
           </Pressable>
           {artistOpen ? (
             <View style={styles.dropdownList}>
-              <SearchField value={artistQuery} onChangeText={setArtistQuery} placeholder="Search artists..." />
+              <SearchField value={artistQuery} onChangeText={setArtistQuery} placeholder={t('Search artists...')} />
               <ScrollView style={styles.optionScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
                 {artistMatches.map((brand) => {
                   const checked = draft.brandIds.includes(brand._id);
@@ -163,23 +167,23 @@ function FiltersContent({
                     </Pressable>
                   );
                 })}
-                {artistMatches.length === 0 ? <Text style={styles.noOptions}>No artists found.</Text> : null}
+                {artistMatches.length === 0 ? <Text style={styles.noOptions}>{t('No artists found.')}</Text> : null}
               </ScrollView>
             </View>
           ) : null}
         </Section>
 
         {!isPartners ? (
-          <Section title="Category">
+          <Section title={t('Category')}>
             <Pressable style={styles.dropdown} onPress={() => setCategoryOpen((prev) => !prev)}>
               <Text style={selectedCategory ? styles.dropdownValue : styles.dropdownPlaceholder} numberOfLines={1}>
-                {selectedCategory?.title.trim() ?? 'All Categories'}
+                {selectedCategory?.title.trim() ?? t('All Categories')}
               </Text>
               <Ionicons name={categoryOpen ? 'chevron-up' : 'chevron-down'} size={18} color={AppColors.textSecondary} />
             </Pressable>
             {categoryOpen ? (
               <View style={styles.dropdownList}>
-                <SearchField value={categoryQuery} onChangeText={setCategoryQuery} placeholder="Search categories..." />
+                <SearchField value={categoryQuery} onChangeText={setCategoryQuery} placeholder={t('Search categories...')} />
                 <ScrollView style={styles.optionScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
                   <Pressable
                     style={styles.optionRow}
@@ -187,7 +191,7 @@ function FiltersContent({
                       set('categoryId', null);
                       setCategoryOpen(false);
                     }}>
-                    <Text style={[styles.optionLabel, !draft.categoryId && styles.optionSelected]}>All Categories</Text>
+                    <Text style={[styles.optionLabel, !draft.categoryId && styles.optionSelected]}>{t('All Categories')}</Text>
                   </Pressable>
                   {categoryMatches.map((category) => (
                     <Pressable
@@ -210,18 +214,18 @@ function FiltersContent({
           </Section>
         ) : null}
 
-        <Section title="Date Range">
+        <Section title={t('Date Range')}>
           <View style={styles.rangeRow}>
-            <RangeInput label="From" value={draft.dateFrom} onChangeText={(v) => set('dateFrom', v)} placeholder="YYYY-MM-DD" />
+            <RangeInput label={t('From')} value={draft.dateFrom} onChangeText={(v) => set('dateFrom', v)} placeholder={t('YYYY-MM-DD')} />
             <Text style={styles.rangeDash}>-</Text>
-            <RangeInput label="To" value={draft.dateTo} onChangeText={(v) => set('dateTo', v)} placeholder="YYYY-MM-DD" />
+            <RangeInput label={t('To')} value={draft.dateTo} onChangeText={(v) => set('dateTo', v)} placeholder={t('YYYY-MM-DD')} />
           </View>
         </Section>
 
-        <Section title="Price Range">
+        <Section title={t('Price Range')}>
           <View style={styles.rangeRow}>
             <RangeInput
-              label="Min"
+              label={t('Min')}
               value={draft.priceMin}
               onChangeText={(v) => set('priceMin', v.replace(/[^0-9.]/g, ''))}
               placeholder="0.00"
@@ -229,7 +233,7 @@ function FiltersContent({
             />
             <Text style={styles.rangeDash}>-</Text>
             <RangeInput
-              label="Max"
+              label={t('Max')}
               value={draft.priceMax}
               onChangeText={(v) => set('priceMax', v.replace(/[^0-9.]/g, ''))}
               placeholder="0.00"
@@ -242,13 +246,14 @@ function FiltersContent({
       </ScrollView>
 
       <View style={styles.footer}>
-        <AuthButton label="Apply Filters" onPress={handleApply} />
+        <AuthButton label={t('Apply Filters')} onPress={handleApply} />
       </View>
     </SafeAreaView>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -266,6 +271,8 @@ function SearchField({
   onChangeText: (value: string) => void;
   placeholder: string;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.searchField}>
       <Ionicons name="search-outline" size={16} color={AppColors.textSecondary} />
@@ -294,6 +301,8 @@ function RangeInput({
   placeholder: string;
   numeric?: boolean;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.rangeField}>
       <Text style={styles.rangeLabel}>{label}</Text>
@@ -310,7 +319,7 @@ function RangeInput({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -476,4 +485,4 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
   },
-});
+}));

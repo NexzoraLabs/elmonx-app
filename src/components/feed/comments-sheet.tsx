@@ -17,11 +17,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { timeAgo } from '@/components/feed/post-card';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { CommentTarget, PostComment } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const MAX_COMMENT = 500;
 
@@ -58,6 +60,9 @@ function CommentsContent({
   onClose,
   onCountChange,
 }: Props & { target: CommentTarget }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [comments, setComments] = useState<PostComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +74,7 @@ function CommentsContent({
     try {
       setComments(await feedApi.getComments(token, target));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to load comments.');
+      setError(e instanceof Error ? e.message : i18n.t('Unable to load comments.'));
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +97,7 @@ function CommentsContent({
       setText('');
       onCountChange(1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to post comment.');
+      setError(e instanceof Error ? e.message : t('Unable to post comment.'));
     } finally {
       setIsSending(false);
     }
@@ -100,10 +105,10 @@ function CommentsContent({
 
   const handleDelete = (comment: PostComment) => {
     if (!token) return;
-    Alert.alert('Delete comment', 'Are you sure you want to delete this comment?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Delete comment'), t('Are you sure you want to delete this comment?'), [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('Delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -111,7 +116,7 @@ function CommentsContent({
             setComments((prev) => prev.filter((c) => c._id !== comment._id));
             onCountChange(-1);
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Unable to delete comment.');
+            Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to delete comment.'));
           }
         },
       },
@@ -123,8 +128,8 @@ function CommentsContent({
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <View style={styles.headerSide} />
-          <Text style={styles.title}>Comments</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose} style={styles.headerSide}>
+          <Text style={styles.title}>{t('Comments')}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={onClose} style={styles.headerSide}>
             <Ionicons name="close" size={22} color={AppColors.textPrimary} />
           </Pressable>
         </View>
@@ -138,7 +143,7 @@ function CommentsContent({
             isLoading ? (
               <ActivityIndicator style={styles.loading} color={AppColors.link} />
             ) : (
-              <Text style={styles.empty}>No comments yet. Be the first to comment.</Text>
+              <Text style={styles.empty}>{t('No comments yet. Be the first to comment.')}</Text>
             )
           }
           renderItem={({ item }) => {
@@ -152,7 +157,7 @@ function CommentsContent({
                 />
                 <View style={styles.commentBody}>
                   <Text style={styles.commentMeta}>
-                    <Text style={styles.commentAuthor}>{item.author?.user_name ?? 'Unknown'}</Text>
+                    <Text style={styles.commentAuthor}>{item.author?.user_name ?? t('Unknown')}</Text>
                     {'  '}
                     {timeAgo(item.created_at)}
                   </Text>
@@ -174,7 +179,7 @@ function CommentsContent({
           <TextInput
             value={text}
             onChangeText={setText}
-            placeholder="Write a comment…"
+            placeholder={t('Write a comment…')}
             placeholderTextColor={AppColors.textPlaceholder}
             maxLength={MAX_COMMENT}
             multiline
@@ -182,7 +187,7 @@ function CommentsContent({
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Send comment"
+            accessibilityLabel={t('Send comment')}
             disabled={!text.trim() || isSending}
             onPress={handleSend}
             style={[styles.sendButton, (!text.trim() || isSending) && styles.sendDisabled]}>
@@ -198,7 +203,7 @@ function CommentsContent({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -304,4 +309,4 @@ const styles = StyleSheet.create({
   sendDisabled: {
     opacity: 0.4,
   },
-});
+}));

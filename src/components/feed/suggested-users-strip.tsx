@@ -6,11 +6,12 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { compactCount } from '@/components/feed/post-card';
 import { SectionHeader } from '@/components/home/section-header';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { RelationshipStatus, SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
 
 function initialStatus(user: SuggestedUser): RelationshipStatus {
   if (user.relationship_status) return user.relationship_status;
@@ -19,6 +20,9 @@ function initialStatus(user: SuggestedUser): RelationshipStatus {
 
 /** `user/suggested` (website's Suggested Collectors). `home` matches the Home screen section style. */
 export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | 'home' }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [statuses, setStatuses] = useState<Record<string, RelationshipStatus>>({});
@@ -48,23 +52,23 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
         setStatuses((prev) => ({ ...prev, [user._id]: next }));
       }
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Something went wrong.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Something went wrong.'));
     }
   };
 
   return (
     <View style={variant === 'home' ? styles.homeContainer : styles.container}>
       {variant === 'home' ? (
-        <SectionHeader title="Suggested Collectors" />
+        <SectionHeader title={t('Suggested Collectors')} />
       ) : (
-        <Text style={styles.title}>Collectors to Follow</Text>
+        <Text style={styles.title}>{t('Collectors to Follow')}</Text>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {users.map((user) => {
           const status = statuses[user._id] ?? initialStatus(user);
           const isPrivate = user.profile_privacy === 'Private';
           const label =
-            status === 'Accepted' ? 'Following' : status === 'Pending' ? 'Requested' : isPrivate ? 'Request' : 'Follow';
+            status === 'Accepted' ? t('Following', { context: 'button' }) : status === 'Pending' ? t('Requested') : isPrivate ? t('Request') : t('Follow');
           const active = status === 'Accepted' || status === 'Pending';
           const followers = user.followers_count ?? 0;
           return (
@@ -78,11 +82,11 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
                   @{user.user_name}
                 </Text>
                 {isPrivate ? (
-                  <Ionicons name="lock-closed" size={10} color={AppColors.link} accessibilityLabel="Private account" />
+                  <Ionicons name="lock-closed" size={10} color={AppColors.link} accessibilityLabel={t('Private account')} />
                 ) : null}
               </View>
               <Text style={styles.followers}>
-                {compactCount(followers)} {followers === 1 ? 'follower' : 'followers'}
+                {compactCount(followers)} {followers === 1 ? t('follower') : t('followers')}
               </Text>
               <Pressable
                 onPress={() => handleFollow(user)}
@@ -97,7 +101,7 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -172,4 +176,4 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-});
+}));

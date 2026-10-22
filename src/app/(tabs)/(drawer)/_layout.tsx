@@ -1,9 +1,10 @@
 import { Drawer } from 'expo-router/drawer';
 
 import { MenuDrawerContent } from '@/components/menu/menu-drawer-content';
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 
 export default function DrawerLayout() {
+  const AppColors = useAppColors();
   return (
     <Drawer
       screenOptions={{

@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { WorldCategory } from '@/data/home-mock';
 
 export function WorldCategoryCard({ item }: { item: WorldCategory }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <Ionicons name={item.icon} size={18} color={AppColors.textPrimary} />
@@ -16,7 +18,7 @@ export function WorldCategoryCard({ item }: { item: WorldCategory }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: '48%',
     flexDirection: 'row',
@@ -36,4 +38,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-});
+}));

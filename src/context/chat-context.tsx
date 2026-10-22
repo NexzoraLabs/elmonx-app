@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useCurrentUserId } from '@/hooks/use-current-user-id';
 import * as chatApi from '@/services/chat-api';
 import type { AttachmentType, ChatMessage, ConversationItem } from '@/services/chat-api';
+import i18n from '@/i18n';
 
 /** Events forwarded to an open thread screen. */
 export type ThreadEvent =
@@ -179,7 +180,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   /** Socket first with ack; REST fallback if the socket is down or the ack isn't 200 (website logic). */
   const sendMessage = useCallback(
     async ({ receiverId, text, attachment }: SendInput): Promise<ChatMessage> => {
-      if (!token) throw new Error('Please sign in to continue.');
+      if (!token) throw new Error(i18n.t('Please sign in to continue.'));
       const payload = {
         receiver_id: receiverId,
         ...(text ? { message: text } : {}),
@@ -196,7 +197,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
         if (ack?.status === 200 && ack.data) return ack.data;
         // A 201 is a business rule (blocked, private, profanity) — REST would fail the same way.
-        if (ack && ack.status !== 200) throw new Error(ack.message || 'Unable to send message.');
+        if (ack && ack.status !== 200) throw new Error(ack.message || i18n.t('Unable to send message.'));
       }
       const sent = await chatApi.sendMessageRest(token, payload);
       refreshConversations();
@@ -226,7 +227,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           });
         });
         if (ack?.status === 200) return;
-        if (ack) throw new Error(ack.message || 'Unable to unsend message.');
+        if (ack) throw new Error(ack.message || i18n.t('Unable to unsend message.'));
       }
       await chatApi.deleteMessageRest(token, messageId);
     },

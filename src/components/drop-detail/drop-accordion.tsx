@@ -5,8 +5,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState, type ReactNode } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { BURNED_EDITIONS } from '@/data/burned-editions';
 import { isSpecialDrop, type Drop } from '@/services/drops-api';
+import { useTranslation } from 'react-i18next';
+import { appLocale } from '@/i18n';
 
 const XP_ARTICLE_URL = 'https://elmonx.com/articles/69cffe439d809e19546d7bc7';
 
@@ -20,8 +24,8 @@ function shortAddress(address: string): string {
 
 function formatDetailDate(iso: string): string {
   const d = new Date(iso);
-  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const date = d.toLocaleDateString(appLocale('en-GB'), { day: '2-digit', month: 'short', year: 'numeric' });
+  const time = d.toLocaleTimeString(appLocale('en-US'), { hour: 'numeric', minute: '2-digit' });
   return `${date} ${time}`;
 }
 
@@ -38,39 +42,51 @@ type Props = {
 };
 
 export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [open, setOpen] = useState<string | null>(null);
+  const [license, setLicense] = useState<{ title: string; description?: string } | null>(null);
   const toggle = (key: string) => setOpen((prev) => (prev === key ? null : key));
 
   const blindBoxItems = Array.isArray(drop.blind_box_items_data) ? drop.blind_box_items_data : [];
   const contract = drop.contract_address;
   const hideRarity = isSpecialDrop(drop._id);
+  const burnedEditions = BURNED_EDITIONS[drop._id] ?? [];
+  const editionsBreakdown = drop.editions_breakdown ?? [];
 
   return (
     <View style={styles.container}>
-      <Section title="Description" open={open === 'description'} onToggle={() => toggle('description')}>
-        <Text style={styles.text}>{drop.description || 'No description available.'}</Text>
+      <Section title={t('Description')} open={open === 'description'} onToggle={() => toggle('description')}>
+        <Text style={styles.text}>{drop.description || t('No description available.')}</Text>
       </Section>
 
-      <Section title="Editions" open={open === 'editions'} onToggle={() => toggle('editions')}>
-        <Row label="Total Editions" value={String(drop.total_editions || 0)} />
-        <Row label="Remaining Editions" value={String(remaining)} />
-        {blindBoxItems.map((item) => {
-          const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
-          return (
-            <Row
-              key={item._id}
-              label={`${item.title || 'Item'}${item.rarity && !hideRarity ? ` - ${item.rarity}` : ''}`}
-              value={`${itemRemaining} / ${item.total_editions || 0}`}
-            />
-          );
-        })}
+      <Section title={t('Editions')} open={open === 'editions'} onToggle={() => toggle('editions')}>
+        <Row label={t('Total Editions')} value={String(drop.total_editions || 0)} />
+        <Row label={t('Remaining Editions')} value={String(remaining)} />
+        {blindBoxItems.length > 0
+          ? blindBoxItems.map((item) => {
+              const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
+              return (
+                <Row
+                  key={item._id}
+                  label={`${item.title || t('Item')}${item.rarity && !hideRarity ? ` - ${item.rarity}` : ''}`}
+                  value={`${itemRemaining} / ${item.total_editions || 0}`}
+                />
+              );
+            })
+          : !hideRarity
+            ? editionsBreakdown.map((edition, index) => (
+                <Row key={`${edition.rarity}-${index}`} label={edition.rarity} value={String(edition.count)} />
+              ))
+            : null}
       </Section>
 
-      <Section title="Details" open={open === 'details'} onToggle={() => toggle('details')}>
-        {drop.drop_edition ? <Row label="Drop Edition" value={drop.drop_edition} /> : null}
+      <Section title={t('Details')} open={open === 'details'} onToggle={() => toggle('details')}>
+        {drop.drop_edition ? <Row label={t('Drop Edition')} value={drop.drop_edition} /> : null}
         {drop.brands_data ? (
           <Row
-            label="Artist"
+            label={t('Artist')}
             value={drop.brands_data.title}
             onPress={() =>
               router.push({
@@ -87,63 +103,63 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
         ) : null}
         {drop.collections_data ? (
           <Row
-            label="Collection"
+            label={t('Collection')}
             value={truncateWords(drop.collections_data.title, 2)}
             onPress={() => router.push({ pathname: '/collection/[id]', params: { id: drop.collections_data!._id } })}
           />
         ) : null}
         {drop.release_date ? (
           <Row
-            label={drop.public_sale_date ? 'Private Release Date' : 'Release Date'}
+            label={drop.public_sale_date ? t('Private Release Date') : t('Release Date')}
             value={formatDetailDate(drop.release_date)}
           />
         ) : null}
-        {drop.public_sale_date ? <Row label="Public Release Date" value={formatDetailDate(drop.public_sale_date)} /> : null}
+        {drop.public_sale_date ? <Row label={t('Public Release Date')} value={formatDetailDate(drop.public_sale_date)} /> : null}
         {drop.royalty_percentage !== null && drop.royalty_percentage !== undefined && drop.royalty_percentage !== '' ? (
-          <Row label="Secondary Fee" value={`${drop.royalty_percentage}%`} />
+          <Row label={t('Secondary Fee')} value={`${drop.royalty_percentage}%`} />
         ) : null}
         {drop.licenses_data?.length ? (
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>License</Text>
+            <Text style={styles.rowLabel}>{t('License')}</Text>
             <View style={styles.licenseList}>
               {drop.licenses_data.map((license) => (
                 <Pressable
                   key={license._id}
                   hitSlop={4}
-                  onPress={() => Alert.alert(license.title, license.description || '')}>
+                  onPress={() => setLicense(license)}>
                   <Text style={styles.link}>{license.title}</Text>
                 </Pressable>
               ))}
             </View>
           </View>
         ) : drop.license ? (
-          <Row label="License" value={drop.license} />
+          <Row label={t('License')} value={drop.license} />
         ) : null}
         {!isNA(contract) ? (
           <Row
-            label="Contract Address"
+            label={t('Contract Address')}
             value={shortAddress(contract)}
             trailing={<Ionicons name="copy-outline" size={14} color={AppColors.link} />}
             onPress={async () => {
               await Clipboard.setStringAsync(contract);
-              Alert.alert('Copied', 'Contract address copied to clipboard.');
+              Alert.alert(t('Copied'), t('Contract address copied to clipboard.'));
             }}
           />
         ) : (
-          <Row label="Contract Address" value="N/A" />
+          <Row label={t('Contract Address')} value="N/A" />
         )}
         {drop.opensea_link && !isNA(drop.opensea_link) ? (
           <Row
-            label="Secondary Market"
-            value={drop.maket_view_btn || 'View on OpenSea'}
+            label={t('Secondary Market')}
+            value={drop.maket_view_btn || t('View on OpenSea')}
             onPress={() => WebBrowser.openBrowserAsync(drop.opensea_link!)}
           />
         ) : null}
         {drop.edition_type && !isNA(drop.edition_type) ? (
           <Row
-            label="Drop Information"
+            label={t('Drop Information')}
             value={
-              drop.drop_info_btn || (drop.drop_edition === 'Collaborations' ? 'Release Info' : 'View Medium Article')
+              drop.drop_info_btn || (drop.drop_edition === 'Collaborations' ? t('Release Info') : t('View Medium Article'))
             }
             onPress={() => WebBrowser.openBrowserAsync(drop.edition_type!)}
           />
@@ -151,63 +167,97 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
       </Section>
 
       {drop.is_physical ? (
-        <Section title="Physical Print" open={open === 'physical'} onToggle={() => toggle('physical')}>
+        <Section title={t('Physical Print')} open={open === 'physical'} onToggle={() => toggle('physical')}>
           <Text style={styles.text}>
-            This drop includes a physical print. Please make sure you have added a shipping address so we can deliver
-            it to you.
+            {t('This drop includes a physical print. To receive it, you must have a')}{' '}
+            <Text style={styles.link} onPress={() => router.push('/shipping-address')}>
+              {t('shipping address')}
+            </Text>{' '}
+            {t('saved on your account before purchasing.')}
           </Text>
-          <Pressable onPress={() => router.push('/shipping-address')} hitSlop={4}>
-            <Text style={[styles.link, styles.linkSpaced]}>Manage shipping address</Text>
-          </Pressable>
         </Section>
       ) : null}
 
       {drop.type === 'Layer_2' && drop.sale_title === 'Private' ? (
-        <Section title="Allowlist" open={open === 'allowlist'} onToggle={() => toggle('allowlist')}>
+        <Section title={t('Allowlist')} open={open === 'allowlist'} onToggle={() => toggle('allowlist')}>
           <Text style={styles.text}>
-            Private releases begin with an exclusive window for holders of qualifying works. When it closes, the
-            release opens to everyone.
+            {t('Private releases begin with an exclusive window for holders of qualifying works. When it closes, the release opens to everyone.')}
           </Text>
           <Pressable onPress={onCheckAllowlist} style={({ pressed }) => [styles.smallButton, pressed && styles.pressed]}>
-            <Text style={styles.smallButtonText}>Check Eligibility</Text>
+            <Text style={styles.smallButtonText}>{t('Check Eligibility')}</Text>
           </Pressable>
         </Section>
       ) : null}
 
       {drop.type === 'Layer_2' && drop.is_blind_box === true ? (
-        <Section title="Blind Box" open={open === 'blindbox'} onToggle={() => toggle('blindbox')}>
+        <Section title={t('Blind Box')} open={open === 'blindbox'} onToggle={() => toggle('blindbox')}>
           <Text style={styles.text}>
-            When you purchase from a Blind Box, you will receive a RANDOM collectible from this series, and you
-            won&apos;t know which collectible you get until after payment.
+            {t('When you purchase from a Blind Box, you will receive a RANDOM collectible from this series, and you won\'t know which collectible you get until after payment.')}
           </Text>
         </Section>
       ) : null}
 
-      <Section title="Earn XP" open={open === 'xp'} onToggle={() => toggle('xp')}>
-        <Text style={styles.text}>+50 XP · +550 XP on your first collectible</Text>
+      {burnedEditions.length > 0 ? (
+        <Section
+          title={t('Burned Editions')}
+          badge={burnedEditions.length}
+          open={open === 'burned'}
+          onToggle={() => toggle('burned')}>
+          <Text style={styles.text}>{t('These editions have been permanently burned and are no longer in circulation.')}</Text>
+          {burnedEditions.map((edition) => (
+            <Row key={edition.tokenId} label={edition.name} value={`#${edition.tokenId}`} />
+          ))}
+        </Section>
+      ) : null}
+
+      <Section title={t('Earn XP with this purchase')} open={open === 'xp'} onToggle={() => toggle('xp')}>
+        <Text style={styles.text}>{t('+50 XP · +550 XP on your first collectible')}</Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync(XP_ARTICLE_URL)} hitSlop={4}>
-          <Text style={[styles.link, styles.linkSpaced]}>Learn more</Text>
+          <Text style={[styles.link, styles.linkSpaced]}>{t('How XP works')}</Text>
         </Pressable>
       </Section>
+
+      {/* Website LicenseDetailModal ("License Details") as a bottom sheet. */}
+      <BottomSheet visible={license !== null} onClose={() => setLicense(null)}>
+        {license ? (
+          <View style={styles.licenseSheet}>
+            <Text style={styles.licenseSheetLabel}>{t('License Details')}</Text>
+            <Text style={styles.licenseSheetTitle}>{license.title}</Text>
+            <Text style={styles.text}>{license.description}</Text>
+          </View>
+        ) : null}
+      </BottomSheet>
     </View>
   );
 }
 
 function Section({
   title,
+  badge,
   open,
   onToggle,
   children,
 }: {
   title: string;
+  /** Small count pill next to the title (Burned Editions). */
+  badge?: number;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Pressable style={styles.header} onPress={onToggle}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{title}</Text>
+          {badge ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          ) : null}
+        </View>
         <Ionicons name={open ? 'remove' : 'add'} size={20} color={AppColors.textPrimary} />
       </Pressable>
       {open ? <View style={styles.body}>{children}</View> : null}
@@ -226,6 +276,7 @@ function Row({
   onPress?: () => void;
   trailing?: ReactNode;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -245,7 +296,7 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     paddingHorizontal: 20,
     marginTop: 12,
@@ -260,9 +311,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
     color: AppColors.textPrimary,
     fontSize: 15,
+    fontWeight: '700',
+  },
+  badge: {
+    minWidth: 22,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 11,
+    backgroundColor: AppColors.subtleFill,
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: AppColors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  licenseSheet: {
+    gap: 8,
+    paddingBottom: 8,
+  },
+  licenseSheetLabel: {
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  licenseSheetTitle: {
+    color: AppColors.textPrimary,
+    fontSize: 18,
     fontWeight: '700',
   },
   body: {
@@ -327,4 +412,4 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.8,
   },
-});
+}));

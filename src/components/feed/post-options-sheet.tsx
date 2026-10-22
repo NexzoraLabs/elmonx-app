@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { RelationshipStatus } from '@/services/feed-api';
 import type { PostAuthor } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
 
 export type PostOptionsTarget = {
   user: PostAuthor;
@@ -36,6 +37,9 @@ function followLabel(status: RelationshipStatus | null): string {
 }
 
 function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOptionsTarget }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [status, setStatus] = useState<RelationshipStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,7 +69,7 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
         setStatus(await feedApi.followUser(token, user._id));
       }
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Something went wrong.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Something went wrong.'));
     } finally {
       setBusy(false);
     }
@@ -73,10 +77,10 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
 
   const handleBlock = () => {
     if (!token) return;
-    Alert.alert(`Block @${user.user_name}?`, "They won't be able to see your profile or posts.", [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Block @{{username}}?', { username: user.user_name }), t('They won\'t be able to see your profile or posts.'), [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Block',
+        text: t('Block'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -84,7 +88,7 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
             onBlocked(user._id);
             onClose();
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Unable to block.');
+            Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to block.'));
           }
         },
       },
@@ -96,19 +100,19 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
     try {
       await feedApi.reportPost(token, target.postId, reason);
       onClose();
-      Alert.alert('Reported', 'Thanks for letting us know. We will review this post.');
+      Alert.alert(t('Reported'), t('Thanks for letting us know. We will review this post.'));
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Unable to report.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to report.'));
     }
   };
 
   if (mode === 'report') {
     return (
       <View>
-        <Text style={styles.title}>Why are you reporting this post?</Text>
+        <Text style={styles.title}>{t('Why are you reporting this post?')}</Text>
         {feedApi.REPORT_REASONS.map((reason) => (
           <Pressable key={reason} style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={() => handleReport(reason)}>
-            <Text style={styles.rowLabel}>{reason}</Text>
+            <Text style={styles.rowLabel}>{t(reason)}</Text>
             <Ionicons name="chevron-forward" size={16} color={AppColors.textSecondary} />
           </Pressable>
         ))}
@@ -122,21 +126,21 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
       <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={handleFollow} disabled={status === null || busy}>
         <View style={styles.rowLeft}>
           <Ionicons name="person-add-outline" size={18} color={AppColors.textPrimary} />
-          <Text style={styles.rowLabel}>{status === null ? 'Loading…' : followLabel(status)}</Text>
+          <Text style={styles.rowLabel}>{status === null ? t('Loading…') : t(followLabel(status))}</Text>
         </View>
         {busy || status === null ? <ActivityIndicator size="small" color={AppColors.textSecondary} /> : null}
       </Pressable>
       <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={handleBlock}>
         <View style={styles.rowLeft}>
           <Ionicons name="ban-outline" size={18} color={AppColors.danger} />
-          <Text style={[styles.rowLabel, styles.danger]}>Block @{user.user_name}</Text>
+          <Text style={[styles.rowLabel, styles.danger]}>{t('Block @{{username}}', { username: user.user_name })}</Text>
         </View>
       </Pressable>
       {target.postId ? (
         <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={() => setMode('report')}>
           <View style={styles.rowLeft}>
             <Ionicons name="flag-outline" size={18} color={AppColors.danger} />
-            <Text style={[styles.rowLabel, styles.danger]}>Report post</Text>
+            <Text style={[styles.rowLabel, styles.danger]}>{t('Report post')}</Text>
           </View>
         </Pressable>
       ) : null}
@@ -144,7 +148,7 @@ function OptionsContent({ target, onClose, onBlocked }: Props & { target: PostOp
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 15,
@@ -174,4 +178,4 @@ const styles = StyleSheet.create({
   danger: {
     color: AppColors.danger,
   },
-});
+}));

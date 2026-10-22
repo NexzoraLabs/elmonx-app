@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { type DimensionValue } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 
 type SkeletonProps = {
   width?: DimensionValue;
@@ -12,6 +12,7 @@ type SkeletonProps = {
 };
 
 export function Skeleton({ width = '100%', height, borderRadius = 8, style }: SkeletonProps) {
+  const AppColors = useAppColors();
   const opacity = useSharedValue(0.35);
 
   useEffect(() => {

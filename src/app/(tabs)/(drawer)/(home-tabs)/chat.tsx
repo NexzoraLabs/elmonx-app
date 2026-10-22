@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChatFilterTabs, type ChatFilter } from '@/components/chat/chat-filter-tabs';
@@ -10,13 +10,17 @@ import { ChatSearchBar } from '@/components/chat/chat-search-bar';
 import { ConversationRow } from '@/components/chat/conversation-row';
 import { MessagesHeader } from '@/components/chat/messages-header';
 import { HomeHeader } from '@/components/home/home-header';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import { searchUsers, type SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatListScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const { conversations, isLoadingConversations, refreshConversations, isOnline, isTyping, currentUserId } = useChat();
   const [query, setQuery] = useState('');
@@ -77,7 +81,7 @@ export default function ChatListScreen() {
         ) : filtered.length === 0 && newPeople.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>
-              {trimmed ? 'No people found.' : filter === 'Unread' ? 'No unread conversations.' : 'No conversations yet.'}
+              {trimmed ? t('No people found.') : filter === 'Unread' ? t('No unread conversations.') : t('No conversations yet.')}
             </Text>
           </View>
         ) : (
@@ -93,7 +97,7 @@ export default function ChatListScreen() {
 
         {newPeople.length > 0 ? (
           <View>
-            <Text style={styles.sectionTitle}>People</Text>
+            <Text style={styles.sectionTitle}>{t('People')}</Text>
             {newPeople.map((user) => (
               <Pressable
                 key={user._id}
@@ -112,7 +116,7 @@ export default function ChatListScreen() {
                       <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
                     ) : null}
                   </View>
-                  <Text style={styles.personMeta}>{user.followers_count ?? 0} followers</Text>
+                  <Text style={styles.personMeta}>{user.followers_count ?? 0}{' '}{t('followers')}</Text>
                 </View>
               </Pressable>
             ))}
@@ -123,7 +127,7 @@ export default function ChatListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -187,4 +191,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-});
+}));

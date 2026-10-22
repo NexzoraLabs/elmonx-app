@@ -5,12 +5,16 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SuggestedUserRow } from '@/components/chat/suggested-user-row';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import { getSuggestedUsers, searchUsers, type SuggestedUser } from '@/services/feed-api';
+import { useTranslation } from 'react-i18next';
 
 export default function NewMessageScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const { conversations, currentUserId } = useChat();
   const [query, setQuery] = useState('');
@@ -71,22 +75,22 @@ export default function NewMessageScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={styles.backButton}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>New Message</Text>
+        <Text style={styles.title}>{t('New Message')}</Text>
         <View style={styles.backButton} />
       </View>
 
       <View style={styles.toRow}>
-        <Text style={styles.toLabel}>To:</Text>
+        <Text style={styles.toLabel}>{t('To:')}</Text>
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search people to message…"
+          placeholder={t('Search people to message…')}
           placeholderTextColor={AppColors.textPlaceholder}
           autoFocus
           autoCapitalize="none"
@@ -97,11 +101,11 @@ export default function NewMessageScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionTitle}>{trimmed ? 'Results' : 'Suggested'}</Text>
+        <Text style={styles.sectionTitle}>{trimmed ? t('Results') : t('Suggested')}</Text>
         {trimmed && isSearching && results.length === 0 ? (
           <ActivityIndicator style={styles.loading} color={AppColors.link} />
         ) : list.length === 0 ? (
-          <Text style={styles.empty}>{trimmed ? 'No people found.' : 'No suggestions right now.'}</Text>
+          <Text style={styles.empty}>{trimmed ? t('No people found.') : t('No suggestions right now.')}</Text>
         ) : (
           list.map((user) => <SuggestedUserRow key={user._id} user={user} onPress={() => openChat(user)} />)
         )}
@@ -110,7 +114,7 @@ export default function NewMessageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -176,4 +180,4 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     textAlign: 'center',
   },
-});
+}));

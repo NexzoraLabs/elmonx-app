@@ -1,16 +1,20 @@
 type AppEnv = {
   apiUrl: string;
   socketUrl: string;
+  /** Website (lmnx-st_ng) — hosts /app-login for Google/Apple sign-in. */
+  webUrl: string;
 };
 
 const dev: AppEnv = {
   apiUrl: 'https://api-dev.elmonx.com/api',
   socketUrl: 'https://api-dev.elmonx.com',
+  webUrl: 'https://ddrops.elmonx.com',
 };
 
 const live: AppEnv = {
   apiUrl: 'https://api.elmonx.com/api',
   socketUrl: 'https://api.elmonx.com',
+  webUrl: 'https://elmonx.com',
 };
 
 // ─── Switch here to change environment ────────────────────────────────────────
@@ -19,6 +23,7 @@ const ACTIVE_ENV: AppEnv = dev;
 
 export const API_BASE_URL = ACTIVE_ENV.apiUrl;
 export const SOCKET_URL = ACTIVE_ENV.socketUrl;
+export const WEB_URL = ACTIVE_ENV.webUrl;
 export const IS_DEV = ACTIVE_ENV === dev;
 
 // Giphy — same key + channel as the website (`lmnx-st_ng` environment.ts). A Giphy API key is a

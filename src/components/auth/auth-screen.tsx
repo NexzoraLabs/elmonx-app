@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 type AuthScreenProps = {
   header?: ReactNode;
@@ -12,6 +12,7 @@ type AuthScreenProps = {
 };
 
 export function AuthScreen({ header, children, footer, scrollable = true }: AuthScreenProps) {
+  const styles = useStyles();
   const Content = scrollable ? ScrollView : View;
   const contentProps = scrollable
     ? { contentContainerStyle: styles.scrollContent, keyboardShouldPersistTaps: 'handled' as const }
@@ -30,7 +31,7 @@ export function AuthScreen({ header, children, footer, scrollable = true }: Auth
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -57,4 +58,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 12,
   },
-});
+}));

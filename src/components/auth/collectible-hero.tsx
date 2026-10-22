@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 // Welcome-screen artwork: three real drop images fanned out (front, left, right).
 const FRONT_IMAGE = 'https://assets.elmonx.com/drops/1792071914968_760944894.webp';
@@ -9,6 +9,7 @@ const LEFT_IMAGE = 'https://assets.elmonx.com/drops/1776862843984_576666441.webp
 const RIGHT_IMAGE = 'https://assets.elmonx.com/drops/1780316209621_577398966.webp';
 
 export function CollectibleHero() {
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <View style={[styles.card, styles.sideCard, styles.leftCard]}>
@@ -24,7 +25,7 @@ export function CollectibleHero() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     height: 220,
     alignItems: 'center',
@@ -53,4 +54,4 @@ const styles = StyleSheet.create({
     height: 190,
     borderRadius: 16,
   },
-});
+}));

@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArtistsTabPage } from '@/components/collections/artists-tab-page';
@@ -11,7 +13,7 @@ import { FiltersModal } from '@/components/collections/filters-modal';
 import { PaginatedGridPage } from '@/components/collections/paginated-grid-page';
 import { CategoryTabs } from '@/components/home/category-tabs';
 import { HomeHeader } from '@/components/home/home-header';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { COLLECTIONS_CATEGORY_TABS } from '@/data/collections-mock';
 import {
   DEFAULT_CATALOG_FILTERS,
@@ -23,22 +25,29 @@ import {
 } from '@/services/catalog-filters';
 import { collectionListItemToGridItem, fetchCollectionsList } from '@/services/collections-api';
 import { dropToGridItem, fetchFeaturedDrops, fetchPartnerDrops } from '@/services/drops-api';
+import { useTranslation } from 'react-i18next';
 
 type Chip = { key: string; label: string; clear: (f: CatalogFilters) => CatalogFilters };
 
-function filterChips(filters: CatalogFilters, tab: CatalogTab, brands: FilterOption[], categories: FilterOption[]): Chip[] {
+function filterChips(
+  filters: CatalogFilters,
+  tab: CatalogTab,
+  brands: FilterOption[],
+  categories: FilterOption[],
+  t: TFunction,
+): Chip[] {
   const chips: Chip[] = [];
   if (tab !== 'Partners') {
-    if (filters.blockchain !== 'All') chips.push({ key: 'chain', label: filters.blockchain, clear: (f) => ({ ...f, blockchain: 'All' }) });
-    if (filters.destination !== 'All') chips.push({ key: 'dest', label: filters.destination, clear: (f) => ({ ...f, destination: 'All' }) });
-    if (filters.edition !== 'all') chips.push({ key: 'edition', label: filters.edition, clear: (f) => ({ ...f, edition: 'all' }) });
+    if (filters.blockchain !== 'All') chips.push({ key: 'chain', label: t(filters.blockchain), clear: (f) => ({ ...f, blockchain: 'All' }) });
+    if (filters.destination !== 'All') chips.push({ key: 'dest', label: t(filters.destination), clear: (f) => ({ ...f, destination: 'All' }) });
+    if (filters.edition !== 'all') chips.push({ key: 'edition', label: t(filters.edition), clear: (f) => ({ ...f, edition: 'all' }) });
     if (filters.categoryId) {
-      const title = categories.find((c) => c._id === filters.categoryId)?.title.trim() ?? 'Category';
+      const title = categories.find((c) => c._id === filters.categoryId)?.title.trim() ?? t('Category');
       chips.push({ key: 'category', label: title, clear: (f) => ({ ...f, categoryId: null }) });
     }
   }
   filters.brandIds.forEach((id) => {
-    const title = brands.find((b) => b._id === id)?.title ?? 'Artist';
+    const title = brands.find((b) => b._id === id)?.title ?? t('Artist');
     chips.push({ key: `brand-${id}`, label: title, clear: (f) => ({ ...f, brandIds: f.brandIds.filter((b) => b !== id) }) });
   });
   if (filters.dateFrom || filters.dateTo) {
@@ -51,7 +60,7 @@ function filterChips(filters: CatalogFilters, tab: CatalogTab, brands: FilterOpt
   if (filters.priceMin || filters.priceMax) {
     chips.push({
       key: 'price',
-      label: `£${filters.priceMin || '0'} – ${filters.priceMax ? `£${filters.priceMax}` : 'any'}`,
+      label: `£${filters.priceMin || '0'} – ${filters.priceMax ? `£${filters.priceMax}` : t('any')}`,
       clear: (f) => ({ ...f, priceMin: '', priceMax: '' }),
     });
   }
@@ -59,7 +68,17 @@ function filterChips(filters: CatalogFilters, tab: CatalogTab, brands: FilterOpt
 }
 
 export default function CollectionsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [pageIndex, setPageIndex] = useState(0);
+  // Deep link into a tab (Home → Featured Drops "View All" → Collectibles).
+  const params = useLocalSearchParams<{ tab?: string; t?: string }>();
+  useEffect(() => {
+    const index = COLLECTIONS_CATEGORY_TABS.findIndex((tab) => tab === params.tab);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- select the tab asked for by the link
+    if (index >= 0) setPageIndex(index);
+  }, [params.tab, params.t]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [search, setSearch] = useState('');
@@ -115,7 +134,7 @@ export default function CollectionsScreen() {
           key={pageKey('Collections')}
           layout="single"
           skeletonCount={3}
-          emptyMessage={search ? `No collections found for "${search}".` : 'No collections yet.'}
+          emptyMessage={search ? t('No collections found for "{{search}}".', { search }) : t('No collections yet.')}
           fetchPage={(page) =>
             fetchCollectionsList(page, filtersByTab.Collections, search).then((result) => ({
               items: result.items.map(collectionListItemToGridItem),
@@ -131,7 +150,7 @@ export default function CollectionsScreen() {
         <PaginatedGridPage
           key={pageKey('Collectibles')}
           layout="grid"
-          emptyMessage={search ? `No collectibles found for "${search}".` : 'No collectibles yet.'}
+          emptyMessage={search ? t('No collectibles found for "{{search}}".', { search }) : t('No collectibles yet.')}
           fetchPage={(page) =>
             fetchFeaturedDrops(page, filtersByTab.Collectibles, search).then((result) => ({
               items: result.items.map((drop) => dropToGridItem(drop, 'Collectibles')),
@@ -151,7 +170,7 @@ export default function CollectionsScreen() {
         <PaginatedGridPage
           key={pageKey('Partners')}
           layout="grid"
-          emptyMessage={search ? `No partner drops found for "${search}".` : 'No partner drops yet.'}
+          emptyMessage={search ? t('No partner drops found for "{{search}}".', { search }) : t('No partner drops yet.')}
           fetchPage={(page) =>
             fetchPartnerDrops(page, filtersByTab.Partners, search).then((result) => ({
               items: result.items.map((drop) => dropToGridItem(drop, 'Partners')),
@@ -167,7 +186,7 @@ export default function CollectionsScreen() {
     },
   ];
 
-  const chips = catalogTab ? filterChips(filtersByTab[catalogTab], catalogTab, brands, categories) : [];
+  const chips = catalogTab ? filterChips(filtersByTab[catalogTab], catalogTab, brands, categories, t) : [];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -185,7 +204,7 @@ export default function CollectionsScreen() {
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
-            placeholder={`Search ${currentTab.toLowerCase()}`}
+            placeholder={t('Search {{tab}}', { tab: t(currentTab).toLowerCase() })}
             placeholderTextColor={AppColors.textPlaceholder}
             autoFocus
             autoCorrect={false}
@@ -240,7 +259,7 @@ export default function CollectionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -288,4 +307,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 1,
   },
-});
+}));

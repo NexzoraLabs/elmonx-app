@@ -6,9 +6,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UserAvatar } from '@/components/account/user-avatar';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_MENU_ITEMS, type MenuItem } from '@/data/menu-items';
+import { useTranslation } from 'react-i18next';
 
 // Temporary: these menu items open the public website until dedicated in-app
 // screens exist for them.
@@ -23,6 +24,9 @@ const MENU_ITEM_URLS: Record<string, string> = {
 };
 
 export function MenuDrawerContent(props: DrawerContentComponentProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const items = ACCOUNT_MENU_ITEMS;
   const { user, signOut } = useAuth();
@@ -47,7 +51,7 @@ export function MenuDrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-      <Text style={styles.title}>Menu</Text>
+      <Text style={styles.title}>{t('Menu')}</Text>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
         {items.map((item) => (
           <Pressable
@@ -56,7 +60,7 @@ export function MenuDrawerContent(props: DrawerContentComponentProps) {
             onPress={() => handlePressItem(item)}>
             <View style={styles.itemLeft}>
               <Ionicons name={item.icon} size={20} color={AppColors.textPrimary} />
-              <Text style={styles.itemLabel}>{item.label}</Text>
+              <Text style={styles.itemLabel}>{t(item.label)}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
           </Pressable>
@@ -77,7 +81,7 @@ export function MenuDrawerContent(props: DrawerContentComponentProps) {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Log out"
+              accessibilityLabel={t('Log out')}
               hitSlop={10}
               style={({ pressed }) => [styles.logOutButton, pressed && styles.itemPressed]}
               onPress={handleLogOut}>
@@ -90,7 +94,7 @@ export function MenuDrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -160,4 +164,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: AppColors.surface,
   },
-});
+}));

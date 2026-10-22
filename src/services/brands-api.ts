@@ -1,6 +1,7 @@
 import { escapeSearch } from '@/services/catalog-filters';
 
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 export type Brand = {
   _id: string;
@@ -22,7 +23,7 @@ export async function fetchBrands(search = ''): Promise<Brand[]> {
   if (search.trim()) params.append('filter', escapeSearch(search));
   const response = await fetch(`${API_BASE_URL}/brands/list?${params.toString()}`);
   if (!response.ok) {
-    throw new Error(`Failed to load artists (${response.status})`);
+    throw new Error(i18n.t('Failed to load artists ({{status}})', { status: response.status }));
   }
   const json: BrandsListResponse = await response.json();
   return json.data;

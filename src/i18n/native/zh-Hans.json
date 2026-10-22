@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "用于拍摄帖子照片，以及通过相机以增强现实查看你的收藏品。",
+    "NSMicrophoneUsageDescription": "用于录制收藏品的 3D 和 AR 视频并录入声音。",
+    "NSPhotoLibraryAddUsageDescription": "用于将收藏品的照片和视频保存到你的相册。",
+    "NSPhotoLibraryUsageDescription": "用于选择头像和封面图片的照片。"
+  }
+}

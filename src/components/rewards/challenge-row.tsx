@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { RewardPillButton, toneForStatus } from '@/components/rewards/reward-pill-button';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { ChallengeDefinition } from '@/data/challenges';
 import type { RewardStatus, RewardTasks } from '@/services/rewards-api';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   index: number;
@@ -21,6 +22,8 @@ function statusOf(tasks: RewardTasks | null, key: string): RewardStatus {
 }
 
 export function ChallengeRow({ index, definition, tasks, isLoading, isClaiming, resetCountdownLabel, onPress }: Props) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const status = statusOf(tasks, definition.key);
   const isDone = status === 'complete' || status === 'done';
   const isAvailable = status === 'available';
@@ -36,28 +39,28 @@ export function ChallengeRow({ index, definition, tasks, isLoading, isClaiming, 
           <Text style={styles.indexText}>{index}</Text>
         </View>
         <View style={styles.textCol}>
-          <Text style={styles.title}>{definition.title}</Text>
-          <Text style={styles.description}>{definition.description}</Text>
+          <Text style={styles.title}>{t(definition.title)}</Text>
+          <Text style={styles.description}>{t(definition.description)}</Text>
         </View>
       </View>
 
       <View style={styles.right}>
-        <Text style={styles.points}>{definition.pointsLabel}</Text>
+        <Text style={styles.points}>{t(definition.pointsLabel)}</Text>
 
         {definition.isInfoOnly ? null : isLoading ? (
           <View style={styles.loadingBox} />
         ) : showProgressBadge ? (
-          <RewardPillButton tone="pending" label={`${progressValue}/${definition.progress?.goal} days`} />
+          <RewardPillButton tone="pending" label={t('{{done}}/{{goal}} days', { done: progressValue, goal: definition.progress?.goal })} />
         ) : (
           <View style={styles.buttonCol}>
             <RewardPillButton
               tone={toneForStatus(status)}
-              label={isDone ? 'Done' : isAvailable ? (definition.isSpin ? 'Spin' : 'Claim') : 'Pending'}
+              label={isDone ? t('Done') : isAvailable ? (definition.isSpin ? t('Spin') : t('Claim')) : t('Pending')}
               disabled={!isAvailable}
               loading={isClaiming}
               onPress={() => onPress(definition)}
             />
-            {showRepeatingCountdown ? <Text style={styles.countdown}>Next in {resetCountdownLabel}</Text> : null}
+            {showRepeatingCountdown ? <Text style={styles.countdown}>{t('Next in')}{' '}{resetCountdownLabel}</Text> : null}
           </View>
         )}
       </View>
@@ -65,7 +68,7 @@ export function ChallengeRow({ index, definition, tasks, isLoading, isClaiming, 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,4 +129,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 10,
   },
-});
+}));

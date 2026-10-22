@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 const BASE = `${API_BASE_URL}/`;
 
 export type AuctionStatus = 'Upcoming' | 'Live' | 'Ended' | 'Cancelled';
@@ -213,13 +214,13 @@ export function formatCountdown(ms: number): string {
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
   const pad = (n: number) => String(n).padStart(2, '0');
-  if (d > 0) return `${d}d ${pad(h)}h`;
+  if (d > 0) return i18n.t('{{d}}d {{h}}h', { d, h: pad(h) });
   if (h > 0) return `${pad(h)}h ${pad(m)}m ${pad(sec)}s`;
   return `${pad(m)}m ${pad(sec)}s`;
 }
 
 export function editionsLabel(editions: number): string {
-  return editions === 1 ? '1 of 1' : `${editions} editions · top ${editions} win`;
+  return editions === 1 ? i18n.t('1 of 1') : i18n.t('{{n}} editions · top {{n}} win', { n: editions });
 }
 
 // ---- Auction Wins ----

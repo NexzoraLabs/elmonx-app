@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type ChatSearchBarProps = {
   value: string;
@@ -9,13 +10,16 @@ type ChatSearchBarProps = {
 };
 
 export function ChatSearchBar({ value, onChangeText }: ChatSearchBarProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Ionicons name="search-outline" size={16} color={AppColors.textSecondary} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder="Search"
+        placeholder={t('Search')}
         placeholderTextColor={AppColors.textPlaceholder}
         style={styles.input}
       />
@@ -23,7 +27,7 @@ export function ChatSearchBar({ value, onChangeText }: ChatSearchBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -40,4 +44,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 0,
   },
-});
+}));

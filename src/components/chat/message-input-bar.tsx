@@ -4,8 +4,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { MAX_MESSAGE_LENGTH } from '@/services/chat-api';
+import { useTranslation } from 'react-i18next';
 
 export type PickedImage = { uri: string; mimeType?: string; fileName?: string | null };
 
@@ -18,6 +19,9 @@ type MessageInputBarProps = {
 const TYPING_IDLE_MS = 2000;
 
 export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [text, setText] = useState('');
   const [image, setImage] = useState<PickedImage | null>(null);
   const [sending, setSending] = useState(false);
@@ -52,7 +56,7 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to send images.');
+      Alert.alert(t('Permission needed'), t('Allow photo access to send images.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
@@ -83,11 +87,11 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
             <Image source={{ uri: image.uri }} style={styles.preview} contentFit="cover" />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Remove image"
+              accessibilityLabel={t('Remove image')}
               hitSlop={6}
               onPress={() => setImage(null)}
               style={styles.removePreview}>
-              <Ionicons name="close" size={12} color={AppColors.textPrimary} />
+              <Ionicons name="close" size={12} color={AppColors.onMedia} />
             </Pressable>
           </View>
         </View>
@@ -96,7 +100,7 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
       <View style={styles.row}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Attach image"
+          accessibilityLabel={t('Attach image')}
           hitSlop={8}
           onPress={handlePickImage}
           style={styles.attachButton}>
@@ -107,7 +111,7 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
           <TextInput
             value={text}
             onChangeText={handleChange}
-            placeholder="Send a message"
+            placeholder={t('Send a message')}
             placeholderTextColor={AppColors.textPlaceholder}
             style={styles.input}
             multiline
@@ -116,7 +120,7 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
         </View>
 
         {canSend || sending ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={handleSend} hitSlop={8} disabled={sending}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('Send')} onPress={handleSend} hitSlop={8} disabled={sending}>
             {sending ? (
               <ActivityIndicator color={AppColors.textPrimary} />
             ) : (
@@ -129,7 +133,7 @@ export function MessageInputBar({ onSend, onTypingChange }: MessageInputBarProps
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: AppColors.border,
@@ -183,4 +187,4 @@ const styles = StyleSheet.create({
     padding: 0,
     maxHeight: 100,
   },
-});
+}));

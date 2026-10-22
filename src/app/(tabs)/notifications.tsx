@@ -5,35 +5,39 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as notifApi from '@/services/notifications-api';
 import type { AppNotification } from '@/services/notifications-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 const ITEMS_PER_PAGE = 10;
-// Fallback for notifications without an NFT/drop image: the white ELMONX header wordmark on a dark
-// tile. Bundled locally — the old assets.elmonx.com logo URL returns 403.
-const ELMONX_WORDMARK = require('@/assets/images/elmonx-wordmark.png');
-const WORDMARK_RATIO = 644 / 83;
+// Website fallback for notifications without an NFT/drop image: black ElmonX logo on a white tile
+// (`logo-black.svg`). Bundled locally — the old assets.elmonx.com logo URL returns 403.
+const ELMONX_LOGO = require('@/assets/images/elmonx-logo.png');
 
-function ElmonxLogoTile({ size }: { size: number }) {
-  const width = size * 0.8;
+function ElmonxLogoTile({ size, logoSize }: { size: number; logoSize: number }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={[styles.logoTile, { width: size, height: size }]}>
       <Image
-        source={ELMONX_WORDMARK}
-        style={{ width, height: width / WORDMARK_RATIO }}
+        source={ELMONX_LOGO}
+        style={{ width: logoSize, height: logoSize }}
         contentFit="contain"
-        accessibilityLabel="ElmonX"
+        tintColor="#000000"
+        accessibilityLabel={t('ElmonX')}
       />
     </View>
   );
@@ -42,13 +46,13 @@ function ElmonxLogoTile({ size }: { size: number }) {
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return i18n.t('just now');
+  if (m < 60) return i18n.t('{{n}}m ago', { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return i18n.t('{{n}}h ago', { n: h });
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (d < 7) return i18n.t('{{n}}d ago', { n: d });
+  return new Date(dateStr).toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function dayBucket(dateStr: string, now: number): string {
@@ -60,6 +64,9 @@ function dayBucket(dateStr: string, now: number): string {
 }
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [total, setTotal] = useState(0);
@@ -85,7 +92,7 @@ export default function NotificationsScreen() {
       setTotal(res.total);
       setPage(p);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load notifications.');
+      setError(e instanceof Error ? e.message : i18n.t('Could not load notifications.'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -108,7 +115,7 @@ export default function NotificationsScreen() {
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t('Notifications')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -118,14 +125,14 @@ export default function NotificationsScreen() {
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryBtn} onPress={() => load(1)}>
-            <Text style={styles.retryText}>Try Again</Text>
+            <Text style={styles.retryText}>{t('Try Again')}</Text>
           </Pressable>
         </View>
       ) : items.length === 0 ? (
         <View style={styles.centered}>
           <Ionicons name="notifications-off-outline" size={48} color={AppColors.textSecondary} />
-          <Text style={styles.emptyTitle}>No notifications</Text>
-          <Text style={styles.emptySubtitle}>You don&apos;t have any notifications at the moment</Text>
+          <Text style={styles.emptyTitle}>{t('No notifications')}</Text>
+          <Text style={styles.emptySubtitle}>{t('You don\'t have any notifications at the moment')}</Text>
         </View>
       ) : (
         <FlatList
@@ -160,10 +167,13 @@ export default function NotificationsScreen() {
 }
 
 function GroupLabel({ label }: { label: string }) {
-  return <Text style={styles.groupLabel}>{label}</Text>;
+  const { t } = useTranslation();
+  const styles = useStyles();
+  return <Text style={styles.groupLabel}>{t(label)}</Text>;
 }
 
 function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => void }) {
+  const styles = useStyles();
   const img = item.users_nft?.nft_image ?? item.drop_info?.image_url;
   return (
     <Pressable
@@ -173,7 +183,7 @@ function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => voi
         {img ? (
           <Image source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="contain" transition={100} />
         ) : (
-          <ElmonxLogoTile size={44} />
+          <ElmonxLogoTile size={44} logoSize={28} />
         )}
       </View>
       <View style={styles.rowBody}>
@@ -193,13 +203,16 @@ function NotifDetailModal({
   notification: AppNotification | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
+  const { height } = useWindowDimensions();
   if (!notification) return null;
   const img = notification.users_nft?.nft_image ?? notification.drop_info?.image_url;
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.dialog} onPress={() => {}}>
+    <BottomSheet visible onClose={onClose}>
+        <View style={[styles.dialog, { maxHeight: height * 0.8 }]}>
           {/* Title bar */}
           <View style={styles.dialogHeader}>
             <Text style={styles.dialogTitle} numberOfLines={2}>{notification.title}</Text>
@@ -214,29 +227,29 @@ function NotifDetailModal({
               {img ? (
                 <Image source={{ uri: img }} style={styles.dialogImg} contentFit="contain" />
               ) : (
-                <ElmonxLogoTile size={80} />
+                <ElmonxLogoTile size={80} logoSize={50} />
               )}
             </View>
 
             {/* Details rows */}
             {notification.drop_info ? (
-              <DetailRow label="Drop" value={notification.drop_info.title} />
+              <DetailRow label={t('Drop')} value={notification.drop_info.title} />
             ) : null}
             {notification.users_nft ? (
-              <DetailRow label="NFT" value={notification.users_nft.nft_name} />
+              <DetailRow label={t('NFT')} value={notification.users_nft.nft_name} />
             ) : null}
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Message</Text>
+              <Text style={styles.detailLabel}>{t('Message')}</Text>
               <Text style={styles.detailMessage}>{notification.message}</Text>
             </View>
 
-            <DetailRow label="Status" value={notification.is_seen ? 'Read' : 'Unread'} valueStyle={notification.is_seen ? styles.seenText : styles.unseenText} />
+            <DetailRow label={t('Status')} value={notification.is_seen ? t('Read') : t('Unread')} valueStyle={notification.is_seen ? styles.seenText : styles.unseenText} />
 
             {notification.is_seen && notification.seen_at ? (
               <DetailRow
-                label="Seen at"
-                value={new Date(notification.seen_at).toLocaleString('en-GB', {
+                label={t('Seen at')}
+                value={new Date(notification.seen_at).toLocaleString(appLocale('en-GB'), {
                   day: 'numeric', month: 'short', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 })}
@@ -244,8 +257,8 @@ function NotifDetailModal({
             ) : null}
 
             <DetailRow
-              label="Received"
-              value={new Date(notification.created_at).toLocaleString('en-GB', {
+              label={t('Received')}
+              value={new Date(notification.created_at).toLocaleString(appLocale('en-GB'), {
                 day: 'numeric', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit',
               })}
@@ -253,11 +266,10 @@ function NotifDetailModal({
           </ScrollView>
 
           <Pressable style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>Close</Text>
+            <Text style={styles.closeBtnText}>{t('Close')}</Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </View>
+    </BottomSheet>
   );
 }
 
@@ -270,6 +282,7 @@ function DetailRow({
   value: string;
   valueStyle?: object;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
@@ -278,7 +291,7 @@ function DetailRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -379,7 +392,7 @@ const styles = StyleSheet.create({
   },
   logoTile: {
     borderRadius: 10,
-    backgroundColor: AppColors.background,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -411,19 +424,7 @@ const styles = StyleSheet.create({
   },
 
   /* Detail Modal */
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    padding: 20,
-  },
   dialog: {
-    backgroundColor: AppColors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    padding: 20,
-    maxHeight: '85%',
     gap: 16,
   },
   dialogHeader: {
@@ -492,4 +493,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}));

@@ -8,12 +8,13 @@ import { ChallengeRow } from '@/components/rewards/challenge-row';
 import { RewardIconRow } from '@/components/rewards/reward-icon-row';
 import { RewardPillButton } from '@/components/rewards/reward-pill-button';
 import { SocialProgressRow } from '@/components/rewards/social-progress-row';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { CHALLENGES, type ChallengeDefinition } from '@/data/challenges';
 import { DROP_ACTION_KEYS, FOLLOWER_TIERS, FOLLOW_TIERS, SOCIAL_ACTION_KEYS } from '@/data/social-tasks';
 import * as rewardsApi from '@/services/rewards-api';
 import type { RewardStatus, RewardTasks, SocialActionProgress } from '@/services/rewards-api';
+import { useTranslation } from 'react-i18next';
 
 function statusOf(tasks: RewardTasks, key: string): RewardStatus {
   const value = tasks[key];
@@ -29,6 +30,9 @@ function activeTier(tasks: RewardTasks, tiers: typeof FOLLOW_TIERS) {
 }
 
 export default function ChallengesScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
 
   const [actionsTasks, setActionsTasks] = useState<RewardTasks>({});
@@ -101,10 +105,10 @@ export default function ChallengesScreen() {
     setClaimingKey(type);
     try {
       const result = await rewardsApi.claimTask(token, type, action);
-      showBanner('success', result.message || 'Claimed!');
+      showBanner('success', result.message || t('Claimed!'));
       onSuccess();
     } catch (e) {
-      showBanner('error', e instanceof Error ? e.message : 'Something went wrong.');
+      showBanner('error', e instanceof Error ? e.message : t('Something went wrong.'));
     } finally {
       setClaimingKey(null);
     }
@@ -117,10 +121,10 @@ export default function ChallengesScreen() {
       setClaimingKey(definition.key);
       try {
         const result = await rewardsApi.spinReward(token);
-        showBanner('success', `${result.reward_label}! is heading your way!`);
+        showBanner('success', t('{{reward}}! is heading your way!', { reward: result.reward_label }));
         loadActionsTasks();
       } catch (e) {
-        showBanner('error', e instanceof Error ? e.message : 'Error spinning wheel');
+        showBanner('error', e instanceof Error ? e.message : t('Error spinning wheel'));
       } finally {
         setClaimingKey(null);
       }
@@ -166,13 +170,13 @@ export default function ChallengesScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Daily Quests, Earn XP</Text>
+        <Text style={styles.headerTitle}>{t('Daily Quests, Earn XP')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -183,8 +187,8 @@ export default function ChallengesScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionLabel}>ACTIONS</Text>
-        <Text style={styles.sectionSubtitle}>Complete these actions inside ELMONX to earn XP points.</Text>
+        <Text style={styles.sectionLabel}>{t('ACTIONS')}</Text>
+        <Text style={styles.sectionSubtitle}>{t('Complete these actions inside ELMONX to earn XP points.')}</Text>
         <View style={styles.card}>
           {CHALLENGES.map((definition, index) => (
             <View key={definition.key}>
@@ -202,17 +206,16 @@ export default function ChallengesScreen() {
           ))}
         </View>
 
-        <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>SOCIAL</Text>
-        <Text style={styles.sectionSubtitle}>Complete these tasks on ELMONX Social to earn XP points.</Text>
+        <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>{t('SOCIAL')}</Text>
+        <Text style={styles.sectionSubtitle}>{t('Complete these tasks on ELMONX Social to earn XP points.')}</Text>
         <View style={styles.card}>
           {isLoadingSocial ? <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} /> : null}
 
           {!isLoadingSocial && socialProgress.length > 0 ? (
             <View style={styles.goodToKnow}>
-              <Text style={styles.goodToKnowTitle}>Good to know</Text>
+              <Text style={styles.goodToKnowTitle}>{t('Good to know')}</Text>
               <Text style={styles.goodToKnowText}>
-                Earn points on posts and drops only once. Re-liking or commenting on content you&apos;ve already
-                earned from won&apos;t earn additional points.
+                {t('Earn points on posts and drops only once. Re-liking or commenting on content you\'ve already earned from won\'t earn additional points.')}
               </Text>
             </View>
           ) : null}
@@ -235,59 +238,59 @@ export default function ChallengesScreen() {
             <>
           <RewardIconRow
             icon="locate-outline"
-            title="Daily Social Goal"
-            description="Do all three above — post, comment, like — then tap claim. That's one day done."
-            pointsLabel="+15 XP">
+            title={t('Daily Social Goal')}
+            description={t('Do all three above — post, comment, like — then tap claim. That\'s one day done.')}
+            pointsLabel={t('+15 XP')}>
             {goalStatus === 'available' ? (
               <RewardPillButton
                 tone="claimable"
-                label="Claim"
+                label={t('Claim')}
                 loading={claimingKey === 'social_daily_goal'}
                 onPress={() => handleClaimSocialMeta('social_daily_goal')}
               />
             ) : goalClaimedToday ? (
               <View style={styles.buttonCol}>
-                <RewardPillButton tone="done" label="Claimed" />
-                <Text style={styles.countdown}>Next in {resetCountdownLabel}</Text>
+                <RewardPillButton tone="done" label={t('Claimed')} />
+                <Text style={styles.countdown}>{t('Next in')}{' '}{resetCountdownLabel}</Text>
               </View>
             ) : (
-              <RewardPillButton tone="pending" label={`${goalActionsToday}/${dailyGoal} done`} />
+              <RewardPillButton tone="pending" label={t('{{done}}/{{goal}} done', { done: goalActionsToday, goal: dailyGoal })} />
             )}
           </RewardIconRow>
           <View style={styles.divider} />
 
           <RewardIconRow
             icon="calendar-outline"
-            title="Social Streak (7 Days)"
-            description="Claim 7 days in a row to earn bonus points. Skip a day and the count goes back to zero."
-            pointsLabel="+100 XP">
+            title={t('Social Streak (7 Days)')}
+            description={t('Claim 7 days in a row to earn bonus points. Skip a day and the count goes back to zero.')}
+            pointsLabel={t('+100 XP')}>
             {statusOf(socialTasks, 'social_weekly_streak') === 'available' ? (
               <RewardPillButton
                 tone="claimable"
-                label="Claim"
+                label={t('Claim')}
                 loading={claimingKey === 'social_weekly_streak'}
                 onPress={() => handleClaimSocialMeta('social_weekly_streak')}
               />
             ) : (
-              <RewardPillButton tone="pending" label={`${weeklyDays}/7 days`} />
+              <RewardPillButton tone="pending" label={t('{{done}}/{{goal}} days', { done: weeklyDays, goal: 7 })} />
             )}
           </RewardIconRow>
           <View style={styles.divider} />
 
           <RewardIconRow
             icon="medal-outline"
-            title="Social Loyalty (30 Days)"
-            description="Claim 30 days in a row to earn your reward. Skip a day and the count goes back to zero."
-            pointsLabel="+500 XP">
+            title={t('Social Loyalty (30 Days)')}
+            description={t('Claim 30 days in a row to earn your reward. Skip a day and the count goes back to zero.')}
+            pointsLabel={t('+500 XP')}>
             {statusOf(socialTasks, 'social_monthly_streak') === 'available' ? (
               <RewardPillButton
                 tone="claimable"
-                label="Claim"
+                label={t('Claim')}
                 loading={claimingKey === 'social_monthly_streak'}
                 onPress={() => handleClaimSocialMeta('social_monthly_streak')}
               />
             ) : (
-              <RewardPillButton tone="pending" label={`${monthlyDays}/30 days`} />
+              <RewardPillButton tone="pending" label={t('{{done}}/{{goal}} days', { done: monthlyDays, goal: 30 })} />
             )}
           </RewardIconRow>
 
@@ -307,34 +310,34 @@ export default function ChallengesScreen() {
           ) : null}
 
           <View style={styles.divider} />
-          <RewardIconRow icon="person-add-outline" title={followTier.title} description={followTier.description} pointsLabel={`+${followTier.points} XP`}>
+          <RewardIconRow icon="person-add-outline" title={t(followTier.title)} description={t(followTier.description)} pointsLabel={t('+{{points}} XP', { points: followTier.points })}>
             {statusOf(actionsTasks, followTier.key) === 'available' ? (
               <RewardPillButton
                 tone="claimable"
-                label="Claim"
+                label={t('Claim')}
                 loading={claimingKey === followTier.key}
                 onPress={() => handleClaimFollowTier(followTier.key)}
               />
             ) : statusOf(actionsTasks, followTier.key) === 'complete' || statusOf(actionsTasks, followTier.key) === 'done' ? (
-              <RewardPillButton tone="done" label="Done" />
+              <RewardPillButton tone="done" label={t('Done')} />
             ) : (
-              <RewardPillButton tone="pending" label={`${followCount} of ${followTier.goal}`} />
+              <RewardPillButton tone="pending" label={t('{{done}} of {{goal}}', { done: followCount, goal: followTier.goal })} />
             )}
           </RewardIconRow>
           <View style={styles.divider} />
 
-          <RewardIconRow icon="people-outline" title={followerTier.title} description={followerTier.description} pointsLabel={`+${followerTier.points} XP`}>
+          <RewardIconRow icon="people-outline" title={t(followerTier.title)} description={t(followerTier.description)} pointsLabel={t('+{{points}} XP', { points: followerTier.points })}>
             {statusOf(actionsTasks, followerTier.key) === 'available' ? (
               <RewardPillButton
                 tone="claimable"
-                label="Claim"
+                label={t('Claim')}
                 loading={claimingKey === followerTier.key}
                 onPress={() => handleClaimFollowTier(followerTier.key)}
               />
             ) : statusOf(actionsTasks, followerTier.key) === 'complete' || statusOf(actionsTasks, followerTier.key) === 'done' ? (
-              <RewardPillButton tone="done" label="Done" />
+              <RewardPillButton tone="done" label={t('Done')} />
             ) : (
-              <RewardPillButton tone="pending" label={`${followerCount} of ${followerTier.goal}`} />
+              <RewardPillButton tone="pending" label={t('{{done}} of {{goal}}', { done: followerCount, goal: followerTier.goal })} />
             )}
           </RewardIconRow>
         </View>
@@ -343,7 +346,7 @@ export default function ChallengesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -450,4 +453,4 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 4,
   },
-});
+}));

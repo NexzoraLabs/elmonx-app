@@ -14,13 +14,15 @@ import { MessageContextMenu } from '@/components/chat/message-context-menu';
 import { MessageInputBar, type PickedImage } from '@/components/chat/message-input-bar';
 import { NewConversationProfileCard } from '@/components/chat/new-conversation-profile-card';
 import { UnblockUserSheet } from '@/components/chat/unblock-user-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import * as chatApi from '@/services/chat-api';
 import type { CanMessageReason, ChatMessage } from '@/services/chat-api';
 import * as feedApi from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 function upsertMessage(list: ChatMessage[], message: ChatMessage): ChatMessage[] {
   if (list.some((m) => m._id === message._id)) {
@@ -31,10 +33,13 @@ function upsertMessage(list: ChatMessage[], message: ChatMessage): ChatMessage[]
 
 function formatSeen(iso?: string | null): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(appLocale('en-US'), { hour: 'numeric', minute: '2-digit' });
 }
 
 export default function ConversationScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const params = useLocalSearchParams<{ id: string; userId: string; username: string; avatar?: string }>();
   const otherUserId = params.userId;
   const username = params.username ?? '';
@@ -77,7 +82,7 @@ export default function ConversationScreen() {
       // Fetching the thread also marks it read on the server.
       setMessages(await chatApi.getThread(token, conversationId));
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Unable to load messages.');
+      Alert.alert(i18n.t('Error'), e instanceof Error ? e.message : i18n.t('Unable to load messages.'));
     } finally {
       setIsLoading(false);
     }
@@ -167,16 +172,16 @@ export default function ConversationScreen() {
       setMessages((prev) => upsertMessage(prev, full));
       return true;
     } catch (e) {
-      Alert.alert('Message not sent', e instanceof Error ? e.message : 'Please try again.');
+      Alert.alert(t('Message not sent'), e instanceof Error ? e.message : t('Please try again.'));
       return false;
     }
   };
 
   const handleUnsend = (message: ChatMessage) => {
-    Alert.alert('Unsend message?', 'This message will be removed for everyone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Unsend message?'), t('This message will be removed for everyone.'), [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Unsend',
+        text: t('Unsend'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -185,7 +190,7 @@ export default function ConversationScreen() {
               prev.map((m) => (m._id === message._id ? { ...m, is_deleted: true, message: null, attachment_url: null } : m))
             );
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Unable to unsend.');
+            Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to unsend.'));
           }
         },
       },
@@ -199,7 +204,7 @@ export default function ConversationScreen() {
       setBlock((prev) => ({ ...prev, is_blocked: true }));
       if (conversationId) removeConversationLocally(conversationId);
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Unable to block.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to block.'));
     }
   };
 
@@ -211,7 +216,7 @@ export default function ConversationScreen() {
       loadRelationship();
       refreshConversations();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Unable to unblock.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to unblock.'));
     }
   };
 
@@ -224,7 +229,7 @@ export default function ConversationScreen() {
       await deleteConversation(conversationId);
       router.back();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Unable to delete chat.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to delete chat.'));
     }
   };
 
@@ -241,7 +246,7 @@ export default function ConversationScreen() {
     footer = (
       <View style={styles.notice}>
         <Text style={styles.noticeText}>
-          {block.is_blocked_by ? 'You cannot message this user.' : chatApi.canMessageReasonText(canMessage.reason)}
+          {block.is_blocked_by ? t('You cannot message this user.') : chatApi.canMessageReasonText(canMessage.reason)}
         </Text>
       </View>
     );
@@ -282,10 +287,10 @@ export default function ConversationScreen() {
               <>
                 {otherTyping ? (
                   <View style={styles.typingBubble}>
-                    <Text style={styles.typingText}>typing…</Text>
+                    <Text style={styles.typingText}>{t('typing…')}</Text>
                   </View>
                 ) : null}
-                {showSeen ? <Text style={styles.seen}>Seen {formatSeen(lastMessage.read_at)}</Text> : null}
+                {showSeen ? <Text style={styles.seen}>{t('Seen')}{' '}{formatSeen(lastMessage.read_at)}</Text> : null}
               </>
             }
             renderItem={({ item }) => (
@@ -345,7 +350,7 @@ export default function ConversationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -391,4 +396,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
   },
-});
+}));

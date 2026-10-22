@@ -2,12 +2,13 @@ import { Image } from 'expo-image';
 import { Dimensions, StyleSheet, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMG_SIZE = SCREEN_WIDTH - 80;
 
 export function ArtistWaveHeader({ color, imageUrl }: { color: string; imageUrl?: string }) {
+  const AppColors = useAppColors();
   return (
     <View style={styles.container}>
       <View style={[styles.imageBox, { backgroundColor: color || AppColors.surface }]}>

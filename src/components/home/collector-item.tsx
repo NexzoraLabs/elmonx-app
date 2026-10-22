@@ -1,10 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { CollectorItem } from '@/data/home-mock';
+import { useTranslation } from 'react-i18next';
 
 export function CollectorTile({ item }: { item: CollectorItem }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <View style={styles.avatarWrapper}>
@@ -16,12 +19,12 @@ export function CollectorTile({ item }: { item: CollectorItem }) {
       <Text style={styles.name} numberOfLines={1}>
         {item.name}
       </Text>
-      <Text style={styles.reward}>Reward {item.rewardXp} xp</Text>
+      <Text style={styles.reward}>{t('Reward')}{' '}{item.rewardXp}{' '}{t('xp')}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: 88,
     alignItems: 'center',
@@ -63,4 +66,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
-});
+}));

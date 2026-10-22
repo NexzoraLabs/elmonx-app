@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 
+import { API_BASE_URL } from '@/config/env';
 import { useAuth } from '@/context/auth-context';
-
-const API_BASE_URL = 'https://api.elmonx.com/api';
 
 // The stored login payload isn't guaranteed to carry `_id`, so resolve it once per token.
 const cache = new Map<string, Promise<string | null>>();
 
-function fetchUserId(token: string): Promise<string | null> {
+export function fetchUserId(token: string): Promise<string | null> {
   let pending = cache.get(token);
   if (!pending) {
     pending = fetch(`${API_BASE_URL}/user/profile`, { headers: { Authorization: `Bearer ${token}` } })

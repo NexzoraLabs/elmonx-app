@@ -4,13 +4,15 @@ import { router } from 'expo-router';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 export function FeaturedDropCard({ item }: { item: CollectionGridItem }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       style={styles.card}
@@ -53,7 +55,7 @@ export function FeaturedDropCard({ item }: { item: CollectionGridItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -106,11 +108,11 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderTopColor: AppColors.subtleFill,
   },
   dateText: {
     color: AppColors.textSecondary,
     fontSize: 11,
     fontWeight: '500',
   },
-});
+}));

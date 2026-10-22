@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 type OtpInputProps = {
   length: number;
@@ -8,6 +8,7 @@ type OtpInputProps = {
 };
 
 export function OtpInput({ length, value }: OtpInputProps) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       {Array.from({ length }).map((_, index) => {
@@ -24,7 +25,7 @@ export function OtpInput({ length, value }: OtpInputProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     gap: 28,
@@ -50,4 +51,4 @@ const styles = StyleSheet.create({
   underlineActive: {
     backgroundColor: AppColors.textPrimary,
   },
-});
+}));

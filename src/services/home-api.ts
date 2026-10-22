@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/config/env';
 import type { Drop } from '@/services/drops-api';
+import i18n from '@/i18n';
 
 export type HomeBanner = {
   id: string;
@@ -72,9 +73,9 @@ function extractExcerpt(html: string): string {
 
 export async function fetchStoreItems(): Promise<StoreItems> {
   const response = await fetch(`${API_BASE_URL}/store/store`);
-  if (!response.ok) throw new Error(`Failed to load store (${response.status})`);
+  if (!response.ok) throw new Error(i18n.t('Failed to load store ({{status}})', { status: response.status }));
   const json: StoreResponse = await response.json();
-  if (json.status !== 200 || !Array.isArray(json.data)) throw new Error('Unexpected store response');
+  if (json.status !== 200 || !Array.isArray(json.data)) throw new Error(i18n.t('Unexpected store response'));
 
   let banners: HomeBanner[] = [];
   let upcoming: Drop[] = [];

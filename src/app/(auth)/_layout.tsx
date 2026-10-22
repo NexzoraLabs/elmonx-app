@@ -1,12 +1,11 @@
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 
 export default function AuthLayout() {
+  const AppColors = useAppColors();
   return (
     <>
-      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,

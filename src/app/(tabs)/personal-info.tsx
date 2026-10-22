@@ -7,7 +7,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -16,10 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthButton } from '@/components/auth/auth-button';
-import { AppColors } from '@/constants/app-colors';
+import { PhoneNumberField } from '@/components/forms/phone-number-field';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as accountApi from '@/services/account-api';
 import type { ProfileUpdatePayload } from '@/services/account-api';
+import { dialCodeOf, phoneValidationError } from '@/services/phone';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 // The backend only accepts these two (`config.users.gender.single_arr`); anything else is a 422.
 const GENDERS = ['Male', 'Female'];
@@ -38,6 +41,9 @@ const EMPTY_FORM: ProfileUpdatePayload = {
 };
 
 export default function PersonalInfoScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, updateUser } = useAuth();
   const [form, setForm] = useState<ProfileUpdatePayload>(EMPTY_FORM);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,13 +62,14 @@ export default function PersonalInfoScreen() {
         email_address: profile.email_address ?? '',
         phone_number: profile.phone_number ?? '',
         country_code: profile.country_code ?? '',
-        iso_code: profile.iso_code ?? '',
+        // Website personal-info: country from the saved iso_code, else United Kingdom.
+        iso_code: profile.iso_code || 'gb',
         dob: profile.dob ? profile.dob.slice(0, 10) : '',
         gender: GENDERS.includes(profile.gender ?? '') ? (profile.gender as string) : '',
         bio: profile.bio ?? '',
       });
     } catch (e) {
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Unable to load your profile.' });
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : i18n.t('Unable to load your profile.') });
     } finally {
       setIsLoading(false);
     }
@@ -85,13 +92,25 @@ export default function PersonalInfoScreen() {
   const handleSave = async () => {
     if (!token || !canSave) return;
     if (form.dob && !/^\d{4}-\d{2}-\d{2}$/.test(form.dob)) {
-      setMessage({ type: 'error', text: 'Date of birth must be in YYYY-MM-DD format.' });
+      setMessage({ type: 'error', text: t('Date of birth must be in YYYY-MM-DD format.') });
+      return;
+    }
+    const phoneError = phoneValidationError(form.phone_number, form.iso_code);
+    if (phoneError) {
+      setMessage({ type: 'error', text: phoneError });
       return;
     }
     setIsSaving(true);
     setMessage(null);
     try {
-      const payload = { ...form, user_name: form.user_name.trim(), email_address: form.email_address.trim() };
+      const payload = {
+        ...form,
+        user_name: form.user_name.trim(),
+        email_address: form.email_address.trim(),
+        phone_number: form.phone_number.trim(),
+        // Always derived from the picked country ("+44"), like the website.
+        country_code: dialCodeOf(form.iso_code),
+      };
       await accountApi.updateProfile(token, payload);
       await updateUser({
         user_name: payload.user_name,
@@ -100,9 +119,9 @@ export default function PersonalInfoScreen() {
         email_address: payload.email_address,
         phone_number: payload.phone_number,
       });
-      setMessage({ type: 'success', text: 'Profile updated successfully.' });
+      setMessage({ type: 'success', text: t('Profile updated successfully.') });
     } catch (e) {
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Unable to update your profile.' });
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('Unable to update your profile.') });
     } finally {
       setIsSaving(false);
     }
@@ -113,13 +132,13 @@ export default function PersonalInfoScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Personal Information</Text>
+        <Text style={styles.headerTitle}>{t('Personal Information')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -137,56 +156,56 @@ export default function PersonalInfoScreen() {
               </View>
             ) : null}
 
-            <Field label="Username">
+            <Field label={t('Username')}>
               <Input
                 value={form.user_name}
                 onChangeText={(v) => update('user_name', v)}
-                placeholder="Enter username"
+                placeholder={t('Enter username')}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </Field>
 
             <View style={styles.row}>
-              <Field label="First Name" style={styles.rowField}>
-                <Input value={form.first_name} onChangeText={(v) => update('first_name', v)} placeholder="First name" />
+              <Field label={t('First Name')} style={styles.rowField}>
+                <Input value={form.first_name} onChangeText={(v) => update('first_name', v)} placeholder={t('First name')} />
               </Field>
-              <Field label="Last Name" style={styles.rowField}>
-                <Input value={form.last_name} onChangeText={(v) => update('last_name', v)} placeholder="Last name" />
+              <Field label={t('Last Name')} style={styles.rowField}>
+                <Input value={form.last_name} onChangeText={(v) => update('last_name', v)} placeholder={t('Last name')} />
               </Field>
             </View>
 
-            <Field label="Email">
+            <Field label={t('Email')}>
               <Input
                 value={form.email_address}
                 onChangeText={(v) => update('email_address', v)}
-                placeholder="Enter email"
+                placeholder={t('Enter email')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </Field>
 
-            <Field label="Phone Number">
-              <Input
-                value={form.phone_number}
-                onChangeText={(v) => update('phone_number', v)}
-                placeholder="(555) 123-4567"
-                keyboardType="phone-pad"
+            <Field label={t('Phone Number')}>
+              <PhoneNumberField
+                iso2={form.iso_code}
+                onIso2Change={(iso2) => update('iso_code', iso2)}
+                number={form.phone_number}
+                onNumberChange={(v) => update('phone_number', v)}
               />
             </Field>
 
-            <Field label="Date of Birth">
+            <Field label={t('Date of Birth')}>
               <Input
                 value={form.dob}
                 onChangeText={(v) => update('dob', v)}
-                placeholder="YYYY-MM-DD"
+                placeholder={t('YYYY-MM-DD')}
                 keyboardType="numbers-and-punctuation"
                 maxLength={10}
               />
             </Field>
 
-            <Field label="Gender">
+            <Field label={t('Gender')}>
               <View style={styles.pillRow}>
                 {GENDERS.map((gender) => {
                   const selected = form.gender === gender;
@@ -195,18 +214,18 @@ export default function PersonalInfoScreen() {
                       key={gender}
                       onPress={() => update('gender', selected ? '' : gender)}
                       style={[styles.pill, selected && styles.pillSelected]}>
-                      <Text style={[styles.pillText, selected && styles.pillTextSelected]}>{gender}</Text>
+                      <Text style={[styles.pillText, selected && styles.pillTextSelected]}>{t(gender)}</Text>
                     </Pressable>
                   );
                 })}
               </View>
             </Field>
 
-            <Field label="Bio">
+            <Field label={t('Bio')}>
               <Input
                 value={form.bio}
                 onChangeText={(v) => update('bio', v)}
-                placeholder="Tell others about yourself"
+                placeholder={t('Tell others about yourself')}
                 multiline
                 style={styles.bioInput}
               />
@@ -214,7 +233,7 @@ export default function PersonalInfoScreen() {
           </ScrollView>
 
           <View style={styles.footer}>
-            <AuthButton label="Save" onPress={handleSave} disabled={!canSave} loading={isSaving} />
+            <AuthButton label={t('Save')} onPress={handleSave} disabled={!canSave} loading={isSaving} />
           </View>
         </KeyboardAvoidingView>
       )}
@@ -223,6 +242,7 @@ export default function PersonalInfoScreen() {
 }
 
 function Field({ label, children, style }: { label: string; children: ReactNode; style?: object }) {
+  const styles = useStyles();
   return (
     <View style={[styles.field, style]}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -232,10 +252,12 @@ function Field({ label, children, style }: { label: string; children: ReactNode;
 }
 
 function Input({ style, ...props }: TextInputProps) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return <TextInput placeholderTextColor={AppColors.textPlaceholder} style={[styles.input, style]} {...props} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -345,4 +367,4 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
   },
-});
+}));

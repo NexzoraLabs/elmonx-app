@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 const DIGIT_KEYS: { digit: string; letters?: string }[] = [
   { digit: '1' },
@@ -21,6 +22,9 @@ type NumericKeypadProps = {
 };
 
 export function NumericKeypad({ onPressDigit, onBackspace }: NumericKeypadProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.grid}>
       {DIGIT_KEYS.map((key) => (
@@ -45,7 +49,7 @@ export function NumericKeypad({ onPressDigit, onBackspace }: NumericKeypadProps)
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Backspace"
+        accessibilityLabel={t('Backspace')}
         style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
         onPress={onBackspace}
         hitSlop={8}>
@@ -55,7 +59,7 @@ export function NumericKeypad({ onPressDigit, onBackspace }: NumericKeypadProps)
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -84,4 +88,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 2,
   },
-});
+}));

@@ -1,13 +1,15 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { useCountdown } from '@/hooks/use-countdown';
+import { useTranslation } from 'react-i18next';
 
 function pad(value: number) {
   return value.toString().padStart(2, '0');
 }
 
 export function CountdownDigits({ targetMs }: { targetMs: number }) {
+  const styles = useStyles();
   const { days, hours, minutes, seconds } = useCountdown(targetMs);
   return (
     <View style={styles.row}>
@@ -21,17 +23,19 @@ export function CountdownDigits({ targetMs }: { targetMs: number }) {
 }
 
 export function CountdownPill({ targetMs }: { targetMs: number }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const { days, hours, minutes, seconds } = useCountdown(targetMs);
   return (
     <View style={styles.pill}>
       <Text style={styles.pillText}>
-        {days}D {pad(hours)}H {pad(minutes)}M {pad(seconds)}S
+        {days}{t('D')}{' '}{pad(hours)}{t('H')}{' '}{pad(minutes)}{t('M')}{' '}{pad(seconds)}{t('S')}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     gap: 10,
@@ -62,8 +66,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   pillText: {
-    color: AppColors.textPrimary,
+    color: AppColors.onMedia,
     fontSize: 10,
     fontWeight: '700',
   },
-});
+}));

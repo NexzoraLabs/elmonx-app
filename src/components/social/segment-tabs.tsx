@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type SegmentTabsProps = {
   options: readonly string[];
@@ -9,13 +10,15 @@ type SegmentTabsProps = {
 };
 
 export function SegmentTabs({ options, selected, onSelect }: SegmentTabsProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       {options.map((option) => {
         const isActive = option === selected;
         return (
           <Pressable key={option} style={styles.tab} onPress={() => onSelect(option)}>
-            <Text style={[styles.label, isActive && styles.labelActive]}>{option}</Text>
+            <Text style={[styles.label, isActive && styles.labelActive]}>{t(option)}</Text>
             <View style={[styles.underline, isActive && styles.underlineActive]} />
           </Pressable>
         );
@@ -24,7 +27,7 @@ export function SegmentTabs({ options, selected, onSelect }: SegmentTabsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -53,4 +56,4 @@ const styles = StyleSheet.create({
   underlineActive: {
     backgroundColor: AppColors.textPrimary,
   },
-});
+}));

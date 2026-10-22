@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { ChatMessage } from '@/services/chat-api';
+import { useTranslation } from 'react-i18next';
+import { appLocale } from '@/i18n';
 
 type MessageBubbleProps = {
   message: ChatMessage;
@@ -14,10 +16,13 @@ type MessageBubbleProps = {
 };
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(appLocale('en-US'), { hour: 'numeric', minute: '2-digit' });
 }
 
 export function MessageBubble({ message, fromMe, pending, onLongPress }: MessageBubbleProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const removed = Boolean(message.is_deleted);
 
   return (
@@ -31,7 +36,7 @@ export function MessageBubble({ message, fromMe, pending, onLongPress }: Message
         ) : null}
         {removed ? (
           <View style={[styles.bubble, styles.bubbleRemoved]}>
-            <Text style={styles.removedText}>Message removed</Text>
+            <Text style={styles.removedText}>{t('Message removed')}</Text>
           </View>
         ) : message.message ? (
           <View style={[styles.bubble, fromMe ? styles.bubbleMine : styles.bubbleTheirs]}>
@@ -55,7 +60,7 @@ export function MessageBubble({ message, fromMe, pending, onLongPress }: Message
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     marginBottom: 12,
@@ -125,4 +130,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 10,
   },
-});
+}));

@@ -1,5 +1,7 @@
 import { PlaceholderScreen } from '@/components/home/placeholder-screen';
+import { useTranslation } from 'react-i18next';
 
 export default function ShowroomScreen() {
-  return <PlaceholderScreen icon="easel-outline" title="Showroom" />;
+  const { t } = useTranslation();
+  return <PlaceholderScreen icon="easel-outline" title={t('Showroom')} />;
 }

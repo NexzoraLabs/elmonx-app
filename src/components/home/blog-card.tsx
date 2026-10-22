@@ -2,8 +2,9 @@ import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { HomeBlog } from '@/services/home-api';
+import { appLocale } from '@/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Show 1.2 cards: full card + peek of next
@@ -12,13 +13,15 @@ const CARD_WIDTH = (SCREEN_WIDTH - 40) / 1.2;
 function formatDate(iso: string): string {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(iso).toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short', year: 'numeric' });
   } catch {
     return '';
   }
 }
 
 export function BlogCard({ blog }: { blog: HomeBlog }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       style={styles.card}
@@ -41,7 +44,7 @@ export function BlogCard({ blog }: { blog: HomeBlog }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
@@ -63,7 +66,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   categoryText: {
-    color: AppColors.textSecondary,
+    color: AppColors.onMedia,
     fontSize: 10,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -83,4 +86,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 11,
   },
-});
+}));

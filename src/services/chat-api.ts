@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/config/env';
 import { appendLocalFile } from '@/services/upload-file';
+import i18n from '@/i18n';
 export { SOCKET_URL as CHAT_SOCKET_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {
@@ -19,7 +20,7 @@ class ChatApiError extends Error {
 function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // Errors come back as HTTP 200 with body `status: 201` (validation/business) or 440 (auth).
   if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new ChatApiError(envelope.message || 'Something went wrong.');
+    throw new ChatApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }
@@ -70,7 +71,11 @@ export type ChatMessage = {
 export const MAX_MESSAGE_LENGTH = 2000;
 
 export async function getConversations(token: string): Promise<ConversationItem[]> {
-  return (await request<ConversationItem[]>('/message/conversations?current_page=1&items_per_page=50', token)) ?? [];
+  const items = await request<ConversationItem[]>('/message/conversations?current_page=1&items_per_page=50', token);
+  // The backend sends `participant: null` when the other user's account no longer exists
+  // (e.g. removed from the DB). Such a chat can't be shown or opened, so drop it here — every
+  // screen reads `participant._id` / `user_name`.
+  return (items ?? []).filter((c) => c.participant != null);
 }
 
 /** Returns oldest → newest (API is newest-first). Fetching a thread also marks it read server-side. */
@@ -121,16 +126,16 @@ export async function canMessageUser(
 }
 
 export function canMessageReasonText(reason: CanMessageReason): string {
-  if (reason === 'blocked') return 'You cannot message this user.';
-  if (reason === 'private_not_followed') return 'This user only accepts messages from people they follow.';
-  if (reason === 'not_found') return 'This user is not available.';
-  return 'You cannot message this user.';
+  if (reason === 'blocked') return i18n.t('You cannot message this user.');
+  if (reason === 'private_not_followed') return i18n.t('This user only accepts messages from people they follow.');
+  if (reason === 'not_found') return i18n.t('This user is not available.');
+  return i18n.t('You cannot message this user.');
 }
 
 export function messagePreview(message: Pick<ChatMessage, 'message' | 'attachment_type' | 'is_deleted'>): string {
-  if (message.is_deleted) return 'Message removed';
+  if (message.is_deleted) return i18n.t('Message removed');
   if (message.message) return message.message;
   if (message.attachment_type === 'gif') return 'GIF';
-  if (message.attachment_type === 'image') return 'Photo';
+  if (message.attachment_type === 'image') return i18n.t('Photo');
   return '';
 }

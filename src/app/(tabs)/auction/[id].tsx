@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,7 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccount, useAppKit } from '@reown/appkit-react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import {
   fetchAuction,
@@ -32,6 +32,8 @@ import {
   type AuctionBid,
   type PlaceBidPayload,
 } from '@/services/auction-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 type BidGate = 'cancelled' | 'ended' | 'upcoming' | 'logged_out' | 'no_wallet' | 'banned' | 'unverified' | 'limit' | 'open';
 
@@ -48,13 +50,16 @@ const UPCOMING_POLL_MS = 15000;
 
 function timeAgo(iso: string, now: number): string {
   const s = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return i18n.t('{{n}}s ago', { n: s });
+  if (s < 3600) return i18n.t('{{n}}m ago', { n: Math.floor(s / 60) });
+  if (s < 86400) return i18n.t('{{n}}h ago', { n: Math.floor(s / 3600) });
+  return i18n.t('{{n}}d ago', { n: Math.floor(s / 86400) });
 }
 
 export default function AuctionDetailScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token, isSignedIn } = useAuth();
   const { address: walletAddress } = useAccount();
@@ -87,7 +92,7 @@ export default function AuctionDetailScreen() {
     }
     if (view.extension_count > lastExtCount.current && lastExtCount.current > 0) {
       const mins = view.anti_snipe?.extension_minutes || 0;
-      Alert.alert('Auction Extended', `Extended by ${mins} minute${mins !== 1 ? 's' : ''} due to a late bid.`);
+      Alert.alert(t('Auction Extended'), mins === 1 ? t('Extended by 1 minute due to a late bid.') : t('Extended by {{mins}} minutes due to a late bid.', { mins }));
     }
     lastExtCount.current = view.extension_count;
     if (view.server_time) {
@@ -195,8 +200,8 @@ export default function AuctionDetailScreen() {
   const amountNum = Number(amount);
   const amountError = (() => {
     if (!auction || !amount) return null;
-    if (!Number.isInteger(amountNum) || amountNum < 1) return 'Bids must be whole X-coins.';
-    if (amountNum < auction.min_next_bid) return `Bid must be at least ${auction.min_next_bid}.`;
+    if (!Number.isInteger(amountNum) || amountNum < 1) return t('Bids must be whole X-coins.');
+    if (amountNum < auction.min_next_bid) return t('Bid must be at least {{min}}.', { min: auction.min_next_bid });
     return null;
   })();
 
@@ -222,7 +227,7 @@ export default function AuctionDetailScreen() {
   function openRaise(bid: AuctionBid) {
     const v = Number(raiseAmount);
     if (!auction || !Number.isInteger(v) || v <= bid.amount || v < auction.min_next_bid) {
-      Alert.alert('Invalid amount', `New bid must be above ${bid.amount} and at least ${auction?.min_next_bid}.`);
+      Alert.alert(t('Invalid amount'), t('New bid must be above {{amount}} and at least {{min}}.', { amount: bid.amount, min: auction?.min_next_bid }));
       return;
     }
     setPending({ kind: 'raise', amount: v, bidId: bid._id, fromAmount: bid.amount });
@@ -230,7 +235,7 @@ export default function AuctionDetailScreen() {
 
   async function confirmPending() {
     if (!pending || submitting || !walletAddress || !token) return;
-    if (needsTerms && !termsChecked) { Alert.alert('Terms required', 'Please accept the terms to continue.'); return; }
+    if (needsTerms && !termsChecked) { Alert.alert(t('Terms required'), t('Please accept the terms to continue.')); return; }
     setSubmitting(true);
     try {
       let res;
@@ -248,14 +253,14 @@ export default function AuctionDetailScreen() {
       if (res.status === 200 && res.data?.auction) {
         setRaisingBidId(null);
         applyView(res.data.auction, auction);
-        Alert.alert('', pending.kind === 'bid' ? `Bid of ${pending.amount} X-coins placed.` : `Bid raised to ${pending.amount} X-coins.`);
+        Alert.alert('', pending.kind === 'bid' ? t('Bid of {{amount}} X-coins placed.', { amount: pending.amount }) : t('Bid raised to {{amount}} X-coins.', { amount: pending.amount }));
         refresh();
       } else {
-        Alert.alert('Error', res.message || 'Bid could not be placed.');
+        Alert.alert(t('Error'), res.message || t('Bid could not be placed.'));
         refresh();
       }
     } catch {
-      Alert.alert('Error', 'Bid could not be placed. Please try again.');
+      Alert.alert(t('Error'), t('Bid could not be placed. Please try again.'));
       refresh();
     } finally {
       setSubmitting(false);
@@ -265,10 +270,12 @@ export default function AuctionDetailScreen() {
   const howItWorks = (() => {
     const n = auction?.editions || 1;
     return [
-      { icon: 'wallet-outline', title: 'Log in & connect a wallet', text: 'Bid from your ElmonX account. Your NFT goes to the wallet you bid with.' },
-      { icon: 'hammer-outline', title: 'Place your bid', text: `Bid in whole X-coins. ${n === 1 ? 'Each bid must beat the leading bid' : `Once ${n} bids are in, a new bid must beat the lowest winning bid`} by ${auction?.increment_percentage ?? 0}%. You don't pay anything unless you win.` },
-      { icon: 'trophy-outline', title: n === 1 ? 'The highest bid wins' : `The top ${n} bids win`, text: n === 1 ? 'The highest bid wins.' : `The top ${n} bids win one item each, paying the lowest winning bid.` },
-      { icon: 'cube-outline', title: 'Pay & receive your NFT', text: `Pay within ${auction?.claim_window_hours ?? 48} hours. Your NFT arrives within 24 hours.` },
+      { icon: 'wallet-outline', title: t('Log in & connect a wallet'), text: t('Bid from your ElmonX account. Your NFT goes to the wallet you bid with.') },
+      { icon: 'hammer-outline', title: t('Place your bid'), text: n === 1
+        ? t("Bid in whole X-coins. Each bid must beat the leading bid by {{pct}}%. You don't pay anything unless you win.", { pct: auction?.increment_percentage ?? 0 })
+        : t("Bid in whole X-coins. Once {{n}} bids are in, a new bid must beat the lowest winning bid by {{pct}}%. You don't pay anything unless you win.", { n, pct: auction?.increment_percentage ?? 0 }) },
+      { icon: 'trophy-outline', title: n === 1 ? t('The highest bid wins') : t('The top {{n}} bids win', { n }), text: n === 1 ? t('The highest bid wins.') : t('The top {{n}} bids win one item each, paying the lowest winning bid.', { n }) },
+      { icon: 'cube-outline', title: t('Pay & receive your NFT'), text: t('Pay within {{hours}} hours. Your NFT arrives within 24 hours.', { hours: auction?.claim_window_hours ?? 48 }) },
     ];
   })();
 
@@ -278,7 +285,7 @@ export default function AuctionDetailScreen() {
         <Pressable hitSlop={8} onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>{drop?.title || 'Auction'}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{drop?.title || t('Auction')}</Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -288,9 +295,9 @@ export default function AuctionDetailScreen() {
         </View>
       ) : notFound ? (
         <View style={styles.centered}>
-          <Text style={styles.mutedText}>Auction not found.</Text>
+          <Text style={styles.mutedText}>{t('Auction not found.')}</Text>
           <Pressable onPress={() => router.back()} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Go back</Text>
+            <Text style={styles.retryText}>{t('Go back')}</Text>
           </Pressable>
         </View>
       ) : auction ? (
@@ -319,11 +326,11 @@ export default function AuctionDetailScreen() {
               <View style={styles.statusRow}>
                 <View style={styles.livePill}>
                   <View style={styles.liveDot} />
-                  <Text style={styles.livePillText}>Live</Text>
+                  <Text style={styles.livePillText}>{t('Live')}</Text>
                 </View>
                 {inAntiSnipe && (
                   <View style={styles.antiSnipePill}>
-                    <Text style={styles.antiSnipePillText}>Anti-snipe active</Text>
+                    <Text style={styles.antiSnipePillText}>{t('Anti-snipe active')}</Text>
                   </View>
                 )}
               </View>
@@ -331,7 +338,7 @@ export default function AuctionDetailScreen() {
             {auction.status === 'Upcoming' && (
               <View style={styles.statusRow}>
                 <View style={styles.upcomingPill}>
-                  <Text style={styles.upcomingPillText}>Upcoming</Text>
+                  <Text style={styles.upcomingPillText}>{t('Upcoming')}</Text>
                 </View>
               </View>
             )}
@@ -348,10 +355,10 @@ export default function AuctionDetailScreen() {
 
             {countdown ? (
               <View style={styles.countdownBox}>
-                <Text style={styles.countdownLabel}>{auction.status === 'Upcoming' ? 'Starts in' : 'Ends in'}</Text>
+                <Text style={styles.countdownLabel}>{auction.status === 'Upcoming' ? t('Starts in') : t('Ends in')}</Text>
                 <Text style={styles.countdownValue}>{countdown}</Text>
                 {totalExtensionMinutes > 0 && (
-                  <Text style={styles.extensionNote}>Extended +{totalExtensionMinutes}m</Text>
+                  <Text style={styles.extensionNote}>{t('Extended +{{mins}}m', { mins: totalExtensionMinutes })}</Text>
                 )}
               </View>
             ) : null}
@@ -359,20 +366,20 @@ export default function AuctionDetailScreen() {
             {/* Price info */}
             <View style={styles.priceRow}>
               <View>
-                <Text style={styles.priceLabel}>{auction.total_bids > 0 ? 'Current bid' : 'Starting bid'}</Text>
-                <Text style={styles.price}>{(auction.current_price ?? auction.leading_bid ?? auction.initial_price ?? 0).toLocaleString()} X</Text>
+                <Text style={styles.priceLabel}>{auction.total_bids > 0 ? t('Current bid') : t('Starting bid')}</Text>
+                <Text style={styles.price}>{(auction.current_price ?? auction.leading_bid ?? auction.initial_price ?? 0).toLocaleString()}{' '}{t('X')}</Text>
               </View>
               <View style={styles.priceDivider} />
               <View>
-                <Text style={styles.priceLabel}>Min next bid</Text>
-                <Text style={styles.price}>{(auction.min_next_bid ?? 0).toLocaleString()} X</Text>
+                <Text style={styles.priceLabel}>{t('Min next bid')}</Text>
+                <Text style={styles.price}>{(auction.min_next_bid ?? 0).toLocaleString()}{' '}{t('X')}</Text>
               </View>
               {auction.leading_bid != null && (
                 <>
                   <View style={styles.priceDivider} />
                   <View>
-                    <Text style={styles.priceLabel}>Leading bid</Text>
-                    <Text style={styles.price}>{auction.leading_bid.toLocaleString()} X</Text>
+                    <Text style={styles.priceLabel}>{t('Leading bid')}</Text>
+                    <Text style={styles.price}>{auction.leading_bid.toLocaleString()}{' '}{t('X')}</Text>
                   </View>
                 </>
               )}
@@ -383,7 +390,7 @@ export default function AuctionDetailScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickBids}>
                 {auction.quick_bids.map((v) => (
                   <Pressable key={v} onPress={() => setAmount(String(v))} style={styles.quickBidBtn}>
-                    <Text style={styles.quickBidText}>{v.toLocaleString()} X</Text>
+                    <Text style={styles.quickBidText}>{v.toLocaleString()}{' '}{t('X')}</Text>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -397,7 +404,7 @@ export default function AuctionDetailScreen() {
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="numeric"
-                  placeholder={`Min ${auction.min_next_bid}`}
+                  placeholder={t('Min {{min}}', { min: auction.min_next_bid })}
                   placeholderTextColor={AppColors.textPlaceholder}
                 />
                 {amountError ? <Text style={styles.amountError}>{amountError}</Text> : null}
@@ -406,60 +413,60 @@ export default function AuctionDetailScreen() {
                   onPress={openBid}
                   disabled={!amount || !!amountError}>
                   <Text style={[styles.bidButtonText, (!amount || !!amountError) && styles.bidButtonTextDisabled]}>
-                    Place Bid
+                    {t('Place Bid')}
                   </Text>
                 </Pressable>
                 {bidsLeft !== null && (
-                  <Text style={styles.bidsLeftText}>{bidsLeft} bid{bidsLeft !== 1 ? 's' : ''} remaining</Text>
+                  <Text style={styles.bidsLeftText}>{bidsLeft === 1 ? t('1 bid remaining') : t('{{n}} bids remaining', { n: bidsLeft })}</Text>
                 )}
               </View>
             )}
 
             {gate === 'logged_out' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Sign in to place a bid</Text>
+                <Text style={styles.gateText}>{t('Sign in to place a bid')}</Text>
                 <Pressable style={styles.gateBtn} onPress={() => router.push('/(auth)/sign-in')}>
-                  <Text style={styles.gateBtnText}>Sign in</Text>
+                  <Text style={styles.gateBtnText}>{t('Sign in')}</Text>
                 </Pressable>
               </View>
             )}
 
             {gate === 'no_wallet' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Connect a wallet to bid</Text>
+                <Text style={styles.gateText}>{t('Connect a wallet to bid')}</Text>
                 <Pressable style={styles.gateBtn} onPress={() => openWallet()}>
-                  <Text style={styles.gateBtnText}>Connect Wallet</Text>
+                  <Text style={styles.gateBtnText}>{t('Connect Wallet')}</Text>
                 </Pressable>
               </View>
             )}
 
             {gate === 'unverified' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Email verification required to bid in this auction.</Text>
+                <Text style={styles.gateText}>{t('Email verification required to bid in this auction.')}</Text>
               </View>
             )}
 
             {gate === 'banned' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Your account is not eligible to bid.</Text>
+                <Text style={styles.gateText}>{t('Your account is not eligible to bid.')}</Text>
               </View>
             )}
 
             {gate === 'limit' && myActiveBids.length > 0 && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Bid limit reached — you can still raise existing bids.</Text>
+                <Text style={styles.gateText}>{t('Bid limit reached — you can still raise existing bids.')}</Text>
               </View>
             )}
 
             {gate === 'upcoming' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>Bidding opens when the auction starts.</Text>
+                <Text style={styles.gateText}>{t('Bidding opens when the auction starts.')}</Text>
               </View>
             )}
 
             {gate === 'cancelled' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>This auction has been cancelled.</Text>
+                <Text style={styles.gateText}>{t('This auction has been cancelled.')}</Text>
               </View>
             )}
 
@@ -467,8 +474,8 @@ export default function AuctionDetailScreen() {
               <View style={styles.gateBox}>
                 <Text style={styles.gateText}>
                   {auction.clearing_price != null
-                    ? `Auction ended · sold at ${auction.clearing_price.toLocaleString()} X`
-                    : 'Auction has ended.'}
+                    ? t('Auction ended · sold at {{price}} X', { price: auction.clearing_price.toLocaleString(appLocale()) })
+                    : t('Auction has ended.')}
                 </Text>
               </View>
             )}
@@ -477,7 +484,7 @@ export default function AuctionDetailScreen() {
             {ranked.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  Bids ({auction.total_bids})
+                  {t('Bids ({{n}})', { n: auction.total_bids })}
                 </Text>
                 {visibleBids.map((bid) => (
                   <BidRow
@@ -498,7 +505,7 @@ export default function AuctionDetailScreen() {
                 {ranked.length > 10 && (
                   <Pressable style={styles.showMoreBtn} onPress={() => setShowAllBids((v) => !v)}>
                     <Text style={styles.showMoreText}>
-                      {showAllBids ? 'Show less' : `Show all ${ranked.length} bids`}
+                      {showAllBids ? t('Show less') : t('Show all {{n}} bids', { n: ranked.length })}
                     </Text>
                   </Pressable>
                 )}
@@ -507,7 +514,7 @@ export default function AuctionDetailScreen() {
 
             {removed.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Removed Bids</Text>
+                <Text style={styles.sectionTitle}>{t('Removed Bids')}</Text>
                 {removed.map((bid) => (
                   <BidRow
                     key={bid._id}
@@ -530,14 +537,14 @@ export default function AuctionDetailScreen() {
             {/* Drop description */}
             {drop?.description ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
+                <Text style={styles.sectionTitle}>{t('About')}</Text>
                 <Text style={styles.description}>{drop.description}</Text>
               </View>
             ) : null}
 
             {/* How it works */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>How it works</Text>
+              <Text style={styles.sectionTitle}>{t('How it works')}</Text>
               {howItWorks.map((item, i) => (
                 <View key={i} style={styles.howItem}>
                   <View style={styles.howIconWrap}>
@@ -554,39 +561,38 @@ export default function AuctionDetailScreen() {
             <Pressable
               style={styles.termsLink}
               onPress={() => Linking.openURL('https://elmonx.com/auction-terms')}>
-              <Text style={styles.termsLinkText}>Auction Terms & Conditions</Text>
+              <Text style={styles.termsLinkText}>{t('Auction Terms & Conditions')}</Text>
             </Pressable>
           </View>
         </ScrollView>
       ) : null}
 
       {/* Confirm modal */}
-      <Modal visible={!!pending} transparent animationType="fade" onRequestClose={() => setPending(null)}>
-        <View style={styles.modalOverlay}>
+      <BottomSheet visible={!!pending} onClose={() => setPending(null)}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>
-              {pending?.kind === 'bid' ? 'Confirm Bid' : 'Confirm Raise'}
+              {pending?.kind === 'bid' ? t('Confirm Bid') : t('Confirm Raise')}
             </Text>
-            <Text style={styles.modalAmount}>{pending?.amount?.toLocaleString()} X</Text>
+            <Text style={styles.modalAmount}>{pending?.amount?.toLocaleString()}{' '}{t('X')}</Text>
             {pending?.kind === 'bid' && (
               <Text style={styles.modalNote}>
-                You won&apos;t be charged unless you win. Payment is due within {auction?.claim_window_hours ?? 48} hours of the auction ending.
+                {t("You won't be charged unless you win. Payment is due within {{hours}} hours of the auction ending.", { hours: auction?.claim_window_hours ?? 48 })}
               </Text>
             )}
             {pending?.kind === 'raise' && (
               <Text style={styles.modalNote}>
-                Raises your bid from {pending.fromAmount?.toLocaleString()} X to {pending.amount?.toLocaleString()} X.
+                {t('Raises your bid from {{from}} X to {{to}} X.', { from: pending.fromAmount?.toLocaleString(), to: pending.amount?.toLocaleString() })}
               </Text>
             )}
             {needsTerms && (
               <View style={styles.termsRow}>
                 <Switch value={termsChecked} onValueChange={setTermsChecked} trackColor={{ true: AppColors.textPrimary }} />
-                <Text style={styles.termsText}>I agree to the auction terms</Text>
+                <Text style={styles.termsText}>{t('I agree to the auction terms')}</Text>
               </View>
             )}
             <View style={styles.modalButtons}>
               <Pressable style={styles.cancelBtn} onPress={() => setPending(null)} disabled={submitting}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>{t('Cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.confirmBtn, (submitting || (needsTerms && !termsChecked)) && styles.confirmBtnDisabled]}
@@ -595,13 +601,12 @@ export default function AuctionDetailScreen() {
                 {submitting ? (
                   <ActivityIndicator size="small" color={AppColors.buttonPrimaryText} />
                 ) : (
-                  <Text style={styles.confirmBtnText}>Confirm</Text>
+                  <Text style={styles.confirmBtnText}>{t('Confirm')}</Text>
                 )}
               </Pressable>
             </View>
           </View>
-        </View>
-      </Modal>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -621,6 +626,9 @@ type BidRowProps = {
 };
 
 function BidRow({ bid, now, canRaise, raisingBidId, raiseAmount, onRaiseAmount, walletAddress, minNextBid, onStartRaise, onOpenRaise, onCancelRaise }: BidRowProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isExpanding = raisingBidId === bid._id;
   const isMyBid = bid.is_mine;
   const isBidWallet = !!walletAddress && bid.wallet_address?.toLowerCase() === walletAddress.toLowerCase();
@@ -632,11 +640,11 @@ function BidRow({ bid, now, canRaise, raisingBidId, raiseAmount, onRaiseAmount, 
           {bid.rank != null && (
             <Text style={styles.bidRank}>#{bid.rank}</Text>
           )}
-          <Text style={styles.bidder}>{bid.user_name || 'Bidder'}</Text>
-          {isMyBid && <View style={styles.myBadge}><Text style={styles.myBadgeText}>You</Text></View>}
+          <Text style={styles.bidder}>{bid.user_name || t('Bidder')}</Text>
+          {isMyBid && <View style={styles.myBadge}><Text style={styles.myBadgeText}>{t('You')}</Text></View>}
         </View>
         <View style={styles.bidRight}>
-          <Text style={styles.bidAmount}>{bid.amount.toLocaleString()} X</Text>
+          <Text style={styles.bidAmount}>{bid.amount.toLocaleString()}{' '}{t('X')}</Text>
           <Text style={styles.bidTime}>{timeAgo(bid.bid_time, now)}</Text>
         </View>
       </View>
@@ -644,7 +652,7 @@ function BidRow({ bid, now, canRaise, raisingBidId, raiseAmount, onRaiseAmount, 
         <>
           {!isExpanding ? (
             <Pressable style={styles.raiseBtn} onPress={() => onStartRaise(bid)}>
-              <Text style={styles.raiseBtnText}>Raise bid</Text>
+              <Text style={styles.raiseBtnText}>{t('Raise bid')}</Text>
             </Pressable>
           ) : (
             <View style={styles.raisePanel}>
@@ -653,15 +661,15 @@ function BidRow({ bid, now, canRaise, raisingBidId, raiseAmount, onRaiseAmount, 
                 value={raiseAmount}
                 onChangeText={onRaiseAmount}
                 keyboardType="numeric"
-                placeholder={`Min ${minNextBid}`}
+                placeholder={t('Min {{min}}', { min: minNextBid })}
                 placeholderTextColor={AppColors.textPlaceholder}
               />
               <View style={styles.raisePanelBtns}>
                 <Pressable style={styles.cancelRaiseBtn} onPress={onCancelRaise}>
-                  <Text style={styles.cancelRaiseBtnText}>Cancel</Text>
+                  <Text style={styles.cancelRaiseBtnText}>{t('Cancel')}</Text>
                 </Pressable>
                 <Pressable style={styles.confirmRaiseBtn} onPress={() => onOpenRaise(bid)}>
-                  <Text style={styles.confirmRaiseBtnText}>Confirm raise</Text>
+                  <Text style={styles.confirmRaiseBtnText}>{t('Confirm raise')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -672,7 +680,7 @@ function BidRow({ bid, now, canRaise, raisingBidId, raiseAmount, onRaiseAmount, 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safe: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -1142,17 +1150,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textDecorationLine: 'underline',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: AppColors.overlay,
-    justifyContent: 'flex-end',
-  },
   modalBox: {
-    backgroundColor: AppColors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
     gap: 12,
+    paddingBottom: 8,
   },
   modalTitle: {
     color: AppColors.textPrimary,
@@ -1217,4 +1217,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-});
+}));

@@ -5,15 +5,17 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelRankCard } from '@/components/rewards/level-rank-card';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as rewardsApi from '@/services/rewards-api';
 import type { PointsTransaction, ProfileLevel, ProfileTier } from '@/services/rewards-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const ITEMS_PER_PAGE = 10;
 
 function formatTitle(type: string): string {
-  if (!type) return 'Transaction';
+  if (!type) return i18n.t('Transaction');
   return type
     .replace(/_/g, ' ')
     .split(' ')
@@ -22,6 +24,9 @@ function formatTitle(type: string): string {
 }
 
 export default function RewardsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
 
   const [totalEarned, setTotalEarned] = useState(0);
@@ -95,16 +100,16 @@ export default function RewardsScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>App Rewards</Text>
+        <Text style={styles.headerTitle}>{t('App Rewards')}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Quests, earn XP"
+          accessibilityLabel={t('Quests, earn XP')}
           hitSlop={8}
           onPress={() => router.push('/challenges')}
           style={({ pressed }) => [styles.questsButton, pressed && styles.pressed]}>
@@ -113,7 +118,7 @@ export default function RewardsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.subtitle}>View all your app rewards transactions and activity</Text>
+        <Text style={styles.subtitle}>{t('View all your app rewards transactions and activity')}</Text>
 
         <View style={styles.levelCardWrap}>
           <LevelRankCard loading={isLoadingLevel} level={level} tier={tier} />
@@ -121,31 +126,31 @@ export default function RewardsScreen() {
 
         <View style={styles.statsRow}>
           <StatBlock
-            title="Total Earned"
+            title={t('Total Earned')}
             value={totalEarned}
-            subtext={`From ${totalEarnedCount} activities`}
+            subtext={t('From {{n}} activities', { n: totalEarnedCount })}
             icon="trending-up"
             tone="up"
             loading={isLoading}
           />
           <StatBlock
-            title="Net Balance"
+            title={t('Net Balance')}
             value={netBalance}
-            subtext="Current available balance"
+            subtext={t('Current available balance')}
             icon="calendar-outline"
             tone="neutral"
             loading={isLoading}
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Transaction History</Text>
+        <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
         <View style={styles.card}>
           {isLoading ? (
             <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
           ) : transactions.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="receipt-outline" size={28} color={AppColors.textSecondary} />
-              <Text style={styles.emptyText}>No transactions found</Text>
+              <Text style={styles.emptyText}>{t('No transactions found')}</Text>
             </View>
           ) : (
             <>
@@ -166,12 +171,12 @@ export default function RewardsScreen() {
                       <View style={styles.txRight}>
                         <View style={[styles.txBadge, isEarned ? styles.txBadgeEarned : styles.txBadgeRedeemed]}>
                           <Text style={[styles.txBadgeText, isEarned ? styles.txBadgeTextEarned : styles.txBadgeTextRedeemed]}>
-                            {isEarned ? 'earned' : 'redeemed'}
+                            {isEarned ? t('earned') : t('redeemed')}
                           </Text>
                         </View>
                         <Text style={[styles.txAmount, isEarned ? styles.txAmountEarned : styles.txAmountRedeemed]}>
                           {isEarned ? '+' : '-'}
-                          {tx.amount} XP
+                          {tx.amount}{' '}{t('XP')}
                         </Text>
                       </View>
                     </View>
@@ -188,7 +193,7 @@ export default function RewardsScreen() {
                   {isLoadingMore ? (
                     <ActivityIndicator size="small" color={AppColors.link} />
                   ) : (
-                    <Text style={styles.loadMoreText}>Load more</Text>
+                    <Text style={styles.loadMoreText}>{t('Load more')}</Text>
                   )}
                 </Pressable>
               ) : null}
@@ -217,6 +222,9 @@ function StatBlock({
   tone: StatTone;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const statStyles = useStatStyles();
   const toneColor = tone === 'up' ? AppColors.success : tone === 'down' ? AppColors.danger : AppColors.link;
   return (
     <View style={statStyles.card}>
@@ -229,14 +237,14 @@ function StatBlock({
       {loading ? (
         <View style={statStyles.loadingValue} />
       ) : (
-        <Text style={statStyles.value}>{value} XP</Text>
+        <Text style={statStyles.value}>{value}{' '}{t('XP')}</Text>
       )}
       <Text style={statStyles.subtext}>{subtext}</Text>
     </View>
   );
 }
 
-const statStyles = StyleSheet.create({
+const useStatStyles = makeStyles((AppColors) => ({
   card: {
     flex: 1,
     backgroundColor: AppColors.surface,
@@ -278,9 +286,9 @@ const statStyles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 10,
   },
-});
+}));
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -440,4 +448,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-});
+}));

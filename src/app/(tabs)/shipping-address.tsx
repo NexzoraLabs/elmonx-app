@@ -1,17 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddressCard } from '@/components/address/address-card';
 import { AddressFormSheet } from '@/components/address/address-form-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as addressApi from '@/services/address-api';
 import type { ShippingAddress } from '@/services/address-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 export default function ShippingAddressScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +33,7 @@ export default function ShippingAddressScreen() {
       const data = await addressApi.getShippingAddresses(token);
       setAddresses(Array.isArray(data) ? data : []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to load addresses.');
+      setError(e instanceof Error ? e.message : i18n.t('Unable to load addresses.'));
     } finally {
       setIsLoading(false);
     }
@@ -56,16 +61,16 @@ export default function ShippingAddressScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Shipping Address</Text>
+        <Text style={styles.headerTitle}>{t('Shipping Address')}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add address"
+          accessibilityLabel={t('Add address')}
           hitSlop={8}
           onPress={openAdd}
           style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
@@ -81,9 +86,9 @@ export default function ShippingAddressScreen() {
         ) : addresses.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="location-outline" size={32} color={AppColors.textSecondary} />
-            <Text style={styles.emptyText}>No shipping addresses yet</Text>
+            <Text style={styles.emptyText}>{t('No shipping addresses yet')}</Text>
             <Pressable onPress={openAdd} style={({ pressed }) => [styles.emptyButton, pressed && styles.pressed]}>
-              <Text style={styles.emptyButtonText}>Add Address</Text>
+              <Text style={styles.emptyButtonText}>{t('Add Address')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -104,7 +109,7 @@ export default function ShippingAddressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -175,4 +180,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

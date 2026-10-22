@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { CountdownPill } from '@/components/home/countdown-badge';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { LeavingSoonItem } from '@/data/home-mock';
 
 export function LeavingSoonCard({ item }: { item: LeavingSoonItem }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
@@ -35,7 +37,7 @@ export function LeavingSoonCard({ item }: { item: LeavingSoonItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: 150,
   },
@@ -73,4 +75,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-});
+}));

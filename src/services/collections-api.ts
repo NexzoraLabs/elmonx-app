@@ -7,6 +7,7 @@ import type { CollectionGridItem } from '@/data/collections-mock';
 import { formatDropDate, type PagedResult } from '@/services/drops-api';
 
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 const ITEMS_PER_PAGE = 9;
 
 export type CollectionListItem = {
@@ -38,7 +39,7 @@ export async function fetchCollectionsList(
 
   const response = await fetch(`${API_BASE_URL}/collections/list?${params.toString()}`);
   if (!response.ok) {
-    throw new Error(`Failed to load collections (${response.status})`);
+    throw new Error(i18n.t('Failed to load collections ({{status}})', { status: response.status }));
   }
   const json: CollectionsListResponse = await response.json();
   return { items: json.data, totalRecords: json.total_records };

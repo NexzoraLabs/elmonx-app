@@ -1,21 +1,28 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
-import { AppColors } from '@/constants/app-colors';
+import { PhoneNumberField } from '@/components/forms/phone-number-field';
+import { makeStyles } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { isValidEmail, isValidPassword } from '@/utils/auth-validation';
+import { dialCodeOf, phoneValidationError } from '@/services/phone';
+import { useTranslation } from 'react-i18next';
 
 export default function CreateAccountScreen() {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const { signUp } = useAuth();
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  // Website sign-up defaults to Pakistan (intl-tel-input initialCountry: 'pk').
+  const [phoneIso, setPhoneIso] = useState('pk');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,23 +31,28 @@ export default function CreateAccountScreen() {
   const handleContinue = async () => {
     const nameParts = fullName.trim().split(/\s+/);
     if (!fullName.trim() || !username.trim() || nameParts.length < 2) {
-      setError('Enter your full name (first and last) and a username');
+      setError(t('Enter your full name (first and last) and a username'));
       return;
     }
     if (!isValidEmail(email)) {
-      setError('Enter a valid email address');
+      setError(t('Enter a valid email address'));
       return;
     }
     if (!phone.trim()) {
-      setError('Enter your phone number');
+      setError(t('Enter your phone number'));
+      return;
+    }
+    const phoneError = phoneValidationError(phone, phoneIso);
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
     if (!isValidPassword(password)) {
-      setError('Password must be at least 8 characters');
+      setError(t('Password must be at least 8 characters'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('Passwords do not match'));
       return;
     }
     setError(null);
@@ -54,10 +66,12 @@ export default function CreateAccountScreen() {
         emailAddress: email.trim(),
         password,
         phoneNumber: phone.trim(),
+        countryCode: dialCodeOf(phoneIso),
+        isoCode: phoneIso,
       });
       router.replace('/home');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to create your account. Please try again.');
+      setError(e instanceof Error ? e.message : t('Unable to create your account. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -65,16 +79,15 @@ export default function CreateAccountScreen() {
 
   return (
     <AuthScreen header={<AuthHeader />}>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>{t('Create Account')}</Text>
       <Text style={styles.subtitle}>
-        Create your account to explore exclusive collectibles, save your favorites, and start
-        building your collection.
+        {t('Create your account to explore exclusive collectibles, save your favorites, and start building your collection.')}
       </Text>
 
       <View style={styles.form}>
-        <AuthTextInput placeholder="Full Name" value={fullName} onChangeText={setFullName} textContentType="name" autoComplete="name" />
+        <AuthTextInput placeholder={t('Full Name')} value={fullName} onChangeText={setFullName} textContentType="name" autoComplete="name" />
         <AuthTextInput
-          placeholder="Username"
+          placeholder={t('Username')}
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
@@ -82,7 +95,7 @@ export default function CreateAccountScreen() {
           textContentType="username"
         />
         <AuthTextInput
-          placeholder="Email address"
+          placeholder={t('Email address')}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -91,16 +104,15 @@ export default function CreateAccountScreen() {
           textContentType="emailAddress"
           autoComplete="email"
         />
-        <AuthTextInput
-          placeholder="Phone number"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          textContentType="telephoneNumber"
-          autoComplete="tel"
+        <PhoneNumberField
+          variant="underline"
+          iso2={phoneIso}
+          onIso2Change={setPhoneIso}
+          number={phone}
+          onNumberChange={setPhone}
         />
         <AuthTextInput
-          placeholder="Create Password"
+          placeholder={t('Create Password')}
           value={password}
           onChangeText={setPassword}
           secureToggle
@@ -108,7 +120,7 @@ export default function CreateAccountScreen() {
           autoComplete="new-password"
         />
         <AuthTextInput
-          placeholder="Confirm Password"
+          placeholder={t('Confirm Password')}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureToggle
@@ -118,18 +130,18 @@ export default function CreateAccountScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <AuthButton label="Continue" onPress={handleContinue} loading={loading} />
+        <AuthButton label={t('Continue')} onPress={handleContinue} loading={loading} />
 
         <Text style={styles.terms}>
-          By creating an account, you agree to our <Text style={styles.link}>Terms of Service</Text> and{' '}
-          <Text style={styles.link}>Privacy Policy</Text>.
+          {t('By creating an account, you agree to our')}{' '}<Text style={styles.link}>{t('Terms of Service')}</Text>{' '}{t('and')}{' '}
+          <Text style={styles.link}>{t('Privacy Policy')}</Text>.
         </Text>
       </View>
     </AuthScreen>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 26,
@@ -159,4 +171,4 @@ const styles = StyleSheet.create({
   link: {
     color: AppColors.link,
   },
-});
+}));

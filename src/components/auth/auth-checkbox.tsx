@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 
 type AuthCheckboxProps = {
   checked: boolean;
@@ -10,6 +10,8 @@ type AuthCheckboxProps = {
 };
 
 export function AuthCheckbox({ checked, onChange, label }: AuthCheckboxProps) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -25,7 +27,7 @@ export function AuthCheckbox({ checked, onChange, label }: AuthCheckboxProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -48,4 +50,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 14,
   },
-});
+}));

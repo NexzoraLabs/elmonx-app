@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 
 export type NftGridField = {
   label: string;
@@ -20,6 +20,8 @@ type Props = {
 };
 
 export function NftGridCard({ width, name, image, fields }: Props) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={[styles.card, { width }]}>
       {/* Image area — portrait ratio matching 660×870 NFT images */}
@@ -75,7 +77,7 @@ export function NftGridCard({ width, name, image, fields }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     backgroundColor: AppColors.surface,
     borderRadius: 16,
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderTopColor: AppColors.subtleFill,
   },
   field: {
     flex: 1,
@@ -148,4 +150,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-});
+}));

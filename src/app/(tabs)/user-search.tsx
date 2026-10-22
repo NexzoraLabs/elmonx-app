@@ -6,13 +6,18 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { compactCount } from '@/components/feed/post-card';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type { SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 export default function UserSearchScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SuggestedUser[]>([]);
@@ -32,7 +37,7 @@ export default function UserSearchScreen() {
         const users = await feedApi.searchUsers(token, trimmed);
         if (active) setResults(users);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Search failed.');
+        if (active) setError(e instanceof Error ? e.message : i18n.t('Search failed.'));
       } finally {
         if (active) setIsSearching(false);
       }
@@ -50,7 +55,7 @@ export default function UserSearchScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -61,7 +66,7 @@ export default function UserSearchScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search users"
+            placeholder={t('Search users')}
             placeholderTextColor={AppColors.textPlaceholder}
             autoFocus
             autoCapitalize="none"
@@ -84,13 +89,13 @@ export default function UserSearchScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           !trimmed ? (
-            <Text style={styles.hint}>Find collectors by their username.</Text>
+            <Text style={styles.hint}>{t('Find collectors by their username.')}</Text>
           ) : isSearching ? (
             <ActivityIndicator style={styles.loading} color={AppColors.link} />
           ) : error ? (
             <Text style={styles.error}>{error}</Text>
           ) : (
-            <Text style={styles.hint}>No users found for &quot;{trimmed}&quot;.</Text>
+            <Text style={styles.hint}>{t('No users found for "{{query}}".', { query: trimmed })}</Text>
           )
         }
         renderItem={({ item }) => (
@@ -107,7 +112,7 @@ export default function UserSearchScreen() {
                   <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
                 ) : null}
               </View>
-              <Text style={styles.followers}>{compactCount(item.followers_count)} followers</Text>
+              <Text style={styles.followers}>{compactCount(item.followers_count)}{' '}{t('followers')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
           </Pressable>
@@ -117,7 +122,7 @@ export default function UserSearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -208,4 +213,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-});
+}));

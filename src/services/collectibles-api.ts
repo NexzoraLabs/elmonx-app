@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 class CollectiblesApiError extends Error {
   constructor(message: string) {
@@ -18,7 +19,7 @@ async function getJson<T>(path: string, token: string, params: Record<string, st
 function assertOk(body: { status?: number | boolean; success?: boolean; message?: string }) {
   // HTTP 200 comes back even for logical failures, so check the body.
   if (body.success === false || (typeof body.status === 'number' && body.status >= 400)) {
-    throw new CollectiblesApiError(body.message || 'Something went wrong.');
+    throw new CollectiblesApiError(body.message || i18n.t('Something went wrong.'));
   }
 }
 
@@ -49,11 +50,15 @@ export type VaultNft = {
   wallet_address?: string;
   image_url?: string;
   title?: string;
+  drop_id?: string;
   meta_data?: { meta_data?: { name?: string; image?: string } };
+  drop_data?: { is_blind_box?: boolean };
+  /** Blind box: the item this token is (matched by name), with its own image + Unity assets. */
+  matched?: { _id?: string; image?: { url?: string }[]; unity_assets?: WalletUnityAsset[] }[];
 };
 
 export function vaultNftToCard(nft: VaultNft): CollectibleCardData {
-  const name = nft.meta_data?.meta_data?.name || nft.title || 'Untitled';
+  const name = nft.meta_data?.meta_data?.name || nft.title || i18n.t('Untitled');
   return {
     key: nft._id,
     name,
@@ -78,18 +83,43 @@ export async function getVaultNfts(
   return { items: body.data ?? [], totalCount: body.total_count ?? 0 };
 }
 
+/** Every vaulted (Layer 2) NFT, page by page — `maxPages` caps a very large vault. */
+export async function getAllVaultNfts(token: string, maxPages = 20): Promise<VaultNft[]> {
+  const pageSize = 50;
+  const all: VaultNft[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const { items, totalCount } = await getVaultNfts(token, page, pageSize);
+    all.push(...items);
+    if (items.length < pageSize || all.length >= totalCount) break;
+  }
+  return all;
+}
+
 // ---- Wallet ("Web") ----
+
+/** One Unity asset entry as stored on a drop / blind box item (`unity_assets[]`). */
+export type WalletUnityAsset = {
+  face?: string | null;
+  multiframe?: string;
+  isWide?: boolean;
+  IOS_assets?: { original_name?: string; original_url?: string };
+  Android_assets?: { original_name?: string; original_url?: string };
+};
 
 export type WalletNft = {
   contract?: string;
   tokenId?: string;
   name?: string;
   image_url?: string;
-  matched?: { image?: { url?: string }[] }[];
+  drop_id?: string;
+  is_blind_box?: boolean;
+  unity_assets?: WalletUnityAsset[];
+  /** Blind box: the item this token turned out to be (its own image + Unity assets). */
+  matched?: { _id?: string; image?: { url?: string }[]; unity_assets?: WalletUnityAsset[] }[];
 };
 
 export function walletNftToCard(nft: WalletNft, ownerWallet: string, index: number): CollectibleCardData {
-  const name = nft.name || 'Untitled';
+  const name = nft.name || i18n.t('Untitled');
   return {
     key: `${nft.contract ?? 'nft'}-${nft.tokenId ?? index}`,
     name,
@@ -115,6 +145,30 @@ export async function getWalletNfts(
   );
   assertOk(body);
   return { items: body.data ?? [], pageKey: body.page_key || undefined };
+}
+
+/**
+ * Every ElmonX NFT in a wallet, following `page_key` until OpenSea runs out (`maxRequests` caps a
+ * huge wallet). The backend answers `success: false` for a stretch of pages without ElmonX NFTs but
+ * still hands back the next `page_key`, so keep going on those.
+ */
+export async function getAllWalletNfts(token: string, walletAddress: string, maxRequests = 15): Promise<WalletNft[]> {
+  const all: WalletNft[] = [];
+  let pageKey: string | undefined;
+  for (let i = 0; i < maxRequests; i++) {
+    const params: Record<string, string> = { wallet_address: walletAddress, network: 'eth' };
+    if (pageKey) params.page_key = pageKey;
+    const body = await getJson<{ success?: boolean; status?: number; message?: string; data?: WalletNft[]; page_key?: string }>(
+      '/elmonx_nft/account',
+      token,
+      params
+    );
+    if (body.success !== false) assertOk(body);
+    all.push(...(body.data ?? []));
+    if (!body.page_key) break;
+    pageKey = body.page_key;
+  }
+  return all;
 }
 
 // ---- Doodles Physicals ----

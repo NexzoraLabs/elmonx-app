@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import {
   formatWalletDate,
@@ -15,10 +15,15 @@ import {
   transactionDirection,
   type CaratTransaction,
 } from '@/services/wallet-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const COIN_ICON = require('../../../assets/coin_icon.webp');
 
 export default function WalletScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<CaratTransaction[]>([]);
@@ -37,7 +42,7 @@ export default function WalletScreen() {
     try {
       setBalance(await getCaratBalance(token));
     } catch {
-      setError('Failed to load wallet balance');
+      setError(i18n.t('Failed to load wallet balance'));
     } finally {
       setLoadingBalance(false);
     }
@@ -54,7 +59,7 @@ export default function WalletScreen() {
         setTotalCount(result.totalCount);
         setPage(nextPage);
       } catch {
-        setError('Failed to load transaction history');
+        setError(i18n.t('Failed to load transaction history'));
       } finally {
         setLoadingHistory(false);
         setLoadingMore(false);
@@ -83,7 +88,7 @@ export default function WalletScreen() {
   const busy = loadingBalance || loadingHistory;
 
   const handleBuy = () => {
-    Alert.alert('Buy X-Coin', 'Buying X-Coins in the app is coming soon.');
+    Alert.alert(t('Buy X-Coin'), t('Buying X-Coins in the app is coming soon.'));
   };
 
   const listHeader = (
@@ -92,7 +97,7 @@ export default function WalletScreen() {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable hitSlop={6} onPress={() => setError(null)}>
-            <Text style={styles.errorDismiss}>Dismiss</Text>
+            <Text style={styles.errorDismiss}>{t('Dismiss')}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -100,7 +105,7 @@ export default function WalletScreen() {
       <View style={styles.balanceCard}>
         <View style={styles.balanceTop}>
           <View>
-            <Text style={styles.balanceLabel}>Balance</Text>
+            <Text style={styles.balanceLabel}>{t('Balance')}</Text>
             {loadingBalance && balance === null ? (
               <ActivityIndicator style={styles.balanceLoader} color={AppColors.textSecondary} />
             ) : (
@@ -111,7 +116,7 @@ export default function WalletScreen() {
             )}
           </View>
           <View style={styles.rateChip}>
-            <Text style={styles.rateText}>1 X-Coin = £1.00</Text>
+            <Text style={styles.rateText}>{t('1 X-Coin = £1.00')}</Text>
           </View>
         </View>
 
@@ -122,18 +127,18 @@ export default function WalletScreen() {
             onPress={refreshAll}
             style={({ pressed }) => [styles.refreshButton, (pressed || busy) && styles.dimmed]}>
             <Ionicons name="refresh" size={14} color={AppColors.buttonSecondaryText} />
-            <Text style={styles.refreshText}>Refresh</Text>
+            <Text style={styles.refreshText}>{t('Refresh')}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={handleBuy}
             style={({ pressed }) => [styles.buyButton, pressed && styles.dimmed]}>
-            <Text style={styles.buyText}>Buy X-Coin</Text>
+            <Text style={styles.buyText}>{t('Buy X-Coin')}</Text>
           </Pressable>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Transaction History</Text>
+      <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
     </View>
   );
 
@@ -142,13 +147,13 @@ export default function WalletScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.dimmed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>My Wallet</Text>
+        <Text style={styles.headerTitle}>{t('My Wallet')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -172,7 +177,7 @@ export default function WalletScreen() {
           loadingHistory ? (
             <ActivityIndicator style={styles.listLoader} color={AppColors.link} />
           ) : (
-            <Text style={styles.emptyText}>No transactions found</Text>
+            <Text style={styles.emptyText}>{t('No transactions found')}</Text>
           )
         }
         ListFooterComponent={
@@ -186,13 +191,16 @@ export default function WalletScreen() {
 }
 
 function TransactionRow({ tx, index, onPress }: { tx: CaratTransaction; index: number; onPress: () => void }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const direction = transactionDirection(tx);
   const isCredit = direction === 'Credit';
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.dimmed]} onPress={onPress}>
       <Text style={styles.rowIndex}>{index + 1}</Text>
       <View style={styles.rowMain}>
-        <Text style={[styles.rowType, isCredit ? styles.credit : styles.debit]}>{direction}</Text>
+        <Text style={[styles.rowType, isCredit ? styles.credit : styles.debit]}>{t(direction)}</Text>
         <Text style={styles.rowDate}>{formatWalletDate(tx.created_at)}</Text>
       </View>
       <View style={styles.rowAmount}>
@@ -209,6 +217,9 @@ function TransactionRow({ tx, index, onPress }: { tx: CaratTransaction; index: n
 
 /** Website x-coin-detail-modal: purchase (credit) vs store purchase (debit) layouts. */
 function TransactionDetailSheet({ tx, onClose }: { tx: CaratTransaction | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isCredit = tx ? transactionDirection(tx) === 'Credit' : true;
   const coins = Math.abs(tx?.amount || 0).toLocaleString();
   const from = tx?.plateform || 'Elmonx';
@@ -218,15 +229,15 @@ function TransactionDetailSheet({ tx, onClose }: { tx: CaratTransaction | null; 
   return (
     <BottomSheet visible={tx !== null} onClose={onClose}>
       <View style={styles.sheetHeader}>
-        <Text style={styles.sheetTitle}>X Coins Transaction Details</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} onPress={onClose} style={styles.sheetClose}>
+        <Text style={styles.sheetTitle}>{t('X Coins Transaction Details')}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={onClose} style={styles.sheetClose}>
           <Ionicons name="close" size={18} color={AppColors.textPrimary} />
         </Pressable>
       </View>
       <View style={styles.detailCard}>
-        <DetailRow label="Type" value={isCredit ? 'X Coin Purchase' : 'Store Purchase'} />
+        <DetailRow label={t('Type')} value={isCredit ? t('X Coin Purchase') : t('Store Purchase')} />
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Received X Coin</Text>
+          <Text style={styles.detailLabel}>{t('Received X Coin')}</Text>
           <View style={styles.detailCoinRow}>
             <Image source={COIN_ICON} style={styles.rowCoin} contentFit="contain" />
             <Text style={[styles.detailValue, isCredit ? styles.credit : styles.debit]}>
@@ -235,21 +246,22 @@ function TransactionDetailSheet({ tx, onClose }: { tx: CaratTransaction | null; 
             </Text>
           </View>
         </View>
-        <DetailRow label="From" value={from} />
+        <DetailRow label={t('From')} value={from} />
         {!isCredit ? (
           <>
-            <DetailRow label="Item" value={itemName ? titleCase(String(itemName)) : 'N/A'} />
-            <DetailRow label="Edition" value={edition != null ? String(edition) : 'N/A'} />
+            <DetailRow label={t('Item')} value={itemName ? titleCase(String(itemName)) : 'N/A'} />
+            <DetailRow label={t('Edition')} value={edition != null ? String(edition) : 'N/A'} />
           </>
         ) : null}
-        <DetailRow label="Time Stamps" value={formatWalletDate(tx?.created_at)} />
-        <DetailRow label="Transaction Id" value={tx?.transaction_id || tx?._id || '-'} last />
+        <DetailRow label={t('Time Stamps')} value={formatWalletDate(tx?.created_at)} />
+        <DetailRow label={t('Transaction Id')} value={tx?.transaction_id || tx?._id || '-'} last />
       </View>
     </BottomSheet>
   );
 }
 
 function DetailRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  const styles = useStyles();
   return (
     <View style={[styles.detailRow, !last && styles.detailDivider]}>
       <Text style={styles.detailLabel}>{label}</Text>
@@ -264,7 +276,7 @@ function titleCase(value: string): string {
   return value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -518,4 +530,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-});
+}));

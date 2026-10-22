@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { HomeBanner } from '@/services/home-api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,6 +27,7 @@ function handleBannerPress(banner: HomeBanner) {
 }
 
 function BannerSlide({ banner, onPress }: { banner: HomeBanner; onPress: () => void }) {
+  const styles = useStyles();
   const imageUrl = banner.mobileImageUrl ?? banner.desktopImageUrl;
   const [ratio, setRatio] = useState<number>(FALLBACK_RATIO);
 
@@ -55,6 +56,7 @@ function BannerSlide({ banner, onPress }: { banner: HomeBanner; onPress: () => v
 }
 
 export function FeaturedCarousel({ banners }: { banners: HomeBanner[] }) {
+  const styles = useStyles();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -94,7 +96,7 @@ export function FeaturedCarousel({ banners }: { banners: HomeBanner[] }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   page: {
     width: SCREEN_WIDTH,
     paddingHorizontal: 20,
@@ -124,4 +126,4 @@ const styles = StyleSheet.create({
     width: 16,
     backgroundColor: AppColors.textPrimary,
   },
-});
+}));

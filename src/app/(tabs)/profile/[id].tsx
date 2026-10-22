@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { compactCount, postToItem, userRepostToItem, type FeedItem } from '@/components/feed/post-card';
 import { PostList } from '@/components/feed/post-list';
 import { CoverBanner } from '@/components/profile/cover-banner';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import { canMessageReasonText, canMessageUser } from '@/services/chat-api';
@@ -16,13 +16,15 @@ import { useCurrentUserId } from '@/hooks/use-current-user-id';
 import * as feedApi from '@/services/feed-api';
 import type { PublicProfile, PublicProfileStats, RelationshipStatus } from '@/services/feed-api';
 import * as profileApi from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import { appLocale } from '@/i18n';
 
 type Tab = 'posts' | 'reposts';
 const SITE_URL = 'https://elmonx.com';
 
 function formatMemberSince(iso?: string): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(appLocale('en-GB'), { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 /** Website's resolveFollowButtonState. */
@@ -33,6 +35,9 @@ function followButtonLabel(status: RelationshipStatus, isPrivate: boolean): stri
 }
 
 export default function PublicProfileScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { id: username } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
   const currentUserId = useCurrentUserId();
@@ -150,7 +155,7 @@ export default function PublicProfileScreen() {
         }
       }
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Something went wrong.');
+      Alert.alert(t('Error'), e instanceof Error ? e.message : t('Something went wrong.'));
     } finally {
       setFollowBusy(false);
     }
@@ -162,7 +167,7 @@ export default function PublicProfileScreen() {
     try {
       const permission = await canMessageUser(token, profile._id);
       if (!permission.can_message) {
-        Alert.alert('Cannot message', canMessageReasonText(permission.reason));
+        Alert.alert(t('Cannot message'), canMessageReasonText(permission.reason));
         return;
       }
     } catch {
@@ -189,13 +194,13 @@ export default function PublicProfileScreen() {
           setBlock((prev) => ({ ...prev, is_blocked: false }));
           loadProfile();
         })
-        .catch((e) => Alert.alert('Error', e instanceof Error ? e.message : 'Unable to unblock.'));
+        .catch((e) => Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to unblock.')));
       return;
     }
-    Alert.alert(`Block @${profile.user_name}?`, "They won't be able to see your profile or posts.", [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Block @{{username}}?', { username: profile.user_name }), t('They won\'t be able to see your profile or posts.'), [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Block',
+        text: t('Block'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -204,7 +209,7 @@ export default function PublicProfileScreen() {
             setStatus('None');
             setItems([]);
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Unable to block.');
+            Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to block.'));
           }
         },
       },
@@ -215,16 +220,16 @@ export default function PublicProfileScreen() {
     if (!profile) return;
     Alert.alert(`@${profile.user_name}`, undefined, [
       {
-        text: 'Share profile',
+        text: t('Share profile'),
         onPress: () => {
           const url = `${SITE_URL}/profile/${profile.user_name}`;
           Share.share({ message: url, url });
         },
       },
       ...(token
-        ? [{ text: block.is_blocked ? 'Unblock' : 'Block', style: 'destructive' as const, onPress: handleBlockToggle }]
+        ? [{ text: block.is_blocked ? t('Unblock') : t('Block'), style: 'destructive' as const, onPress: handleBlockToggle }]
         : []),
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('Cancel'), style: 'cancel' },
     ]);
   };
 
@@ -240,7 +245,7 @@ export default function PublicProfileScreen() {
     <View style={styles.topBar}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('Go back')}
         hitSlop={8}
         onPress={() => router.back()}
         style={({ pressed }) => [styles.roundButton, pressed && styles.pressed]}>
@@ -249,7 +254,7 @@ export default function PublicProfileScreen() {
       {profile ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="More options"
+          accessibilityLabel={t('More options')}
           hitSlop={8}
           onPress={handleMore}
           style={({ pressed }) => [styles.roundButton, pressed && styles.pressed]}>
@@ -274,8 +279,8 @@ export default function PublicProfileScreen() {
         {topBar}
         <View style={styles.centerState}>
           <Ionicons name="person-outline" size={32} color={AppColors.textSecondary} />
-          <Text style={styles.stateTitle}>Profile unavailable</Text>
-          <Text style={styles.stateText}>This account doesn&apos;t exist or isn&apos;t available.</Text>
+          <Text style={styles.stateTitle}>{t('Profile unavailable')}</Text>
+          <Text style={styles.stateText}>{t('This account doesn\'t exist or isn\'t available.')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -295,26 +300,26 @@ export default function PublicProfileScreen() {
         </View>
         {fullName ? <Text style={styles.fullName}>{fullName}</Text> : null}
         {profile.created_at ? (
-          <Text style={styles.memberSince}>Member since {formatMemberSince(profile.created_at)}</Text>
+          <Text style={styles.memberSince}>{t('Member since')}{' '}{formatMemberSince(profile.created_at)}</Text>
         ) : null}
         {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
         <View style={styles.statsRow}>
-          <Stat value={compactCount(stats.posts_count)} label="Post" />
-          <Stat value={compactCount(stats.followers_count)} label="Followers" />
-          <Stat value={compactCount(stats.following_count)} label="Followings" />
+          <Stat value={compactCount(stats.posts_count)} label={t('Post')} />
+          <Stat value={compactCount(stats.followers_count)} label={t('Followers')} />
+          <Stat value={compactCount(stats.following_count)} label={t('Followings')} />
         </View>
 
         {block.is_blocked ? (
           <View style={styles.banner}>
-            <Text style={styles.bannerText}>You blocked @{profile.user_name}.</Text>
+            <Text style={styles.bannerText}>{t('You blocked @')}{profile.user_name}.</Text>
             <Pressable onPress={handleBlockToggle} style={({ pressed }) => [styles.bannerButton, pressed && styles.pressed]}>
-              <Text style={styles.bannerButtonText}>Unblock</Text>
+              <Text style={styles.bannerButtonText}>{t('Unblock')}</Text>
             </Pressable>
           </View>
         ) : block.is_blocked_by ? (
           <View style={styles.banner}>
-            <Text style={styles.bannerText}>@{profile.user_name} has blocked you.</Text>
+            <Text style={styles.bannerText}>{t('@{{username}} has blocked you.', { username: profile.user_name })}</Text>
           </View>
         ) : token ? (
           <View style={styles.actionsRow}>
@@ -326,14 +331,14 @@ export default function PublicProfileScreen() {
                 <ActivityIndicator size="small" color={followActive ? AppColors.textPrimary : AppColors.buttonPrimaryText} />
               ) : (
                 <Text style={[styles.followLabel, followActive && styles.followLabelActive]}>
-                  {followButtonLabel(status, isPrivate)}
+                  {t(followButtonLabel(status, isPrivate), { context: 'button' })}
                 </Text>
               )}
             </Pressable>
             <Pressable
               onPress={handleMessage}
               style={({ pressed }) => [styles.followButton, styles.followButtonActive, pressed && styles.pressed]}>
-              <Text style={[styles.followLabel, styles.followLabelActive]}>Message</Text>
+              <Text style={[styles.followLabel, styles.followLabelActive]}>{t('Message')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -344,7 +349,7 @@ export default function PublicProfileScreen() {
           <Pressable style={styles.tab} onPress={() => handleSelectTab('posts')}>
             <View style={styles.tabContent}>
               <Ionicons name="reader-outline" size={18} color={tab === 'posts' ? AppColors.textPrimary : AppColors.textSecondary} />
-              <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>Posts</Text>
+              <Text style={[styles.tabLabel, tab === 'posts' && styles.tabLabelActive]}>{t('Posts')}</Text>
             </View>
             <View style={[styles.tabIndicator, tab === 'posts' && styles.tabIndicatorActive]} />
           </Pressable>
@@ -363,18 +368,18 @@ export default function PublicProfileScreen() {
     isLocked && !block.is_blocked && !block.is_blocked_by ? (
       <View style={styles.centerState}>
         <Ionicons name="lock-closed-outline" size={28} color={AppColors.textSecondary} />
-        <Text style={styles.stateTitle}>This account is private.</Text>
+        <Text style={styles.stateTitle}>{t('This account is private.')}</Text>
         <Text style={styles.stateText}>
           {status === 'Pending'
-            ? 'Your follow request is pending.'
-            : 'Follow this account to see their posts.'}
+            ? t('Your follow request is pending.')
+            : t('Follow this account to see their posts.')}
         </Text>
       </View>
     ) : null
   ) : isLoadingList ? (
     <ActivityIndicator style={styles.loading} color={AppColors.link} />
   ) : (
-    <Text style={styles.emptyText}>{tab === 'posts' ? 'No posts yet.' : 'No reposts yet.'}</Text>
+    <Text style={styles.emptyText}>{tab === 'posts' ? t('No posts yet.') : t('No reposts yet.')}</Text>
   );
 
   return (
@@ -396,6 +401,7 @@ export default function PublicProfileScreen() {
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -404,7 +410,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -592,4 +598,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 40,
   },
-});
+}));

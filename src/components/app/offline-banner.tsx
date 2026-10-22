@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 export function OfflineBanner() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { isConnected, isInternetReachable } = useNetInfo();
   // Both start as null (unknown); only show once the device is known to be offline.
@@ -16,13 +20,13 @@ export function OfflineBanner() {
     <View pointerEvents="none" style={[styles.wrap, { top: insets.top + 60 }]}>
       <View style={styles.pill} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={16} color={AppColors.textPrimary} />
-        <Text style={styles.text}>No internet connection</Text>
+        <Text style={styles.text}>{t('No internet connection')}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   wrap: {
     position: 'absolute',
     left: 0,
@@ -48,4 +52,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

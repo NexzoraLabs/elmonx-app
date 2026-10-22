@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 type SelectPillProps = {
   label: string;
@@ -9,6 +9,7 @@ type SelectPillProps = {
 };
 
 export function SelectPill({ label, selected, onPress }: SelectPillProps) {
+  const styles = useStyles();
   return (
     <Pressable style={[styles.pill, selected && styles.pillSelected]} onPress={onPress}>
       <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
@@ -16,7 +17,7 @@ export function SelectPill({ label, selected, onPress }: SelectPillProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   pill: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -34,4 +35,4 @@ const styles = StyleSheet.create({
     color: AppColors.textPrimary,
     fontWeight: '700',
   },
-});
+}));

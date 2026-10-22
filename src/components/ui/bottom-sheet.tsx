@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { Easing, SlideInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type BottomSheetProps = {
   visible: boolean;
@@ -10,21 +12,30 @@ type BottomSheetProps = {
   children: ReactNode;
 };
 
+// App-wide rule: every dialog/menu opens from the bottom as this sheet. Only success/error
+// messages stay centered (native Alert).
+const SHEET_ENTER = SlideInDown.duration(260).easing(Easing.out(Easing.cubic));
+
 export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Dismiss" />
-        <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <View style={styles.grabber} />
-          {children}
-        </SafeAreaView>
-      </View>
+      {/* Lifts the sheet above the keyboard for sheets with inputs (address form, checkout). */}
+      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={t('Dismiss')} />
+        <Animated.View entering={SHEET_ENTER}>
+          <SafeAreaView edges={['bottom']} style={styles.sheet}>
+            <View style={styles.grabber} />
+            {children}
+          </SafeAreaView>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -46,4 +57,4 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.border,
     marginBottom: 16,
   },
-});
+}));

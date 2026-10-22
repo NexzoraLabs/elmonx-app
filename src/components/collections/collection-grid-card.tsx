@@ -4,8 +4,9 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
+import { useTranslation } from 'react-i18next';
 
 type CollectionGridCardProps = {
   item: CollectionGridItem;
@@ -14,6 +15,7 @@ type CollectionGridCardProps = {
 
 // Same edition checks as the website's nft-card.
 function EditionBadge({ edition }: { edition: string }) {
+  const styles = useStyles();
   const lower = edition.toLowerCase();
   const isDigitalProof = edition === 'Digital Proof';
   const isArtistProof = lower === 'artist proof' || lower === 'artist_proof';
@@ -33,6 +35,9 @@ function EditionBadge({ edition }: { edition: string }) {
 }
 
 export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCardProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isSingle = layout === 'single';
 
   const total = item.totalEditions ?? 0;
@@ -62,29 +67,21 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
         }
       }}>
 
-      {/* ── Image area ── */}
-      <View style={[styles.imageOuter, isSingle ? styles.imageOuterSingle : styles.imageOuterGrid]}>
-        {item.imageUrl ? (
-          <>
-            {/* Ambient glow */}
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={[StyleSheet.absoluteFill, styles.ambientGlow]}
-              contentFit="cover"
-              blurRadius={22}
-            />
-            {/* Main image */}
+      {/* ── Image area ── whole artwork, centred, nothing painted behind it (drop images
+           carry their own transparent margin around the frame). */}
+      <View style={isSingle ? undefined : styles.imagePad}>
+        <View style={[styles.imageOuter, isSingle ? styles.imageOuterSingle : styles.imageOuterGrid]}>
+          {item.imageUrl ? (
             <Image
               source={{ uri: item.imageUrl }}
               style={StyleSheet.absoluteFill}
-              contentFit="cover"
+              contentFit="contain"
               transition={150}
             />
-          </>
-        ) : (
-          <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
-        )}
-
+          ) : (
+            <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
+          )}
+        </View>
       </View>
 
       {/* ── Card body ── */}
@@ -118,20 +115,20 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
             <View style={styles.editionLeft}>
               <Ionicons name="layers-outline" size={11} color={AppColors.textSecondary} />
               {total === 1 ? (
-                <Text style={styles.editionText}>1 of 1 · Unique</Text>
+                <Text style={styles.editionText}>{t('1 of 1 · Unique')}</Text>
               ) : (
                 <Text style={styles.editionText}>
-                  Edition of <Text style={styles.editionCount}>{total.toLocaleString()}</Text>
+                  {t('Edition of')}{' '}<Text style={styles.editionCount}>{total.toLocaleString()}</Text>
                 </Text>
               )}
             </View>
             {item.isSoldOut ? (
-              <Text style={styles.soldOut}>Sold out</Text>
+              <Text style={styles.soldOut}>{t('Sold out')}</Text>
             ) : isLowStock ? (
-              <Text style={styles.lowStock}>Only {remaining} left!</Text>
+              <Text style={styles.lowStock}>{t('Only {{n}} left!', { n: remaining })}</Text>
             ) : (
               <Text style={styles.remaining}>
-                <Text style={styles.remainingCount}>{remaining.toLocaleString()}</Text> left
+                <Text style={styles.remainingCount}>{remaining.toLocaleString()}</Text>{' '}{t('left')}
               </Text>
             )}
           </View>
@@ -159,7 +156,7 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
           <View style={styles.dateBar}>
             <View style={[styles.statusDot, item.isUpcoming ? styles.dotUpcoming : styles.dotPast]} />
             <Text style={[styles.statusLabel, item.isUpcoming ? styles.statusLabelUpcoming : styles.statusLabelPast]}>
-              {item.isUpcoming ? 'Dropping' : 'Dropped'}
+              {item.isUpcoming ? t('Dropping') : t('Dropped')}
             </Text>
             <View style={styles.dateSpacer} />
             <Ionicons name="calendar-outline" size={11} color={AppColors.textSecondary} />
@@ -171,7 +168,7 @@ export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCard
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     backgroundColor: AppColors.surface,
     borderRadius: 16,
@@ -187,25 +184,24 @@ const styles = StyleSheet.create({
   },
 
   /* Image area */
+  imagePad: {
+    padding: 8,
+  },
   imageOuter: {
-    margin: 8,
+    // Explicit full width: with a margin + aspectRatio, Yoga sized this box from its height
+    // instead, leaving it narrower than the card and stuck to the left.
+    width: '100%',
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: AppColors.surface,
   },
   imageOuterGrid: {
     aspectRatio: 660 / 870,
   },
   imageOuterSingle: {
     aspectRatio: 3 / 2,
-    margin: 0,
     borderRadius: 0,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-  },
-  ambientGlow: {
-    opacity: 0.4,
-    transform: [{ scale: 1.25 }],
   },
 
 
@@ -265,7 +261,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -321,7 +317,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 5,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: AppColors.subtleFill,
     overflow: 'hidden',
   },
   progressFill: {
@@ -336,7 +332,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderTopColor: AppColors.subtleFill,
   },
   statusDot: {
     width: 6,
@@ -369,4 +365,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-});
+}));

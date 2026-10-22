@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type CollectionsHeaderProps = {
   searchActive: boolean;
@@ -13,14 +14,17 @@ type CollectionsHeaderProps = {
 };
 
 export function CollectionsHeader({ searchActive, onPressSearch, onPressFilter, activeFilterCount }: CollectionsHeaderProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>Collections</Text>
+      <Text style={styles.title}>{t('Collections')}</Text>
       <View style={styles.actions}>
         {onPressSearch ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Search"
+            accessibilityLabel={t('Search')}
             hitSlop={8}
             style={[styles.button, searchActive && styles.buttonActive]}
             onPress={onPressSearch}>
@@ -32,7 +36,7 @@ export function CollectionsHeader({ searchActive, onPressSearch, onPressFilter, 
           </Pressable>
         ) : null}
         {onPressFilter ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Filters" hitSlop={8} style={styles.button} onPress={onPressFilter}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('Filters')} hitSlop={8} style={styles.button} onPress={onPressFilter}>
             <Ionicons name="options-outline" size={18} color={AppColors.textPrimary} />
             {activeFilterCount > 0 ? (
               <View style={styles.badge}>
@@ -46,7 +50,7 @@ export function CollectionsHeader({ searchActive, onPressSearch, onPressFilter, 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -92,4 +96,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-});
+}));

@@ -1,30 +1,36 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type SectionHeaderProps = {
   title: string;
   eyebrow?: string;
+  /** Short line under the title (e.g. the auction section's "Bid in X-coins…"). */
+  subtitle?: string;
   onPressSeeAll?: () => void;
 };
 
-export function SectionHeader({ title, eyebrow, onPressSeeAll }: SectionHeaderProps) {
+export function SectionHeader({ title, eyebrow, subtitle, onPressSeeAll }: SectionHeaderProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <View style={styles.textGroup}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {onPressSeeAll ? (
         <Pressable hitSlop={8} onPress={onPressSeeAll}>
-          <Text style={styles.viewAll}>View All</Text>
+          <Text style={styles.viewAll}>{t('View All')}</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -48,6 +54,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
   },
+  subtitle: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+  },
   viewAll: {
     color: AppColors.textPrimary,
     fontSize: 14,
@@ -55,4 +66,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     opacity: 0.85,
   },
-});
+}));

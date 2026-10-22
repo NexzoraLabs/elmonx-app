@@ -4,13 +4,17 @@ import { router } from 'expo-router';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CollectionGridItem } from '@/data/collections-mock';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 function PriceLabel({ item }: { item: CollectionGridItem }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   if (!item.priceKind) return null;
   if (item.priceKind === 'xcoin') {
     return (
@@ -24,7 +28,7 @@ function PriceLabel({ item }: { item: CollectionGridItem }) {
     return (
       <View style={styles.priceBadge}>
         <Ionicons name="gift-outline" size={11} color="#fff" />
-        <Text style={styles.priceBadgeText}>Airdrop</Text>
+        <Text style={styles.priceBadgeText}>{t('Airdrop')}</Text>
       </View>
     );
   }
@@ -41,6 +45,8 @@ function PriceLabel({ item }: { item: CollectionGridItem }) {
 }
 
 export function CollectibleCard({ item }: { item: CollectionGridItem }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       style={styles.card}
@@ -87,7 +93,7 @@ export function CollectibleCard({ item }: { item: CollectionGridItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
@@ -126,7 +132,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: AppColors.subtleFill,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -140,7 +146,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderTopColor: AppColors.subtleFill,
     gap: 4,
   },
   priceBadge: {
@@ -165,4 +171,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-});
+}));

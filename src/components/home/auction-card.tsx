@@ -3,14 +3,16 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { type AuctionCard as AuctionCardData, auctionImage, formatCountdown } from '@/services/auction-api';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Show 2 full cards + gap in the scroll view (20px padding each side, 12px gap between)
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 function LiveDot() {
+  const styles = useStyles();
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     const id = setInterval(() => setVisible((v) => !v), 700);
@@ -20,6 +22,9 @@ function LiveDot() {
 }
 
 export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; now: number }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const img = auctionImage(auction.drop);
   const isLive = auction.status === 'Live';
   const isUpcoming = auction.status === 'Upcoming';
@@ -29,8 +34,8 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
   else if (isUpcoming) timeLeft = formatCountdown(new Date(auction.start_time).getTime() - now);
 
   const priceLabel = auction.status === 'Ended'
-    ? (auction.clearing_price != null ? 'Sold at' : 'Ended')
-    : auction.total_bids > 0 ? 'Current bid' : 'Starting bid';
+    ? (auction.clearing_price != null ? t('Sold at') : t('Ended'))
+    : auction.total_bids > 0 ? t('Current bid') : t('Starting bid');
   const price = auction.status === 'Ended' ? auction.clearing_price : auction.current_price;
 
   return (
@@ -46,12 +51,12 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
         {isLive && (
           <View style={styles.badge}>
             <LiveDot />
-            <Text style={styles.badgeText}>Live</Text>
+            <Text style={styles.badgeText}>{t('Live')}</Text>
           </View>
         )}
         {isUpcoming && (
           <View style={[styles.badge, styles.badgeUpcoming]}>
-            <Text style={styles.badgeText}>Upcoming</Text>
+            <Text style={styles.badgeText}>{t('Upcoming')}</Text>
           </View>
         )}
       </View>
@@ -64,7 +69,7 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
         <View style={styles.priceRow}>
           <Text style={styles.priceLabel}>{priceLabel}</Text>
           {price != null ? (
-            <Text style={styles.price}>{price.toLocaleString()} X</Text>
+            <Text style={styles.price}>{price.toLocaleString()}{' '}{t('X')}</Text>
           ) : null}
         </View>
       </View>
@@ -72,7 +77,7 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: AppColors.surface,
@@ -143,4 +148,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

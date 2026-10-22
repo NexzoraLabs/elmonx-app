@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 
 import { AuctionCardHome } from '@/components/home/auction-card';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { type AuctionCard, fetchAuctions } from '@/services/auction-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const PAGE_SIZE = 12;
 const STATUS_FILTERS = ['All', 'Live', 'Upcoming', 'Ended'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export function AuctionsTabPage() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [items, setItems] = useState<AuctionCard[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,7 +45,7 @@ export function AuctionsTabPage() {
       setTotal(list.total);
       setPage(p);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load auctions.');
+      setError(e instanceof Error ? e.message : i18n.t('Could not load auctions.'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -64,7 +69,7 @@ export function AuctionsTabPage() {
             key={s}
             style={[styles.pill, s === status && styles.pillActive]}
             onPress={() => handleStatus(s)}>
-            <Text style={[styles.pillText, s === status && styles.pillTextActive]}>{s}</Text>
+            <Text style={[styles.pillText, s === status && styles.pillTextActive]}>{t(s)}</Text>
           </Pressable>
         ))}
       </View>
@@ -75,12 +80,12 @@ export function AuctionsTabPage() {
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryBtn} onPress={() => load(1, status)}>
-            <Text style={styles.retryText}>Try Again</Text>
+            <Text style={styles.retryText}>{t('Try Again')}</Text>
           </Pressable>
         </View>
       ) : items.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No auctions found.</Text>
+          <Text style={styles.emptyText}>{t('No auctions found.')}</Text>
         </View>
       ) : (
         <FlatList
@@ -100,7 +105,7 @@ export function AuctionsTabPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   root: { flex: 1 },
   pillRow: {
     flexDirection: 'row',
@@ -152,4 +157,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   row: { gap: 12 },
-});
+}));

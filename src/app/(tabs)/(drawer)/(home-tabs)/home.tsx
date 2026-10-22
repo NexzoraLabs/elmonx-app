@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SuggestedUsersStrip } from '@/components/feed/suggested-users-strip';
@@ -14,7 +14,7 @@ import { FeaturedDropCard } from '@/components/home/featured-drop-card';
 import { HomeHeader } from '@/components/home/home-header';
 import { NewsCard } from '@/components/home/news-card';
 import { SectionHeader } from '@/components/home/section-header';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
   type AuctionCard,
   fetchAuctions,
@@ -29,8 +29,12 @@ import {
   type StoreItems,
 } from '@/services/home-api';
 import type { CollectionGridItem } from '@/data/collections-mock';
+import { useTranslation } from 'react-i18next';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [upcoming, setUpcoming] = useState<CollectionGridItem[]>([]);
   const [featured, setFeatured] = useState<CollectionGridItem[]>([]);
@@ -93,8 +97,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header stays pinned; only the content below scrolls (same as the other tabs). */}
+      <HomeHeader />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <HomeHeader />
 
         {promoTitle ? (
           <View style={styles.promoRow}>
@@ -113,7 +118,8 @@ export default function HomeScreen() {
             {auctions.length > 0 ? (
               <View style={styles.section}>
                 <SectionHeader
-                  title="ElmonX Auctions"
+                  title={t('ElmonX Auction')}
+                  subtitle={t('Bid in X-coins. Nothing is charged until you win.')}
                   onPressSeeAll={() => router.push('/auctions')}
                 />
                 <ScrollView
@@ -129,7 +135,7 @@ export default function HomeScreen() {
 
             {upcoming.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader title="Upcoming Drops" onPressSeeAll={() => {}} />
+                <SectionHeader title={t('Upcoming Drops')} onPressSeeAll={() => {}} />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -143,7 +149,13 @@ export default function HomeScreen() {
 
             {featured.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader eyebrow="Featured Drop" title="Discover New Drops" onPressSeeAll={() => {}} />
+                <SectionHeader
+                  title={t('Featured Drops')}
+                  // `t` makes a repeat tap re-select Collectibles even if the user swiped away since.
+                  onPressSeeAll={() =>
+                    router.navigate({ pathname: '/collections', params: { tab: 'Collectibles', t: String(Date.now()) } })
+                  }
+                />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -158,7 +170,7 @@ export default function HomeScreen() {
             {blogs.length > 0 ? (
               <View style={styles.section}>
                 <SectionHeader
-                  title="ElmonX 101"
+                  title={t('ElmonX 101')}
                   onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/articles')}
                 />
                 <ScrollView
@@ -173,7 +185,7 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.section}>
                 <SectionHeader
-                  title="ElmonX 101"
+                  title={t('ElmonX 101')}
                   onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/articles')}
                 />
               </View>
@@ -182,7 +194,7 @@ export default function HomeScreen() {
             {news.length > 0 ? (
               <View style={styles.section}>
                 <SectionHeader
-                  title="News"
+                  title={t('News')}
                   onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/news')}
                 />
                 <ScrollView
@@ -197,7 +209,7 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.section}>
                 <SectionHeader
-                  title="News"
+                  title={t('News')}
                   onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/news')}
                 />
               </View>
@@ -205,7 +217,7 @@ export default function HomeScreen() {
 
             {collectibles.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader title="Collectibles" onPressSeeAll={() => {}} />
+                <SectionHeader title={t('Collectibles')} onPressSeeAll={() => {}} />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -225,7 +237,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -256,4 +268,4 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
   },
-});
+}));

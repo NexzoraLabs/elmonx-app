@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -14,18 +14,37 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors, useTheme } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as accountApi from '@/services/account-api';
-import { getDarkModePreference, setDarkModePreference } from '@/services/preferences';
+import { getSavedWallet } from '@/services/purchase-api';
+import { useTranslation } from 'react-i18next';
 
 type LinkedAccounts = { google?: boolean; apple?: boolean };
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, user, signOut } = useAuth();
   const [emailPreference, setEmailPreferenceState] = useState(true);
   const [isPrivate, setIsPrivate] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const { isDark, setMode } = useTheme();
+  // Drop Wallet: undefined = loading, null = none saved. Refreshed whenever Settings regains focus
+  // (e.g. coming back from the Drop Wallet screen).
+  const [dropWallet, setDropWallet] = useState<string | null | undefined>(undefined);
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      let active = true;
+      getSavedWallet(token)
+        .then((wallet) => active && setDropWallet(wallet))
+        .catch(() => active && setDropWallet(null));
+      return () => {
+        active = false;
+      };
+    }, [token]),
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'error' | 'info' | 'success'; text: string } | null>(null);
 
@@ -44,15 +63,13 @@ export default function SettingsScreen() {
   const load = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
-    const [profile, emailPref, darkPref] = await Promise.allSettled([
+    const [profile, emailPref] = await Promise.allSettled([
       accountApi.getProfile(token),
       accountApi.getEmailPreference(token),
-      getDarkModePreference(),
     ]);
     if (!mountedRef.current) return;
     if (profile.status === 'fulfilled') setIsPrivate(profile.value.profile_privacy === 'Private');
     if (emailPref.status === 'fulfilled') setEmailPreferenceState(emailPref.value);
-    if (darkPref.status === 'fulfilled') setDarkMode(darkPref.value);
     setIsLoading(false);
   }, [token]);
 
@@ -69,7 +86,7 @@ export default function SettingsScreen() {
       await accountApi.setEmailPreference(token, value);
     } catch (e) {
       setEmailPreferenceState(!value);
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Unable to update email preference.' });
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('Unable to update email preference.') });
     }
   };
 
@@ -81,28 +98,25 @@ export default function SettingsScreen() {
       await accountApi.setProfilePrivacy(token, value ? 'Private' : 'Public');
     } catch (e) {
       setIsPrivate(!value);
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Unable to update privacy.' });
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('Unable to update privacy.') });
     }
   };
 
-  const handleDarkMode = async (value: boolean) => {
-    setDarkMode(value);
-    await setDarkModePreference(value);
-  };
+  const handleDarkMode = (value: boolean) => setMode(value ? 'dark' : 'light');
 
   const handleConnectGoogle = () => {
     if (linkedAccounts.google) return;
-    setMessage({ type: 'info', text: 'Connecting a Google account will be available soon.' });
+    setMessage({ type: 'info', text: t('Connecting a Google account will be available soon.') });
   };
 
   const handleChangePassword = async () => {
     setPwError(null);
     if (!oldPassword || !newPassword || !confirmPassword) {
-      setPwError('Please fill in all password fields.');
+      setPwError(t('Please fill in all password fields.'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwError('Passwords do not match.');
+      setPwError(t('Passwords do not match.'));
       return;
     }
     if (!token) return;
@@ -116,9 +130,9 @@ export default function SettingsScreen() {
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setMessage({ type: 'success', text: 'Password updated successfully.' });
+      setMessage({ type: 'success', text: t('Password updated successfully.') });
     } catch (e) {
-      setPwError(e instanceof Error ? e.message : 'Incorrect old password.');
+      setPwError(e instanceof Error ? e.message : t('Incorrect old password.'));
     } finally {
       setPwLoading(false);
     }
@@ -126,12 +140,12 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'Are you sure? This action permanently deletes your account and cannot be undone.',
+      t('Delete Account'),
+      t('Are you sure? This action permanently deletes your account and cannot be undone.'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('Delete'),
           style: 'destructive',
           onPress: async () => {
             if (!token) return;
@@ -140,7 +154,7 @@ export default function SettingsScreen() {
               await signOut();
               router.replace('/(auth)/welcome');
             } catch (e) {
-              Alert.alert('Error', e instanceof Error ? e.message : 'Failed to delete account. Please try again.');
+              Alert.alert(t('Error'), e instanceof Error ? e.message : t('Failed to delete account. Please try again.'));
             }
           },
         },
@@ -153,13 +167,13 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>{t('Settings')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -181,28 +195,46 @@ export default function SettingsScreen() {
           ) : null}
 
           {/* ── Notifications ── */}
-          <Text style={styles.sectionLabel}>Notifications</Text>
-          <ToggleRow label="Email & Preferences" value={emailPreference} onChange={handleEmailPreference} />
+          <Text style={styles.sectionLabel}>{t('Notifications')}</Text>
+          <ToggleRow label={t('Email & Preferences')} value={emailPreference} onChange={handleEmailPreference} />
 
           {/* ── Account Privacy ── */}
-          <Text style={styles.sectionLabel}>Account Privacy</Text>
-          <ToggleRow label="Private Profile" value={isPrivate} onChange={handlePrivacy} />
+          <Text style={styles.sectionLabel}>{t('Account Privacy')}</Text>
+          <ToggleRow label={t('Private Profile')} value={isPrivate} onChange={handlePrivacy} />
 
           {/* ── Display ── */}
-          <Text style={styles.sectionLabel}>Display</Text>
-          <ToggleRow label="Dark Mode" value={darkMode} onChange={handleDarkMode} />
+          <Text style={styles.sectionLabel}>{t('Display')}</Text>
+          <ToggleRow label={t('Dark Mode')} value={isDark} onChange={handleDarkMode} />
+
+          {/* ── Drop Wallet ── */}
+          <Text style={styles.sectionLabel}>{t('Drop Wallet')}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/drop-wallet')}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+            <View style={styles.linkLeft}>
+              <Ionicons name="wallet-outline" size={18} color={AppColors.textPrimary} />
+              <Text style={styles.rowLabel}>{t('Saved Wallet')}</Text>
+            </View>
+            <View style={styles.linkLeft}>
+              <Text style={styles.walletValue}>
+                {dropWallet === undefined ? '' : dropWallet ? `${dropWallet.slice(0, 6)}…${dropWallet.slice(-4)}` : t('Not set')}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
+            </View>
+          </Pressable>
 
           {/* ── Link Google ── */}
-          <Text style={styles.sectionLabel}>Link Google Account</Text>
+          <Text style={styles.sectionLabel}>{t('Link Google Account')}</Text>
           <LinkRow
             icon={<Ionicons name="logo-google" size={18} color={AppColors.textPrimary} />}
-            label="Connect Your Google Account"
+            label={t('Connect Your Google Account')}
             connected={Boolean(linkedAccounts.google)}
             onPress={handleConnectGoogle}
           />
 
           {/* ── Change Password ── */}
-          <Text style={styles.sectionLabel}>Change Password</Text>
+          <Text style={styles.sectionLabel}>{t('Change Password')}</Text>
           <View style={styles.card}>
             {pwError ? (
               <View style={styles.pwError}>
@@ -210,27 +242,27 @@ export default function SettingsScreen() {
               </View>
             ) : null}
             <PasswordField
-              label="Old Password"
+              label={t('Old Password')}
               value={oldPassword}
               onChange={setOldPassword}
               show={showPassword}
             />
             <PasswordField
-              label="New Password"
+              label={t('New Password')}
               value={newPassword}
               onChange={setNewPassword}
               show={showPassword}
             />
             <PasswordField
-              label="Confirm Password"
+              label={t('Confirm Password')}
               value={confirmPassword}
               onChange={setConfirmPassword}
               show={showPassword}
               hint={
                 confirmPassword
                   ? newPassword === confirmPassword
-                    ? { ok: true, text: '✓ Passwords match' }
-                    : { ok: false, text: 'Passwords do not match' }
+                    ? { ok: true, text: t('✓ Passwords match') }
+                    : { ok: false, text: t('Passwords do not match') }
                   : null
               }
             />
@@ -241,7 +273,7 @@ export default function SettingsScreen() {
                 <View style={[styles.checkbox, showPassword && styles.checkboxActive]}>
                   {showPassword ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
                 </View>
-                <Text style={styles.showPwLabel}>Show Password</Text>
+                <Text style={styles.showPwLabel}>{t('Show Password')}</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.saveBtn, pressed && styles.pressed, (!oldPassword || !newPassword || !confirmPassword || pwLoading) && styles.saveBtnDisabled]}
@@ -250,21 +282,21 @@ export default function SettingsScreen() {
                 {pwLoading ? (
                   <ActivityIndicator size="small" color={AppColors.background} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                  <Text style={styles.saveBtnText}>{t('Save Changes')}</Text>
                 )}
               </Pressable>
             </View>
           </View>
 
           {/* ── Danger Zone ── */}
-          <Text style={[styles.sectionLabel, styles.dangerLabel]}>Danger Zone</Text>
+          <Text style={[styles.sectionLabel, styles.dangerLabel]}>{t('Danger Zone')}</Text>
           <View style={[styles.card, styles.dangerCard]}>
-            <Text style={styles.dangerTitle}>Delete Account</Text>
-            <Text style={styles.dangerSubtitle}>Permanently delete your account and all associated data.</Text>
+            <Text style={styles.dangerTitle}>{t('Delete Account')}</Text>
+            <Text style={styles.dangerSubtitle}>{t('Permanently delete your account and all associated data.')}</Text>
             <Pressable
               style={({ pressed }) => [styles.deleteBtn, pressed && styles.pressed]}
               onPress={handleDeleteAccount}>
-              <Text style={styles.deleteBtnText}>Delete Account</Text>
+              <Text style={styles.deleteBtnText}>{t('Delete Account')}</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -274,6 +306,8 @@ export default function SettingsScreen() {
 }
 
 function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -299,6 +333,9 @@ function LinkRow({
   connected: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable
       disabled={connected}
@@ -309,7 +346,7 @@ function LinkRow({
         <Text style={styles.rowLabel}>{label}</Text>
       </View>
       {connected ? (
-        <Text style={styles.connected}>Connected</Text>
+        <Text style={styles.connected}>{t('Connected')}</Text>
       ) : (
         <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
       )}
@@ -330,6 +367,8 @@ function PasswordField({
   show: boolean;
   hint?: { ok: boolean; text: string } | null;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.pwField}>
       <Text style={styles.pwLabel}>{label}</Text>
@@ -350,7 +389,7 @@ function PasswordField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -425,6 +464,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  walletValue: {
+    color: AppColors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   connected: {
     color: AppColors.success,
@@ -549,4 +593,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

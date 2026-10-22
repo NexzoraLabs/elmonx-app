@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "Permite hacer fotos para tus publicaciones y ver tus coleccionables en realidad aumentada con la cámara.",
+    "NSMicrophoneUsageDescription": "Permite grabar vídeos con sonido de tus coleccionables en 3D y RA.",
+    "NSPhotoLibraryAddUsageDescription": "Permite guardar fotos y vídeos de tus coleccionables en tu fototeca.",
+    "NSPhotoLibraryUsageDescription": "Permite elegir una foto para tu foto de perfil y tu imagen de portada."
+  }
+}

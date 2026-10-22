@@ -1,11 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { RarityBadge } from '@/components/home/rarity-badge';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { CollectionItem } from '@/data/home-mock';
 
 export function ExploreCollectionCard({ item }: { item: CollectionItem }) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <View style={styles.thumbWrapper}>
@@ -20,7 +21,7 @@ export function ExploreCollectionCard({ item }: { item: CollectionItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: '48%',
   },
@@ -44,4 +45,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-});
+}));

@@ -7,6 +7,8 @@ import * as authApi from '@/services/auth-api';
 import type { AuthSession, RegisterPayload, UserData } from '@/services/auth-api';
 import { setCrashReportingUser } from '@/services/crash-reporting';
 import { configureSessionGuard } from '@/services/session-guard';
+import { signInWithWebsite } from '@/services/web-auth';
+import i18n from '@/i18n';
 
 const TOKEN_KEY = 'elmonx_auth_token';
 const REFRESH_TOKEN_KEY = 'elmonx_auth_refresh_token';
@@ -22,7 +24,8 @@ type AuthContextValue = {
   confirmSignInOtp: (emailAddress: string, code: string) => Promise<void>;
   resendOtp: (emailAddress: string) => Promise<void>;
   signUp: (payload: RegisterPayload) => Promise<void>;
-  signInWithGoogle: (idToken: string) => Promise<void>;
+  /** Google/Apple (any website method) via the website's /app-login. False when the user cancelled. */
+  signInWithWeb: () => Promise<boolean>;
   requestPasswordReset: (emailAddress: string) => Promise<void>;
   confirmPasswordReset: (emailAddress: string, code: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         setUser(null);
         router.replace('/(auth)/welcome');
-        Alert.alert('Session expired', 'Please log in again to continue.');
+        Alert.alert(i18n.t('Session expired'), i18n.t('Please log in again to continue.'));
       },
     });
   }, []);
@@ -139,13 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await applySession({ user_data: result.user_data, token: result.token });
   }, [applySession]);
 
-  const signInWithGoogle = useCallback(
-    async (idToken: string) => {
-      const session = await authApi.loginWithGoogle(idToken);
-      await applySession(session);
-    },
-    [applySession]
-  );
+  const signInWithWeb = useCallback(async () => {
+    const session = await signInWithWebsite();
+    if (!session) return false;
+    await applySession(session);
+    return true;
+  }, [applySession]);
 
   const requestPasswordReset = useCallback(async (emailAddress: string) => {
     await authApi.forgotPassword(emailAddress);
@@ -190,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       confirmSignInOtp,
       resendOtp,
       signUp,
-      signInWithGoogle,
+      signInWithWeb,
       requestPasswordReset,
       confirmPasswordReset,
       signOut,
@@ -204,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       confirmSignInOtp,
       resendOtp,
       signUp,
-      signInWithGoogle,
+      signInWithWeb,
       requestPasswordReset,
       confirmPasswordReset,
       signOut,

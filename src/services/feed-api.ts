@@ -2,6 +2,7 @@ import type { Post, PostAuthor } from '@/services/profile-api';
 
 import { API_BASE_URL } from '@/config/env';
 import { appendLocalFile } from '@/services/upload-file';
+import i18n from '@/i18n';
 
 type ApiEnvelope<T> = {
   status?: number;
@@ -20,7 +21,7 @@ class FeedApiError extends Error {
 function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // Business errors come back as HTTP 200/201 with body `status: 201` (or >= 400).
   if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new FeedApiError(envelope.message || 'Something went wrong.');
+    throw new FeedApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }
@@ -215,8 +216,8 @@ export async function getPublicProfileStats(token: string | null, username: stri
 
 // ---- Connections (followers / following / blocked / requests) ----
 
+// The backend projects `_id: 0` on follower/following/blocked rows — use `user._id` as the row id.
 export type FollowListItem = {
-  _id: string;
   user: {
     _id: string;
     user_name: string;
@@ -239,7 +240,6 @@ export type FollowRequestItem = {
 };
 
 export type BlockedListItem = {
-  _id: string;
   user: {
     _id: string;
     user_name: string;

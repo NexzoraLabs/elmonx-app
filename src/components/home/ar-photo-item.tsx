@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { ArPhotoItem } from '@/data/home-mock';
 
 export function ArPhotoTile({ item }: { item: ArPhotoItem }) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <PlaceholderThumb color={item.color} icon="camera-outline" style={styles.thumb} />
@@ -16,7 +17,7 @@ export function ArPhotoTile({ item }: { item: ArPhotoItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: 100,
   },
@@ -36,4 +37,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
-});
+}));

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { ShippingAddress } from '@/services/address-api';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   address: ShippingAddress;
@@ -10,6 +11,9 @@ type Props = {
 };
 
 export function AddressCard({ address, onEdit }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const addressLine = [address.address_one, address.address_two].filter(Boolean).join(', ');
   const cityLine = [address.town_city, address.county_state, address.postal_code].filter(Boolean).join(', ');
   const phone = [address.country_code, address.phone_number].filter(Boolean).join(' ');
@@ -19,12 +23,12 @@ export function AddressCard({ address, onEdit }: Props) {
       <View style={styles.headerRow}>
         {address.primary ? (
           <View style={styles.primaryBadge}>
-            <Text style={styles.primaryBadgeText}>Primary</Text>
+            <Text style={styles.primaryBadgeText}>{t('Primary')}</Text>
           </View>
         ) : (
           <View />
         )}
-        <Pressable accessibilityRole="button" accessibilityLabel="Edit address" hitSlop={8} onPress={onEdit}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Edit address')} hitSlop={8} onPress={onEdit}>
           <Ionicons name="pencil" size={16} color={AppColors.textSecondary} />
         </Pressable>
       </View>
@@ -47,7 +51,7 @@ export function AddressCard({ address, onEdit }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     backgroundColor: AppColors.surface,
     borderRadius: 16,
@@ -85,4 +89,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-});
+}));

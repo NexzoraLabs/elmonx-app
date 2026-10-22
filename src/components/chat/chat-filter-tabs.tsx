@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 // The backend has no message requests, so there is no "Requests" filter.
 export type ChatFilter = 'All' | 'Unread';
@@ -12,9 +13,11 @@ type ChatFilterTabsProps = {
 };
 
 export function ChatFilterTabs({ selected, onSelect, unreadCount }: ChatFilterTabsProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const tabs: { key: ChatFilter; label: string; count?: number }[] = [
-    { key: 'All', label: 'All' },
-    { key: 'Unread', label: 'Unread', count: unreadCount },
+    { key: 'All', label: t('All') },
+    { key: 'Unread', label: t('Unread'), count: unreadCount },
   ];
 
   return (
@@ -39,7 +42,7 @@ export function ChatFilterTabs({ selected, onSelect, unreadCount }: ChatFilterTa
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,4 +89,4 @@ const styles = StyleSheet.create({
   badgeTextActive: {
     color: AppColors.buttonPrimaryText,
   },
-});
+}));

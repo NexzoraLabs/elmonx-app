@@ -21,8 +21,8 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     rows: [
       { key: 'personal-information', label: 'Personal Information', icon: 'id-card-outline' },
       { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+      { key: 'language', label: 'Language', icon: 'language-outline' },
       { key: 'connections', label: 'Connections', icon: 'people-outline' },
-      { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' },
     ],
   },
   {
@@ -36,10 +36,11 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
   {
     title: 'Collectables',
     rows: [
-      { key: 'my-wallet-collectables', label: 'My Wallet Collectables', icon: 'layers-outline' },
-      { key: 'my-vault-collectables', label: 'My Vault Collectables', icon: 'shield-checkmark-outline' },
-      { key: 'my-auction-wins', label: 'My Auction Wins', icon: 'trophy-outline' },
+      // One entry — the screen has Vault / Wallet / Auctions tabs (swipeable).
+      { key: 'my-collectables', label: 'My Collectables', icon: 'layers-outline' },
       { key: 'doodles-physicals', label: 'Doodles Physicals', icon: 'cube-outline' },
+      // Opens Unity's Multi-Viewer with every owned 3D collectible (hooks/use-multi-viewer.ts).
+      { key: 'multi-viewer', label: 'Multi-Viewer', icon: 'grid-outline' },
     ],
   },
   {

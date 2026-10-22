@@ -2,14 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { NewsItem } from '@/services/home-api';
+import { useTranslation } from 'react-i18next';
+import { appLocale } from '@/i18n';
 
 function formatDate(iso?: string): string {
   if (!iso) return '-';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('en-GB', {
+  return date.toLocaleString(appLocale('en-GB'), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -20,21 +22,24 @@ function formatDate(iso?: string): string {
 
 /** Same fields as the website's news-detail-modal. */
 export function NewsDetailSheet({ item, visible, onClose }: { item: NewsItem; visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{item.name}</Text>
 
         <View style={styles.metaBlock}>
-          <MetaRow icon="time-outline" label="Created" value={formatDate(item.created_at)} />
-          <MetaRow icon="refresh-outline" label="Updated" value={formatDate(item.updated_at)} />
-          <MetaRow icon="chatbubbles-outline" label="Total Posts" value={String(item.cluster_posts_results?.length ?? 0)} />
-          <MetaRow icon="logo-twitter" label="Source" value={item.source || '-'} />
+          <MetaRow icon="time-outline" label={t('Created')} value={formatDate(item.created_at)} />
+          <MetaRow icon="refresh-outline" label={t('Updated')} value={formatDate(item.updated_at)} />
+          <MetaRow icon="chatbubbles-outline" label={t('Total Posts')} value={String(item.cluster_posts_results?.length ?? 0)} />
+          <MetaRow icon="logo-twitter" label={t('Source')} value={item.source || '-'} />
         </View>
 
         <View style={styles.summaryHeader}>
           <Ionicons name="document-text-outline" size={18} color={AppColors.textPrimary} />
-          <Text style={styles.summaryTitle}>Summary</Text>
+          <Text style={styles.summaryTitle}>{t('Summary')}</Text>
         </View>
         <Text style={styles.summary}>{item.summary}</Text>
       </ScrollView>
@@ -43,6 +48,8 @@ export function NewsDetailSheet({ item, visible, onClose }: { item: NewsItem; vi
 }
 
 function MetaRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.metaRow}>
       <Ionicons name={icon} size={14} color={AppColors.textSecondary} />
@@ -52,7 +59,7 @@ function MetaRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap;
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   scroll: {
     maxHeight: 560,
   },
@@ -101,4 +108,4 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     paddingBottom: 8,
   },
-});
+}));

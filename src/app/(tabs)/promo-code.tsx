@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthButton } from '@/components/auth/auth-button';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as promoApi from '@/services/promo-api';
+import { useTranslation } from 'react-i18next';
 
 export default function PromoCodeScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const [walletAddress, setWalletAddress] = useState('');
   const [promoCode, setPromoCode] = useState('');
@@ -29,7 +33,7 @@ export default function PromoCodeScreen() {
         setPromoCode('');
       }
     } catch (e) {
-      setResult({ type: 'error', message: e instanceof Error ? e.message : 'Something went wrong!' });
+      setResult({ type: 'error', message: e instanceof Error ? e.message : t('Something went wrong!') });
     } finally {
       setIsSubmitting(false);
     }
@@ -40,7 +44,7 @@ export default function PromoCodeScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -48,18 +52,18 @@ export default function PromoCodeScreen() {
         </Pressable>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Redeem Promo Code</Text>
+          <Text style={styles.title}>{t('Redeem Promo Code')}</Text>
           <Text style={styles.subtitle}>
-            Enter your wallet address and promo code below to redeem your rewards or exclusive benefits.
+            {t('Enter your wallet address and promo code below to redeem your rewards or exclusive benefits.')}
           </Text>
 
-          <Text style={styles.label}>Enter Wallet Address</Text>
+          <Text style={styles.label}>{t('Enter Wallet Address')}</Text>
           <View style={styles.inputRow}>
             <Ionicons name="wallet-outline" size={18} color={AppColors.textSecondary} />
             <TextInput
               value={walletAddress}
               onChangeText={setWalletAddress}
-              placeholder="Enter your wallet address"
+              placeholder={t('Enter your wallet address')}
               placeholderTextColor={AppColors.textPlaceholder}
               autoCapitalize="none"
               autoCorrect={false}
@@ -67,13 +71,13 @@ export default function PromoCodeScreen() {
             />
           </View>
 
-          <Text style={[styles.label, styles.labelSpaced]}>Enter PromoCode</Text>
+          <Text style={[styles.label, styles.labelSpaced]}>{t('Enter PromoCode')}</Text>
           <View style={styles.inputRow}>
             <Ionicons name="pricetag-outline" size={18} color={AppColors.textSecondary} />
             <TextInput
               value={promoCode}
               onChangeText={setPromoCode}
-              placeholder="Enter PromoCode"
+              placeholder={t('Enter PromoCode')}
               placeholderTextColor={AppColors.textPlaceholder}
               autoCapitalize="characters"
               autoCorrect={false}
@@ -89,14 +93,14 @@ export default function PromoCodeScreen() {
         </View>
 
         <View style={styles.footer}>
-          <AuthButton label="Send" onPress={handleSend} disabled={!canSubmit} loading={isSubmitting} />
+          <AuthButton label={t('Send')} onPress={handleSend} disabled={!canSubmit} loading={isSubmitting} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -179,4 +183,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 12,
   },
-});
+}));

@@ -2,15 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAccount } from '@reown/appkit-react-native';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NftGridCard } from '@/components/collectibles/nft-grid-card';
 import { ConnectedWalletBar, ConnectWalletPrompt } from '@/components/collectibles/wallet-connect-panel';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as collectiblesApi from '@/services/collectibles-api';
 import type { DoodlesRedemption } from '@/services/collectibles-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const H_PADDING = 20;
 const COLUMN_GAP = 12;
@@ -18,6 +20,9 @@ const INFO_TEXT =
   "To view your physical order status, connect the wallet used to redeem your Piet Mondrian x Doodles NFT. If you've transferred the NFT to another wallet, you still need to connect the original redemption wallet.";
 
 export default function DoodlesPhysicalsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { address, isConnected } = useAccount();
 
   return (
@@ -25,13 +30,13 @@ export default function DoodlesPhysicalsScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Doodles Physicals</Text>
+        <Text style={styles.headerTitle}>{t('Doodles Physicals')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -39,10 +44,10 @@ export default function DoodlesPhysicalsScreen() {
         <RedemptionList key={address} address={address} />
       ) : (
         <View style={styles.content}>
-          <Text style={styles.info}>{INFO_TEXT}</Text>
+          <Text style={styles.info}>{t(INFO_TEXT)}</Text>
           <ConnectWalletPrompt
-            title="Wallet Not Connected"
-            subtitle="Connect the wallet you used to redeem your Piet Mondrian x Doodles."
+            title={t('Wallet Not Connected')}
+            subtitle={t('Connect the wallet you used to redeem your Piet Mondrian x Doodles.')}
           />
         </View>
       )}
@@ -51,6 +56,9 @@ export default function DoodlesPhysicalsScreen() {
 }
 
 function RedemptionList({ address }: { address: string }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const { width } = useWindowDimensions();
   const cardWidth = (width - H_PADDING * 2 - COLUMN_GAP) / 2;
@@ -65,7 +73,7 @@ function RedemptionList({ address }: { address: string }) {
     try {
       setItems(await collectiblesApi.getDoodlesRedemptions(token, address));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to load your physicals.');
+      setError(e instanceof Error ? e.message : i18n.t('Unable to load your physicals.'));
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +95,7 @@ function RedemptionList({ address }: { address: string }) {
       ListHeaderComponent={
         <>
           <ConnectedWalletBar address={address} />
-          <Text style={styles.info}>{INFO_TEXT}</Text>
+          <Text style={styles.info}>{t(INFO_TEXT)}</Text>
         </>
       }
       ListEmptyComponent={
@@ -97,8 +105,8 @@ function RedemptionList({ address }: { address: string }) {
           <Text style={styles.error}>{error}</Text>
         ) : (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No Physicals Found</Text>
-            <Text style={styles.emptySubtitle}>No physical redemptions found for this wallet.</Text>
+            <Text style={styles.emptyTitle}>{t('No Physicals Found')}</Text>
+            <Text style={styles.emptySubtitle}>{t('No physical redemptions found for this wallet.')}</Text>
           </View>
         )
       }
@@ -112,16 +120,16 @@ function RedemptionList({ address }: { address: string }) {
             name={item.meta_data?.[0]?.name || 'Piet Mondrian x Doodles'}
             image={item.images?.[0]?.image}
             fields={[
-              { label: 'Courier', value: courier },
-              { label: 'Tracking ID', value: tracking },
+              { label: t('Courier'), value: courier },
+              { label: t('Tracking ID'), value: tracking },
               {
-                label: 'Status',
+                label: t('Status'),
                 custom: (
                   <View style={[styles.badge, shipped ? styles.badgeShipped : styles.badgeProduction]}>
                     <Text
                       style={[styles.badgeText, shipped ? styles.badgeTextShipped : styles.badgeTextProduction]}
                       numberOfLines={1}>
-                      {shipped ? 'Shipped' : 'In Production'}
+                      {shipped ? t('Shipped') : t('In Production')}
                     </Text>
                   </View>
                 ),
@@ -134,7 +142,7 @@ function RedemptionList({ address }: { address: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -227,4 +235,4 @@ const styles = StyleSheet.create({
   badgeTextProduction: {
     color: AppColors.gold,
   },
-});
+}));

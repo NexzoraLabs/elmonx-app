@@ -3,10 +3,11 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 /** Cover image, or the striped placeholder when the user has none. */
 export function CoverBanner({ uri, children }: { uri?: string; children?: ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.cover}>
       {uri ? (
@@ -26,10 +27,10 @@ export function CoverBanner({ uri, children }: { uri?: string; children?: ReactN
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   cover: {
     height: 150,
     backgroundColor: AppColors.surface,
     overflow: 'hidden',
   },
-});
+}));

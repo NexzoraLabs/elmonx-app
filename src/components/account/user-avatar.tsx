@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
-import { StyleSheet } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { UserData } from '@/services/auth-api';
 import { isImageUrl } from '@/services/profile-api';
 
@@ -12,6 +11,8 @@ type Props = {
 };
 
 export function UserAvatar({ user, size }: Props) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const avatarUrl = [user?.profile_avatar_url, user?.profile_avatar].find(
     (url) => isImageUrl(url) && url !== 'images/avatar/default.png'
   );
@@ -24,8 +25,8 @@ export function UserAvatar({ user, size }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   image: {
     backgroundColor: AppColors.surface,
   },
-});
+}));

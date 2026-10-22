@@ -1,16 +1,19 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { isValidEmail } from '@/utils/auth-validation';
+import { useTranslation } from 'react-i18next';
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +22,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSend = async () => {
     if (!isValidEmail(email)) {
-      setError('Enter a valid email address');
+      setError(t('Enter a valid email address'));
       return;
     }
     setError(null);
@@ -29,22 +32,22 @@ export default function ForgotPasswordScreen() {
       setSent(true);
       router.push({ pathname: '/(auth)/verify-code', params: { email: email.trim(), purpose: 'reset' } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to send reset code. Please try again.');
+      setError(e instanceof Error ? e.message : t('Unable to send reset code. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthScreen header={<AuthHeader title="Forgot Password" />}>
-      <Text style={styles.title}>Reset Your Password</Text>
+    <AuthScreen header={<AuthHeader title={t('Forgot Password')} />}>
+      <Text style={styles.title}>{t('Reset Your Password')}</Text>
       <Text style={styles.subtitle}>
-        Provide your registered email address to receive a secure password reset link.
+        {t('Provide your registered email address to receive a secure password reset link.')}
       </Text>
 
       <View style={styles.form}>
         <AuthTextInput
-          placeholder="Email address"
+          placeholder={t('Email address')}
           value={email}
           onChangeText={(value) => {
             setEmail(value);
@@ -58,15 +61,15 @@ export default function ForgotPasswordScreen() {
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        {sent ? <Text style={styles.success}>Reset link sent — check your inbox.</Text> : null}
+        {sent ? <Text style={styles.success}>{t('Reset link sent — check your inbox.')}</Text> : null}
 
-        <AuthButton label="Send" onPress={handleSend} loading={loading} />
+        <AuthButton label={t('Send')} onPress={handleSend} loading={loading} />
       </View>
     </AuthScreen>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 26,
@@ -91,4 +94,4 @@ const styles = StyleSheet.create({
     color: AppColors.success,
     fontSize: 13,
   },
-});
+}));

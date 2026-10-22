@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { AuthCheckbox } from '@/components/auth/auth-checkbox';
@@ -8,24 +8,28 @@ import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AuthTextInput } from '@/components/auth/auth-text-input';
 import { SocialButton } from '@/components/auth/social-button';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
+import { useTranslation } from 'react-i18next';
 
 export default function SignInScreen() {
-  const { signIn } = useAuth();
+  const { t } = useTranslation();
+  const styles = useStyles();
+  const { signIn, signInWithWeb } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [webLoading, setWebLoading] = useState(false);
 
   const handleContinue = async () => {
     if (identifier.trim().length === 0) {
-      setError('Enter your email or username');
+      setError(t('Enter your email or username'));
       return;
     }
     if (password.length === 0) {
-      setError('Enter your password');
+      setError(t('Enter your password'));
       return;
     }
     setError(null);
@@ -34,22 +38,37 @@ export default function SignInScreen() {
       const emailAddress = await signIn(identifier.trim(), password);
       router.push({ pathname: '/(auth)/verify-code', params: { email: emailAddress, purpose: 'login' } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to sign in. Please try again.');
+      setError(e instanceof Error ? e.message : t('Unable to sign in. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
+  // Google and Apple both run through the website's sign-in page (system browser sheet), so the
+  // app needs no native Google/Apple SDK. See services/web-auth.ts.
+  const handleWebSignIn = async () => {
+    if (webLoading) return;
+    setError(null);
+    setWebLoading(true);
+    try {
+      if (await signInWithWeb()) router.replace('/home');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('Unable to sign in. Please try again.'));
+    } finally {
+      setWebLoading(false);
+    }
+  };
+
   return (
     <AuthScreen header={<AuthHeader />}>
-      <Text style={styles.title}>Sign In to ElmonX</Text>
+      <Text style={styles.title}>{t('Sign In to ElmonX')}</Text>
       <Text style={styles.subtitle}>
-        Sign in to explore exclusive collections and never miss new releases.
+        {t('Sign in to explore exclusive collections and never miss new releases.')}
       </Text>
 
       <View style={styles.form}>
         <AuthTextInput
-          placeholder="Email or Username"
+          placeholder={t('Email or Username')}
           value={identifier}
           onChangeText={setIdentifier}
           autoCapitalize="none"
@@ -59,7 +78,7 @@ export default function SignInScreen() {
         />
 
         <AuthTextInput
-          placeholder="Password"
+          placeholder={t('Password')}
           value={password}
           onChangeText={setPassword}
           secureToggle
@@ -70,28 +89,28 @@ export default function SignInScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <View style={styles.row}>
-          <AuthCheckbox checked={rememberMe} onChange={setRememberMe} label="Remember me" />
+          <AuthCheckbox checked={rememberMe} onChange={setRememberMe} label={t('Remember me')} />
           <Text style={styles.forgotLink} onPress={() => router.push('/(auth)/forgot-password')}>
-            Forgot password?
+            {t('Forgot password?')}
           </Text>
         </View>
 
-        <AuthButton label="Continue" onPress={handleContinue} loading={loading} />
+        <AuthButton label={t('Continue')} onPress={handleContinue} loading={loading} />
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
+          <Text style={styles.dividerText}>{t('OR')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialButton provider="google" onPress={() => {}} />
-        {/* Apple sign-in hidden for now — re-enable once ready. */}
+        <SocialButton provider="google" onPress={handleWebSignIn} disabled={webLoading} />
+        <SocialButton provider="apple" onPress={handleWebSignIn} disabled={webLoading} />
       </View>
     </AuthScreen>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 26,
@@ -137,4 +156,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 12,
   },
-});
+}));

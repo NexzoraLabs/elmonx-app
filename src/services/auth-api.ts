@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 export type UserData = {
   first_name: string;
@@ -55,7 +56,7 @@ function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // This backend often responds with HTTP 200/201 regardless of logical outcome —
   // the real success/failure signal is `success`/`status` in the JSON body itself.
   if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AuthApiError(envelope.message || 'Something went wrong.');
+    throw new AuthApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }
@@ -98,6 +99,9 @@ export type RegisterPayload = {
   emailAddress: string;
   password: string;
   phoneNumber: string;
+  /** "+44" and "gb" — stored with the number, same fields as the website's personal-info. */
+  countryCode: string;
+  isoCode: string;
 };
 
 /** Registration returns a usable session immediately — no OTP step required. */
@@ -109,6 +113,8 @@ export async function register(payload: RegisterPayload): Promise<{ user_data: U
     email_address: payload.emailAddress,
     password: payload.password,
     phone_number: payload.phoneNumber,
+    country_code: payload.countryCode,
+    iso_code: payload.isoCode,
   });
   return assertSuccess(envelope);
 }
@@ -141,8 +147,12 @@ export async function refreshSession(refreshToken: string): Promise<{ token: str
 }
 
 /** Google Sign-In: exchange a Google ID token for an ElmonX session (same response shape as OTP verify). */
-export async function loginWithGoogle(idToken: string): Promise<AuthSession> {
-  const envelope = await postJson<AuthSession>('/user/google-token', { id_token: idToken });
+/**
+ * Website sign-in hand-off: trades the one-time code the website's /app-login page sent back
+ * (plus this attempt's PKCE verifier) for a session of the app's own. See services/web-auth.ts.
+ */
+export async function exchangeAppAuthCode(code: string, codeVerifier: string): Promise<AuthSession> {
+  const envelope = await postJson<AuthSession>('/user/app-auth/exchange', { code, code_verifier: codeVerifier });
   return assertSuccess(envelope);
 }
 

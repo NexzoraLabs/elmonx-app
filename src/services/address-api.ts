@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 type ApiEnvelope<T> = {
   status: number;
@@ -18,7 +19,7 @@ class AddressApiError extends Error {
 
 function assertSuccess<T>(envelope: ApiEnvelope<T>, fallbackKeys: (keyof ApiEnvelope<T>)[] = []): T {
   if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AddressApiError(envelope.message || 'Something went wrong.');
+    throw new AddressApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   if (envelope.data !== undefined) return envelope.data;
   for (const key of fallbackKeys) {

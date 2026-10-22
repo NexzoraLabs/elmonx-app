@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n, { appLocale, currentLanguage } from '@/i18n';
 
 // X-Coin wallet — same endpoints as the website's account/wallet page.
 
@@ -31,7 +32,7 @@ async function getJson<T>(path: string, token: string): Promise<Envelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
   const envelope = (await response.json()) as Envelope<T>;
   if (envelope.status && envelope.status !== 200) {
-    throw new Error(envelope.message || 'Something went wrong.');
+    throw new Error(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope;
 }
@@ -64,12 +65,12 @@ export function formatWalletDate(iso?: string): string {
   if (!iso) return 'N/A';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString('en-GB', {
+  return date.toLocaleDateString(appLocale('en-GB'), {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: currentLanguage() === 'en',
   });
 }

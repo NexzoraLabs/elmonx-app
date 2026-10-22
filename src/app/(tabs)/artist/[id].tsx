@@ -1,12 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ArtistWaveHeader } from '@/components/collections/artist-wave-header';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 export default function ArtistDetailScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { name, image, description } = useLocalSearchParams<{
     id: string;
     name?: string;
@@ -18,7 +22,7 @@ export default function ArtistDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('Go back')}
         hitSlop={8}
         onPress={() => router.back()}
         style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -27,18 +31,18 @@ export default function ArtistDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ArtistWaveHeader color={AppColors.surface} imageUrl={image} />
-        <Text style={styles.name}>{name || 'Unknown Artist'}</Text>
+        <Text style={styles.name}>{name || t('Unknown Artist')}</Text>
 
         <View style={styles.detailsCard}>
-          <Text style={styles.detailsTitle}>Artist Details</Text>
-          <Text style={styles.bio}>{description || 'No details available for this artist yet.'}</Text>
+          <Text style={styles.detailsTitle}>{t('Artist Details')}</Text>
+          <Text style={styles.bio}>{description || t('No details available for this artist yet.')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -84,4 +88,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-});
+}));

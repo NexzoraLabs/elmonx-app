@@ -10,16 +10,21 @@ import { PostList } from '@/components/feed/post-list';
 import { SuggestedUsersStrip } from '@/components/feed/suggested-users-strip';
 import { HomeHeader } from '@/components/home/home-header';
 import { SegmentTabs } from '@/components/social/segment-tabs';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useCurrentUserId } from '@/hooks/use-current-user-id';
 import * as feedApi from '@/services/feed-api';
 import { onFeedChanged } from '@/services/feed-events';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const SEGMENTS = ['For you', 'Following'] as const;
 type Segment = (typeof SEGMENTS)[number];
 
 export default function FeedScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, user } = useAuth();
   const currentUserId = useCurrentUserId();
   const [segment, setSegment] = useState<Segment>('For you');
@@ -56,7 +61,7 @@ export default function FeedScreen() {
         setHasMore(rows.length === feedApi.FEED_PAGE_SIZE);
         setMessage(null);
       } catch (e) {
-        if (requestId === requestRef.current) setMessage(e instanceof Error ? e.message : 'Unable to load the feed.');
+        if (requestId === requestRef.current) setMessage(e instanceof Error ? e.message : i18n.t('Unable to load the feed.'));
       } finally {
         if (requestId === requestRef.current) {
           setIsLoading(false);
@@ -97,7 +102,7 @@ export default function FeedScreen() {
     <View>
       <Pressable style={({ pressed }) => [styles.composeRow, pressed && styles.pressed]} onPress={() => router.push('/create-post')}>
         <UserAvatar user={user} size={40} />
-        <Text style={styles.composePlaceholder}>What&apos;s new?</Text>
+        <Text style={styles.composePlaceholder}>{t('What\'s new?')}</Text>
         <Ionicons name="image-outline" size={20} color={AppColors.textSecondary} />
       </Pressable>
       {segment === 'For you' ? <SuggestedUsersStrip /> : null}
@@ -109,9 +114,9 @@ export default function FeedScreen() {
   ) : (
     <View style={styles.emptyState}>
       <Ionicons name="people-outline" size={28} color={AppColors.textSecondary} />
-      <Text style={styles.emptyTitle}>Nothing here yet</Text>
+      <Text style={styles.emptyTitle}>{t('Nothing here yet')}</Text>
       <Text style={styles.emptySubtitle}>
-        {message ?? (segment === 'Following' ? 'Posts from people you follow will show up here.' : 'No posts yet.')}
+        {message ?? (segment === 'Following' ? t('Posts from people you follow will show up here.') : t('No posts yet.'))}
       </Text>
     </View>
   );
@@ -120,11 +125,11 @@ export default function FeedScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <HomeHeader />
       <View style={styles.topBar}>
-        <Text style={styles.title}>Feed</Text>
+        <Text style={styles.title}>{t('Feed')}</Text>
         <View style={styles.topActions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Search users"
+            accessibilityLabel={t('Search users')}
             hitSlop={8}
             onPress={() => router.push('/user-search')}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
@@ -132,7 +137,7 @@ export default function FeedScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Create post"
+            accessibilityLabel={t('Create post')}
             hitSlop={8}
             onPress={() => router.push('/create-post')}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
@@ -160,7 +165,7 @@ export default function FeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -225,4 +230,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
   },
-});
+}));

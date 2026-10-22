@@ -1,12 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
 
 export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPress: () => void }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
       <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.avatar} contentFit="cover" />
@@ -19,13 +23,13 @@ export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPre
             <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
           ) : null}
         </View>
-        <Text style={styles.meta}>{user.followers_count ?? 0} followers</Text>
+        <Text style={styles.meta}>{user.followers_count ?? 0}{' '}{t('followers')}</Text>
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -60,4 +64,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-});
+}));

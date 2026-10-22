@@ -3,7 +3,6 @@ import { useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -13,10 +12,11 @@ import {
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as addressApi from '@/services/address-api';
 import type { ShippingAddress } from '@/services/address-api';
+import { useTranslation } from 'react-i18next';
 
 const EMPTY_FORM: ShippingAddress = {
   address_one: '',
@@ -39,6 +39,9 @@ type Props = {
 };
 
 export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   // The parent remounts this sheet (via `key`) on every open, so initial state is always fresh.
   const [form, setForm] = useState<ShippingAddress>(() => editing ?? EMPTY_FORM);
@@ -64,7 +67,7 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
       onSaved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to save this address.');
+      setError(e instanceof Error ? e.message : t('Unable to save this address.'));
     } finally {
       setIsSaving(false);
     }
@@ -72,10 +75,10 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>{editing ? 'Edit Shipping Address' : 'Add Shipping Address'}</Text>
+      <Text style={styles.title}>{editing ? t('Edit Shipping Address') : t('Add Shipping Address')}</Text>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Field label="Phone Number">
+        <Field label={t('Phone Number')}>
           <TextInput
             value={form.phone_number}
             onChangeText={(v) => update('phone_number', v)}
@@ -86,41 +89,41 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
           />
         </Field>
 
-        <Field label="Address Line 1">
+        <Field label={t('Address Line 1')}>
           <TextInput
             value={form.address_one}
             onChangeText={(v) => update('address_one', v)}
-            placeholder="Street Name, Number"
+            placeholder={t('Street Name, Number')}
             placeholderTextColor={AppColors.textPlaceholder}
             style={styles.input}
           />
         </Field>
 
-        <Field label="Address Line 2 (Optional)">
+        <Field label={t('Address Line 2 (Optional)')}>
           <TextInput
             value={form.address_two}
             onChangeText={(v) => update('address_two', v)}
-            placeholder="Apt, Suite, Unit, etc."
+            placeholder={t('Apt, Suite, Unit, etc.')}
             placeholderTextColor={AppColors.textPlaceholder}
             style={styles.input}
           />
         </Field>
 
         <View style={styles.row}>
-          <Field label="Town/City" style={styles.rowField}>
+          <Field label={t('Town/City')} style={styles.rowField}>
             <TextInput
               value={form.town_city}
               onChangeText={(v) => update('town_city', v)}
-              placeholder="Enter City"
+              placeholder={t('Enter City')}
               placeholderTextColor={AppColors.textPlaceholder}
               style={styles.input}
             />
           </Field>
-          <Field label="Country/State" style={styles.rowField}>
+          <Field label={t('Country/State')} style={styles.rowField}>
             <TextInput
               value={form.county_state}
               onChangeText={(v) => update('county_state', v)}
-              placeholder="Enter State"
+              placeholder={t('Enter State')}
               placeholderTextColor={AppColors.textPlaceholder}
               style={styles.input}
             />
@@ -128,20 +131,20 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
         </View>
 
         <View style={styles.row}>
-          <Field label="Postal Code" style={styles.rowField}>
+          <Field label={t('Postal Code')} style={styles.rowField}>
             <TextInput
               value={form.postal_code}
               onChangeText={(v) => update('postal_code', v)}
-              placeholder="Enter Postal Code"
+              placeholder={t('Enter Postal Code')}
               placeholderTextColor={AppColors.textPlaceholder}
               style={styles.input}
             />
           </Field>
-          <Field label="Country" style={styles.rowField}>
+          <Field label={t('Country')} style={styles.rowField}>
             <TextInput
               value={form.country}
               onChangeText={(v) => update('country', v)}
-              placeholder="Enter Country"
+              placeholder={t('Enter Country')}
               placeholderTextColor={AppColors.textPlaceholder}
               style={styles.input}
             />
@@ -154,7 +157,7 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
           <View style={[styles.checkbox, form.primary && styles.checkboxChecked]}>
             {form.primary ? <Ionicons name="checkmark" size={14} color={AppColors.buttonPrimaryText} /> : null}
           </View>
-          <Text style={styles.checkboxLabel}>Set as primary address</Text>
+          <Text style={styles.checkboxLabel}>{t('Set as primary address')}</Text>
         </Pressable>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -162,10 +165,10 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
 
       <View style={styles.buttonRow}>
         <Pressable style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]} onPress={onClose}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={styles.cancelText}>{t('Cancel')}</Text>
         </Pressable>
         <View style={styles.saveButton}>
-          <AuthButton label={editing ? 'Save' : 'Add'} onPress={handleSave} disabled={!canSave} loading={isSaving} />
+          <AuthButton label={editing ? t('Save') : t('Add')} onPress={handleSave} disabled={!canSave} loading={isSaving} />
         </View>
       </View>
     </BottomSheet>
@@ -173,6 +176,7 @@ export function AddressFormSheet({ visible, onClose, editing, onSaved }: Props) 
 }
 
 function Field({ label, children, style }: { label: string; children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const styles = useStyles();
   return (
     <View style={[styles.field, style]}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -181,7 +185,7 @@ function Field({ label, children, style }: { label: string; children: ReactNode;
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 18,
@@ -270,4 +274,4 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
   },
-});
+}));

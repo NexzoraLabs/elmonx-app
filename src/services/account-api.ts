@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 type ApiEnvelope<T> = {
   status?: number;
@@ -18,7 +19,7 @@ function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
   // HTTP 200 is returned even for logical failures (e.g. duplicate username comes back as
   // body `{status: 400}`), so the body is the source of truth.
   if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AccountApiError(envelope.message || 'Something went wrong.');
+    throw new AccountApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   return envelope.data as T;
 }

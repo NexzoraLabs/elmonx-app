@@ -1,9 +1,10 @@
 import { Stack } from 'expo-router';
 
-import { AppColors } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 import { ChatProvider } from '@/context/chat-context';
 
 export default function AppShellLayout() {
+  const AppColors = useAppColors();
   return (
     <ChatProvider>
       <Stack
@@ -22,6 +23,8 @@ export default function AppShellLayout() {
         <Stack.Screen name="leaderboard" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="shipping-address" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="promo-code" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="language" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="drop-wallet" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="personal-info" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="collectibles" options={{ animation: 'slide_from_right' }} />

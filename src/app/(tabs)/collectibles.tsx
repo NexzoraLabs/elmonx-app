@@ -18,23 +18,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NftGridCard } from '@/components/collectibles/nft-grid-card';
 import { ConnectedWalletBar, ConnectWalletPrompt } from '@/components/collectibles/wallet-connect-panel';
-import { AppColors } from '@/constants/app-colors';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { CollectionsPager } from '@/components/collections/collections-pager';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as auctionApi from '@/services/auction-api';
 import type { AuctionWinItem } from '@/services/auction-api';
 import * as collectiblesApi from '@/services/collectibles-api';
 import { shortenAddress, type CollectibleCardData } from '@/services/collectibles-api';
+import { useTranslation } from 'react-i18next';
+import i18n, { appLocale } from '@/i18n';
 
 type Tab = 'app' | 'web' | 'auctions';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'app', label: 'Vault' },
+  { key: 'web', label: 'Wallet' },
+  { key: 'auctions', label: 'Auctions' },
+];
 
 const VAULT_PAGE_SIZE = 10;
 const H_PADDING = 20;
 const COLUMN_GAP = 12;
 
 export default function CollectiblesScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const params = useLocalSearchParams<{ tab?: string }>();
   const initTab: Tab = params.tab === 'web' ? 'web' : params.tab === 'auctions' ? 'auctions' : 'app';
   const [tab, setTab] = useState<Tab>(initTab);
+  const tabIndex = TABS.findIndex((item) => item.key === tab);
   const [search, setSearch] = useState('');
   const { width } = useWindowDimensions();
   const cardWidth = (width - H_PADDING * 2 - COLUMN_GAP) / 2;
@@ -44,13 +58,13 @@ export default function CollectiblesScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>My Collectibles</Text>
+        <Text style={styles.headerTitle}>{t('My Collectibles')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -59,7 +73,7 @@ export default function CollectiblesScreen() {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search"
+          placeholder={t('Search')}
           placeholderTextColor={AppColors.textPlaceholder}
           autoCorrect={false}
           style={styles.searchInput}
@@ -67,35 +81,33 @@ export default function CollectiblesScreen() {
       </View>
 
       <View style={styles.tabs}>
-        {(
-          [
-            { key: 'app', label: 'Vault' },
-            { key: 'web', label: 'Wallet' },
-            { key: 'auctions', label: 'Auctions' },
-          ] as const
-        ).map((item) => {
+        {TABS.map((item) => {
           const active = tab === item.key;
           return (
             <Pressable key={item.key} style={styles.tab} onPress={() => setTab(item.key)}>
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{item.label}</Text>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t(item.label)}</Text>
               <View style={[styles.tabIndicator, active && styles.tabIndicatorActive]} />
             </Pressable>
           );
         })}
       </View>
 
-      {tab === 'app' ? (
-        <VaultList search={search} cardWidth={cardWidth} />
-      ) : tab === 'web' ? (
-        <WalletList search={search} cardWidth={cardWidth} />
-      ) : (
-        <AuctionWinsList />
-      )}
+      {/* Swipe left/right between the tabs (same pager as the Collections screen). */}
+      <CollectionsPager
+        selectedIndex={tabIndex}
+        onIndexChange={(index) => setTab(TABS[index]?.key ?? 'app')}
+        pages={[
+          { key: 'app', element: <VaultList search={search} cardWidth={cardWidth} /> },
+          { key: 'web', element: <WalletList search={search} cardWidth={cardWidth} /> },
+          { key: 'auctions', element: <AuctionWinsList /> },
+        ]}
+      />
     </SafeAreaView>
   );
 }
 
 function VaultList({ search, cardWidth }: { search: string; cardWidth: number }) {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [items, setItems] = useState<CollectibleCardData[]>([]);
   const [page, setPage] = useState(1);
@@ -117,7 +129,7 @@ function VaultList({ search, cardWidth }: { search: string; cardWidth: number })
         setTotalCount(result.totalCount);
         setPage(nextPage);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Unable to load your collectibles.');
+        setError(e instanceof Error ? e.message : i18n.t('Unable to load your collectibles.'));
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
@@ -142,20 +154,21 @@ function VaultList({ search, cardWidth }: { search: string; cardWidth: number })
       onEndReached={() => {
         if (!isLoading && !isLoadingMore && items.length < totalCount) load(page + 1);
       }}
-      emptyTitle="No Vault Collectibles"
-      emptySubtitle="You don't have any vault collectibles yet."
+      emptyTitle={t('No Vault Collectibles')}
+      emptySubtitle={t('You don\'t have any vault collectibles yet.')}
     />
   );
 }
 
 function WalletList({ search, cardWidth }: { search: string; cardWidth: number }) {
+  const { t } = useTranslation();
   const { address, isConnected } = useAccount();
 
   if (!isConnected || !address) {
     return (
       <ConnectWalletPrompt
-        title="Wallet Not Connected"
-        subtitle="Please connect your wallet to view your web collectibles."
+        title={t('Wallet Not Connected')}
+        subtitle={t('Please connect your wallet to view your web collectibles.')}
       />
     );
   }
@@ -165,6 +178,7 @@ function WalletList({ search, cardWidth }: { search: string; cardWidth: number }
 }
 
 function ConnectedWalletList({ address, search, cardWidth }: { address: string; search: string; cardWidth: number }) {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [items, setItems] = useState<CollectibleCardData[]>([]);
   const [pageKey, setPageKey] = useState<string | undefined>();
@@ -187,7 +201,7 @@ function ConnectedWalletList({ address, search, cardWidth }: { address: string; 
         });
         setPageKey(result.pageKey);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Unable to load your wallet collectibles.');
+        setError(e instanceof Error ? e.message : i18n.t('Unable to load your wallet collectibles.'));
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
@@ -213,8 +227,8 @@ function ConnectedWalletList({ address, search, cardWidth }: { address: string; 
       onEndReached={() => {
         if (!isLoading && !isLoadingMore && pageKey) load(pageKey);
       }}
-      emptyTitle="No Wallet Collectibles"
-      emptySubtitle="You don't have any wallet collectibles yet."
+      emptyTitle={t('No Wallet Collectibles')}
+      emptySubtitle={t('You don\'t have any wallet collectibles yet.')}
     />
   );
 }
@@ -242,6 +256,9 @@ function CollectibleGrid({
   emptyTitle: string;
   emptySubtitle: string;
 }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const query = search.trim().toLowerCase();
   const visible = query ? items.filter((item) => item.name.toLowerCase().includes(query)) : items;
 
@@ -254,8 +271,8 @@ function CollectibleGrid({
       <View style={styles.emptyIcon}>
         <Ionicons name="file-tray-outline" size={26} color={AppColors.textSecondary} />
       </View>
-      <Text style={styles.emptyTitle}>{query ? 'No results' : emptyTitle}</Text>
-      <Text style={styles.emptySubtitle}>{query ? `Nothing matches "${search.trim()}".` : emptySubtitle}</Text>
+      <Text style={styles.emptyTitle}>{query ? t('No results') : emptyTitle}</Text>
+      <Text style={styles.emptySubtitle}>{query ? t('Nothing matches "{{query}}".', { query: search.trim() }) : emptySubtitle}</Text>
     </View>
   );
 
@@ -278,9 +295,9 @@ function CollectibleGrid({
           name={item.name}
           image={item.image}
           fields={[
-            { label: 'Edition', value: item.edition },
-            { label: 'Token ID', value: item.tokenId },
-            { label: 'Owner Wallet', value: shortenAddress(item.ownerWallet) },
+            { label: t('Edition'), value: item.edition },
+            { label: t('Token ID'), value: item.tokenId },
+            { label: t('Owner Wallet'), value: shortenAddress(item.ownerWallet) },
           ]}
         />
       )}
@@ -316,6 +333,9 @@ function winImage(win: AuctionWinItem): string | null {
 }
 
 function AuctionWinsList() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const winStyles = useWinStyles();
   const { token } = useAuth();
   const [wins, setWins] = useState<AuctionWinItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -359,13 +379,13 @@ function AuctionWinsList() {
       const res = await auctionApi.claimAuctionWin(token, confirming._id);
       setConfirming(null);
       if (res?.status === 200) {
-        Alert.alert('Success', 'Payment received. Your NFT will be transferred within 24 hours.');
+        Alert.alert(t('Success'), t('Payment received. Your NFT will be transferred within 24 hours.'));
         load(1);
       } else {
-        Alert.alert('Error', res?.message || 'Payment could not be completed.');
+        Alert.alert(t('Error'), res?.message || t('Payment could not be completed.'));
       }
     } catch {
-      Alert.alert('Error', 'Payment failed. Please try again.');
+      Alert.alert(t('Error'), t('Payment failed. Please try again.'));
     } finally {
       setClaimingId(null);
     }
@@ -384,17 +404,17 @@ function AuctionWinsList() {
         onEndReached={() => { if (!loadingMore && wins.length < total) load(page + 1, true); }}
         ListHeaderComponent={
           <Text style={winStyles.note}>
-            Auctions you won. Pay each win before its deadline — the NFT is sent to your wallet within 24 hours.
+            {t('Auctions you won. Pay each win before its deadline — the NFT is sent to your wallet within 24 hours.')}
           </Text>
         }
         ListEmptyComponent={
           <View style={winStyles.empty}>
             <Ionicons name="trophy-outline" size={32} color={AppColors.textSecondary} />
-            <Text style={winStyles.emptyTitle}>No auction wins yet</Text>
+            <Text style={winStyles.emptyTitle}>{t('No auction wins yet')}</Text>
             <Pressable
               style={({ pressed }) => [winStyles.browseBtn, pressed && { opacity: 0.7 }]}
               onPress={() => router.push('/auctions')}>
-              <Text style={winStyles.browseBtnText}>See Live Auctions</Text>
+              <Text style={winStyles.browseBtnText}>{t('See Live Auctions')}</Text>
             </Pressable>
           </View>
         }
@@ -414,28 +434,28 @@ function AuctionWinsList() {
                 </View>
               </View>
               <View style={winStyles.cardBody}>
-                <Text style={winStyles.cardTitle} numberOfLines={1}>{win.drop?.title ?? 'Auction Item'}</Text>
+                <Text style={winStyles.cardTitle} numberOfLines={1}>{win.drop?.title ?? t('Auction Item')}</Text>
                 {win.item_name ? <Text style={winStyles.cardSub} numberOfLines={1}>{win.item_name}</Text> : null}
                 <View style={winStyles.metaRow}>
                   <View style={[winStyles.statusBadge, { backgroundColor: `${color}20` }]}>
-                    <Text style={[winStyles.statusText, { color }]}>{WIN_STATUS_LABEL[win.status]}</Text>
+                    <Text style={[winStyles.statusText, { color }]}>{t(WIN_STATUS_LABEL[win.status])}</Text>
                   </View>
-                  <Text style={winStyles.rankText}>Rank {win.rank} · Bid {win.bid_amount.toLocaleString()}</Text>
+                  <Text style={winStyles.rankText}>{t('Rank')}{' '}{win.rank}{' '}{t('· Bid')}{' '}{win.bid_amount.toLocaleString()}</Text>
                 </View>
                 {win.status === 'Claim_Pending' ? (
                   <Text style={winStyles.deadlineText}>
-                    Pay before {new Date(win.claim_deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {t('Pay before')}{' '}{new Date(win.claim_deadline).toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 ) : null}
               </View>
               <View style={winStyles.cardRight}>
                 <Text style={winStyles.price}>{win.price.toLocaleString()}</Text>
-                <Text style={winStyles.priceUnit}>X-coins</Text>
+                <Text style={winStyles.priceUnit}>{t('X-coins')}</Text>
                 {canClaim(win) ? (
                   <Pressable
                     style={({ pressed }) => [winStyles.claimBtn, pressed && { opacity: 0.8 }]}
                     onPress={() => setConfirming(win)}>
-                    <Text style={winStyles.claimBtnText}>Claim & Pay</Text>
+                    <Text style={winStyles.claimBtnText}>{t('Claim & Pay')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -445,19 +465,19 @@ function AuctionWinsList() {
       />
 
       {confirming ? (
-        <View style={winStyles.overlay}>
+        <BottomSheet visible onClose={() => !claimingId && setConfirming(null)}>
           <View style={winStyles.dialog}>
-            <Text style={winStyles.dialogTitle}>Claim & Pay</Text>
+            <Text style={winStyles.dialogTitle}>{t('Claim & Pay')}</Text>
             <Text style={winStyles.dialogBody}>
-              Pay <Text style={{ fontWeight: '700' }}>{confirming.price.toLocaleString()} X-coins</Text> for {confirming.drop?.title ?? 'this win'}.{'\n'}
-              The NFT will be sent to {confirming.wallet_address.slice(0, 6)}...{confirming.wallet_address.slice(-4)} within 24 hours.
+              {t('Pay')}{' '}<Text style={{ fontWeight: '700' }}>{confirming.price.toLocaleString()}{' '}{t('X-coins')}</Text>{' '}{t('for')}{' '}{confirming.drop?.title ?? t('this win')}.{'\n'}
+              {t('The NFT will be sent to')}{' '}{confirming.wallet_address.slice(0, 6)}...{confirming.wallet_address.slice(-4)}{' '}{t('within 24 hours.')}
             </Text>
             <View style={winStyles.dialogBtns}>
               <Pressable
                 style={winStyles.dialogBack}
                 disabled={!!claimingId}
                 onPress={() => setConfirming(null)}>
-                <Text style={winStyles.dialogBackText}>Back</Text>
+                <Text style={winStyles.dialogBackText}>{t('Back')}</Text>
               </Pressable>
               <Pressable
                 style={[winStyles.dialogPay, !!claimingId && { opacity: 0.5 }]}
@@ -466,18 +486,18 @@ function AuctionWinsList() {
                 {claimingId ? (
                   <ActivityIndicator size="small" color={AppColors.background} />
                 ) : (
-                  <Text style={winStyles.dialogPayText}>Pay Now</Text>
+                  <Text style={winStyles.dialogPayText}>{t('Pay Now')}</Text>
                 )}
               </Pressable>
             </View>
           </View>
-        </View>
+        </BottomSheet>
       ) : null}
     </>
   );
 }
 
-const winStyles = StyleSheet.create({
+const useWinStyles = makeStyles((AppColors) => ({
   loader: { paddingVertical: 48 },
   list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, flexGrow: 1 },
   note: { color: AppColors.textSecondary, fontSize: 12, lineHeight: 18, marginBottom: 16 },
@@ -529,20 +549,9 @@ const winStyles = StyleSheet.create({
     marginTop: 4,
   },
   claimBtnText: { color: AppColors.background, fontSize: 11, fontWeight: '700' },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    zIndex: 100,
-  },
   dialog: {
-    backgroundColor: AppColors.surface,
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
     gap: 12,
+    paddingBottom: 8,
   },
   dialogTitle: { color: AppColors.textPrimary, fontSize: 17, fontWeight: '700' },
   dialogBody: { color: AppColors.textSecondary, fontSize: 13, lineHeight: 20 },
@@ -564,9 +573,9 @@ const winStyles = StyleSheet.create({
     alignItems: 'center',
   },
   dialogPayText: { color: AppColors.background, fontSize: 14, fontWeight: '700' },
-});
+}));
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -689,4 +698,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-});
+}));

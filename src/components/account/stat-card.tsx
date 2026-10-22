@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { ImageSourcePropType, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 type StatCardProps = {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -15,6 +15,7 @@ type StatCardProps = {
 };
 
 export function StatCard({ icon, iconColor, imageIcon, label, value, delta, subtext }: StatCardProps) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <Text style={styles.label}>{label}</Text>
@@ -32,7 +33,7 @@ export function StatCard({ icon, iconColor, imageIcon, label, value, delta, subt
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     flex: 1,
     backgroundColor: AppColors.surface,
@@ -67,4 +68,4 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
   },
-});
+}));

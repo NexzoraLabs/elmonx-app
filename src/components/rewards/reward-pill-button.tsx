@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import type { AppColor } from '@/constants/app-colors';
+import { useAppColors } from '@/context/theme-context';
 
 type Tone = 'claimable' | 'done' | 'pending' | 'disabled';
 
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function RewardPillButton({ label, tone, onPress, disabled, loading, style }: Props) {
+  const AppColors = useAppColors();
   const isPressable = !disabled && !loading && tone === 'claimable';
 
   return (
@@ -24,7 +26,7 @@ export function RewardPillButton({ label, tone, onPress, disabled, loading, styl
       {loading ? (
         <ActivityIndicator size="small" color={AppColors.textPrimary} />
       ) : (
-        <Text style={[styles.text, toneTextStyle[tone]]} numberOfLines={1}>
+        <Text style={[styles.text, { color: AppColors[TONE_TEXT_COLOR[tone]] }]} numberOfLines={1}>
           {label}
         </Text>
       )}
@@ -69,11 +71,11 @@ const styles = StyleSheet.create({
   },
 });
 
-const toneTextStyle: Record<Tone, { color: string }> = {
-  claimable: { color: AppColors.success },
-  done: { color: AppColors.textSecondary },
-  pending: { color: AppColors.gold },
-  disabled: { color: AppColors.textSecondary },
+const TONE_TEXT_COLOR: Record<Tone, AppColor> = {
+  claimable: 'success',
+  done: 'textSecondary',
+  pending: 'gold',
+  disabled: 'textSecondary',
 };
 
 export function toneForStatus(status: 'available' | 'pending' | 'complete' | 'done'): Tone {

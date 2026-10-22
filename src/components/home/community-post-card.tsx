@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { CommunityPost } from '@/data/home-mock';
 
 function CaptionText({ caption }: { caption: string }) {
+  const styles = useStyles();
   const words = caption.split(' ');
   return (
     <Text style={styles.caption}>
@@ -20,6 +21,8 @@ function CaptionText({ caption }: { caption: string }) {
 }
 
 export function CommunityPostCard({ post }: { post: CommunityPost }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -97,7 +100,7 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -186,4 +189,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 12,
   },
-});
+}));

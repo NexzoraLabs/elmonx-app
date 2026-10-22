@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 
 type FilterChipProps = {
   label: string;
@@ -9,6 +9,7 @@ type FilterChipProps = {
 };
 
 export function FilterChip({ label, active, onPress }: FilterChipProps) {
+  const styles = useStyles();
   return (
     <Pressable style={[styles.chip, active && styles.chipActive]} onPress={onPress}>
       <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
@@ -16,7 +17,7 @@ export function FilterChip({ label, active, onPress }: FilterChipProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -34,4 +35,4 @@ const styles = StyleSheet.create({
   labelActive: {
     color: AppColors.buttonPrimaryText,
   },
-});
+}));

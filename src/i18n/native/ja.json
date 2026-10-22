@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "投稿用の写真を撮ったり、カメラを使ってコレクティブルをARで表示したりするために使用します。",
+    "NSMicrophoneUsageDescription": "コレクティブルの3D・AR動画を音声付きで録画するために使用します。",
+    "NSPhotoLibraryAddUsageDescription": "コレクティブルの写真や動画をライブラリに保存するために使用します。",
+    "NSPhotoLibraryUsageDescription": "プロフィール写真やカバー画像に使う写真を選ぶために使用します。"
+  }
+}

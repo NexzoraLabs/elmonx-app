@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+import { Pressable, TextInput, type TextInputProps, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 
 type AuthTextInputProps = TextInputProps & {
   secureToggle?: boolean;
@@ -13,6 +13,8 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
   { secureToggle, secureTextEntry, error, style, onFocus, onBlur, ...props },
   ref
 ) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [isFocused, setIsFocused] = useState(false);
   const [isHidden, setIsHidden] = useState(secureToggle ?? secureTextEntry ?? false);
 
@@ -53,7 +55,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -74,4 +76,4 @@ const styles = StyleSheet.create({
     color: AppColors.textPrimary,
     padding: 0,
   },
-});
+}));

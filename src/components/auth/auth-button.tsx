@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, Text, type ViewStyle } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 
 type AuthButtonVariant = 'primary' | 'secondary';
 
@@ -24,6 +24,8 @@ export function AuthButton({
   icon,
   style,
 }: AuthButtonProps) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isDisabled = Boolean(disabled || loading);
   const isPrimary = variant === 'primary';
 
@@ -61,7 +63,7 @@ export function AuthButton({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -98,4 +100,4 @@ const styles = StyleSheet.create({
   secondaryLabel: {
     color: AppColors.buttonSecondaryText,
   },
-});
+}));

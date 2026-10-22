@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type MessageContextMenuProps = {
   visible: boolean;
@@ -13,20 +15,20 @@ type MessageContextMenuProps = {
 };
 
 export function MessageContextMenu({ visible, onClose, onCopy, onUnsend }: MessageContextMenuProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const action = (fn: () => void) => () => {
     onClose();
     fn();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <View style={styles.menu}>
-          {onCopy ? <Row icon="copy-outline" label="Copy" onPress={action(onCopy)} last={!onUnsend} /> : null}
-          {onUnsend ? <Row icon="arrow-undo-outline" label="Unsend" onPress={action(onUnsend)} danger last /> : null}
-        </View>
-      </Pressable>
-    </Modal>
+    <BottomSheet visible={visible} onClose={onClose}>
+      <View style={styles.menu}>
+        {onCopy ? <Row icon="copy-outline" label={t('Copy')} onPress={action(onCopy)} last={!onUnsend} /> : null}
+        {onUnsend ? <Row icon="arrow-undo-outline" label={t('Unsend')} onPress={action(onUnsend)} danger last /> : null}
+      </View>
+    </BottomSheet>
   );
 }
 
@@ -43,33 +45,25 @@ function Row({
   danger?: boolean;
   last?: boolean;
 }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <Pressable style={[styles.row, !last && styles.rowBorder]} onPress={onPress}>
-      <Ionicons name={icon} size={17} color={danger ? AppColors.danger : AppColors.textPrimary} />
+      <Ionicons name={icon} size={20} color={danger ? AppColors.danger : AppColors.textPrimary} />
       <Text style={[styles.label, danger && styles.labelDanger]}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+const useStyles = makeStyles((AppColors) => ({
   menu: {
-    width: 180,
-    backgroundColor: AppColors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    overflow: 'hidden',
+    paddingBottom: 4,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
+    gap: 14,
+    paddingVertical: 14,
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -77,10 +71,10 @@ const styles = StyleSheet.create({
   },
   label: {
     color: AppColors.textPrimary,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   labelDanger: {
     color: AppColors.danger,
   },
-});
+}));

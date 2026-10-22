@@ -1,10 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { RewardIconRow } from '@/components/rewards/reward-icon-row';
 import { RewardPillButton } from '@/components/rewards/reward-pill-button';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { SOCIAL_ACTION_HINTS, SOCIAL_ACTION_ICONS } from '@/data/social-tasks';
 import type { SocialActionProgress } from '@/services/rewards-api';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   row: SocialActionProgress;
@@ -14,11 +16,11 @@ type Props = {
   onPress: (row: SocialActionProgress) => void;
 };
 
-function claimLabel(row: SocialActionProgress): string {
-  if (row.no_drops_available) return 'Caught Up';
-  if (row.claimable_points > 0) return `Claim ${row.claimable_points}`;
-  if (row.is_capped) return 'Claimed';
-  return 'Pending';
+function claimLabel(row: SocialActionProgress, t: TFunction): string {
+  if (row.no_drops_available) return t('Caught Up');
+  if (row.claimable_points > 0) return t('Claim {{points}}', { points: row.claimable_points });
+  if (row.is_capped) return t('Claimed');
+  return t('Pending');
 }
 
 function claimTone(row: SocialActionProgress): 'claimable' | 'disabled' | 'pending' {
@@ -29,12 +31,14 @@ function claimTone(row: SocialActionProgress): 'claimable' | 'disabled' | 'pendi
 }
 
 export function SocialProgressRow({ row, variant, resetCountdownLabel, isClaiming, onPress }: Props) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const icon = SOCIAL_ACTION_ICONS[row.action] ?? 'star-outline';
-  const hint = SOCIAL_ACTION_HINTS[row.action];
+  const hint = SOCIAL_ACTION_HINTS[row.action] ? t(SOCIAL_ACTION_HINTS[row.action]) : undefined;
   const percent = row.daily_limit ? Math.min(100, (row.completed_today / row.daily_limit) * 100) : 0;
 
   const extra = row.no_drops_available ? (
-    <Text style={styles.caughtUp}>You&apos;re all caught up. New drops earn again.</Text>
+    <Text style={styles.caughtUp}>{t('You\'re all caught up. New drops earn again.')}</Text>
   ) : (
     <>
       <View style={styles.progressRow}>
@@ -42,24 +46,24 @@ export function SocialProgressRow({ row, variant, resetCountdownLabel, isClaimin
           <View style={[styles.progressFill, { width: `${percent}%` }]} />
         </View>
         <Text style={styles.progressLabel}>
-          {row.completed_today} of {row.daily_limit} today
+          {row.completed_today}{' '}{t('of')}{' '}{row.daily_limit}{' '}{t('today')}
         </Text>
       </View>
       {row.is_capped ? (
         <Text style={styles.capNote}>
           {variant === 'drop'
-            ? 'Daily limit reached — come back tomorrow'
-            : `Daily limit reached — resets in ${resetCountdownLabel}`}
+            ? t('Daily limit reached — come back tomorrow')
+            : t('Daily limit reached — resets in {{time}}', { time: resetCountdownLabel })}
         </Text>
       ) : null}
     </>
   );
 
   return (
-    <RewardIconRow icon={icon} title={row.label} description={hint} pointsLabel={`+${row.points_per_action} XP`} extra={extra}>
+    <RewardIconRow icon={icon} title={row.label} description={hint} pointsLabel={t('+{{points}} XP', { points: row.points_per_action })} extra={extra}>
       <RewardPillButton
         tone={claimTone(row)}
-        label={claimLabel(row)}
+        label={claimLabel(row, t)}
         disabled={row.claimable_points <= 0}
         loading={isClaiming}
         onPress={() => onPress(row)}
@@ -68,7 +72,7 @@ export function SocialProgressRow({ row, variant, resetCountdownLabel, isClaimin
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -102,4 +106,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 6,
   },
-});
+}));

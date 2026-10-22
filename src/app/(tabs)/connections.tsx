@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
 import type {
@@ -24,6 +24,7 @@ import type {
   FollowListItem,
   FollowRequestItem,
 } from '@/services/feed-api';
+import { useTranslation } from 'react-i18next';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const TABS: Tab[] = ['followers', 'following', 'blocked'];
@@ -38,6 +39,9 @@ function avatar(url?: string | null): string {
 }
 
 export default function ConnectionsScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token, user } = useAuth();
   const params = useLocalSearchParams<{ tab?: string }>();
   const initialIndex = params.tab === 'following' ? 1 : params.tab === 'blocked' ? 2 : 0;
@@ -65,7 +69,7 @@ export default function ConnectionsScreen() {
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Connections</Text>
+        <Text style={styles.headerTitle}>{t('Connections')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -76,7 +80,7 @@ export default function ConnectionsScreen() {
           const label = key.charAt(0).toUpperCase() + key.slice(1);
           return (
             <Pressable key={key} style={styles.tab} onPress={() => goToTab(i)}>
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t(label)}</Text>
               <View style={[styles.tabIndicator, active && styles.tabIndicatorActive]} />
             </Pressable>
           );
@@ -110,6 +114,9 @@ export default function ConnectionsScreen() {
 // ─────────────────────────────── Followers ─────────────────────────────────
 
 function FollowersList({ token, userId }: { token: string | null; userId: string }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [requests, setRequests] = useState<FollowRequestItem[]>([]);
   const [followers, setFollowers] = useState<FollowListItem[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -204,7 +211,7 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
 
   const header = requests.length > 0 ? (
     <View style={styles.requestsSection}>
-      <Text style={styles.subHeader}>Follow Requests ({requests.length})</Text>
+      <Text style={styles.subHeader}>{t('Follow Requests ({{n}})', { n: requests.length })}</Text>
       {requests.map((req) => (
         <View key={req._id} style={styles.userRow}>
           <AvatarImage url={req.user.profile_avatar} />
@@ -218,13 +225,13 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
               style={[styles.btn, styles.btnPrimary, busyIds.has(req._id) && styles.btnDisabled]}
               disabled={busyIds.has(req._id)}
               onPress={() => handleAccept(req)}>
-              <Text style={styles.btnPrimaryText}>Accept</Text>
+              <Text style={styles.btnPrimaryText}>{t('Accept')}</Text>
             </Pressable>
             <Pressable
               style={[styles.btn, styles.btnSecondary, busyIds.has(req._id) && styles.btnDisabled]}
               disabled={busyIds.has(req._id)}
               onPress={() => handleReject(req)}>
-              <Text style={styles.btnSecondaryText}>Decline</Text>
+              <Text style={styles.btnSecondaryText}>{t('Decline')}</Text>
             </Pressable>
           </View>
         </View>
@@ -236,13 +243,13 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
   return (
     <FlatList
       data={followers}
-      keyExtractor={(item) => item._id}
+      keyExtractor={(item) => item.user._id}
       ListHeaderComponent={header}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
       onEndReachedThreshold={0.4}
       onEndReached={() => { if (page < totalPages) load(page + 1); }}
-      ListEmptyComponent={<EmptyState label="No followers yet" />}
+      ListEmptyComponent={<EmptyState label={t('No followers yet')} />}
       renderItem={({ item }) => {
         const isFollowing = followingIds.has(item.user._id);
         return (
@@ -258,7 +265,7 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
               disabled={busyIds.has(item.user._id)}
               onPress={() => handleFollowBack(item)}>
               <Text style={isFollowing ? styles.btnSecondaryText : styles.btnPrimaryText}>
-                {isFollowing ? 'Following' : 'Follow Back'}
+                {isFollowing ? t('Following', { context: 'button' }) : t('Follow Back')}
               </Text>
             </Pressable>
           </View>
@@ -271,6 +278,9 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
 // ─────────────────────────────── Following ─────────────────────────────────
 
 function FollowingList({ token, userId }: { token: string | null; userId: string }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [following, setFollowing] = useState<FollowListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -323,12 +333,12 @@ function FollowingList({ token, userId }: { token: string | null; userId: string
   return (
     <FlatList
       data={following}
-      keyExtractor={(item) => item._id}
+      keyExtractor={(item) => item.user._id}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
       onEndReachedThreshold={0.4}
       onEndReached={() => { if (page < totalPages) load(page + 1); }}
-      ListEmptyComponent={<EmptyState label="Not following anyone yet" />}
+      ListEmptyComponent={<EmptyState label={t('Not following anyone yet')} />}
       renderItem={({ item }) => (
         <View style={styles.userRow}>
           <AvatarImage url={item.user.profile_avatar} />
@@ -341,7 +351,7 @@ function FollowingList({ token, userId }: { token: string | null; userId: string
             style={[styles.btn, styles.btnSecondary, busyIds.has(item.user._id) && styles.btnDisabled]}
             disabled={busyIds.has(item.user._id)}
             onPress={() => handleUnfollow(item)}>
-            <Text style={styles.btnSecondaryText}>Unfollow</Text>
+            <Text style={styles.btnSecondaryText}>{t('Unfollow')}</Text>
           </Pressable>
         </View>
       )}
@@ -352,6 +362,9 @@ function FollowingList({ token, userId }: { token: string | null; userId: string
 // ─────────────────────────────── Blocked ───────────────────────────────────
 
 function BlockedList({ token }: { token: string | null }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [blocked, setBlocked] = useState<BlockedListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -404,12 +417,12 @@ function BlockedList({ token }: { token: string | null }) {
   return (
     <FlatList
       data={blocked}
-      keyExtractor={(item) => item._id}
+      keyExtractor={(item) => item.user._id}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
       onEndReachedThreshold={0.4}
       onEndReached={() => { if (page < totalPages) load(page + 1); }}
-      ListEmptyComponent={<EmptyState label="No blocked users" />}
+      ListEmptyComponent={<EmptyState label={t('No blocked users')} />}
       renderItem={({ item }) => (
         <View style={styles.userRow}>
           <AvatarImage url={item.user.profile_avatar} />
@@ -422,7 +435,7 @@ function BlockedList({ token }: { token: string | null }) {
             style={[styles.btn, styles.btnDanger, busyIds.has(item.user._id) && styles.btnDisabled]}
             disabled={busyIds.has(item.user._id)}
             onPress={() => handleUnblock(item)}>
-            <Text style={styles.btnDangerText}>Unblock</Text>
+            <Text style={styles.btnDangerText}>{t('Unblock')}</Text>
           </Pressable>
         </View>
       )}
@@ -433,6 +446,7 @@ function BlockedList({ token }: { token: string | null }) {
 // ─────────────────────────────── Shared ────────────────────────────────────
 
 function AvatarImage({ url }: { url?: string | null }) {
+  const styles = useStyles();
   const src = avatar(url);
   return (
     <Image
@@ -445,6 +459,8 @@ function AvatarImage({ url }: { url?: string | null }) {
 }
 
 function EmptyState({ label }: { label: string }) {
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.empty}>
       <Ionicons name="people-outline" size={32} color={AppColors.textSecondary} />
@@ -453,7 +469,7 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -614,4 +630,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 14,
   },
-});
+}));

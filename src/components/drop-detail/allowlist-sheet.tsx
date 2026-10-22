@@ -1,12 +1,13 @@
 import { useAccount, useAppKit } from '@reown/appkit-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { checkWhitelist } from '@/services/drops-api';
 import { shortenAddress } from '@/services/collectibles-api';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   dropId: string | null;
@@ -22,6 +23,9 @@ export function AllowlistSheet({ dropId, onClose }: Props) {
 }
 
 function AllowlistContent({ dropId }: { dropId: string }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const { address, isConnected } = useAccount();
   const { open } = useAppKit();
@@ -40,21 +44,21 @@ function AllowlistContent({ dropId }: { dropId: string }) {
         setResult({
           ok: true,
           lines: [
-            "You're on the allowlist!",
-            'You have access to this drop.',
-            `You can purchase up to ${remaining} more editions.`,
+            t("You're on the allowlist!"),
+            t('You have access to this drop.'),
+            t('You can purchase up to {{n}} more editions.', { n: remaining }),
           ],
         });
       } else if (response.status === 201) {
         setResult({
           ok: false,
-          lines: ['Not Eligible', "You're not on the allowlist for this drop.", 'Stay tuned for future releases!'],
+          lines: [t('Not Eligible'), t("You're not on the allowlist for this drop."), t('Stay tuned for future releases!')],
         });
       } else {
-        setResult({ ok: false, lines: ['List is not updated yet, Please wait'] });
+        setResult({ ok: false, lines: [t('List is not updated yet, Please wait')] });
       }
     } catch {
-      setResult({ ok: false, lines: ['Failed to check status'] });
+      setResult({ ok: false, lines: [t('Failed to check status')] });
     } finally {
       setLoading(false);
     }
@@ -62,15 +66,15 @@ function AllowlistContent({ dropId }: { dropId: string }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Check Allowlist Eligibility</Text>
+      <Text style={styles.title}>{t('Check Allowlist Eligibility')}</Text>
       <Text style={styles.text}>
-        Private releases begin with an exclusive window for holders of qualifying works.
+        {t('Private releases begin with an exclusive window for holders of qualifying works.')}
       </Text>
 
       {isConnected && address ? (
         <>
           <View style={styles.walletRow}>
-            <Text style={styles.walletLabel}>Wallet</Text>
+            <Text style={styles.walletLabel}>{t('Wallet')}</Text>
             <Text style={styles.walletValue}>{shortenAddress(address)}</Text>
           </View>
           <Pressable
@@ -80,13 +84,13 @@ function AllowlistContent({ dropId }: { dropId: string }) {
             {loading ? (
               <ActivityIndicator color={AppColors.buttonPrimaryText} />
             ) : (
-              <Text style={styles.buttonText}>Check Eligibility</Text>
+              <Text style={styles.buttonText}>{t('Check Eligibility')}</Text>
             )}
           </Pressable>
         </>
       ) : (
         <Pressable onPress={() => open()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-          <Text style={styles.buttonText}>Connect Wallet</Text>
+          <Text style={styles.buttonText}>{t('Connect Wallet')}</Text>
         </Pressable>
       )}
 
@@ -103,7 +107,7 @@ function AllowlistContent({ dropId }: { dropId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   container: {
     gap: 12,
     paddingBottom: 8,
@@ -170,4 +174,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-});
+}));

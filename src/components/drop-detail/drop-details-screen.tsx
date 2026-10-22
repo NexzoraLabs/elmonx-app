@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AllowlistSheet } from '@/components/drop-detail/allowlist-sheet';
 import { DropDetailSection } from '@/components/drop-detail/drop-detail-section';
+import { DropSocialActions } from '@/components/drop-detail/drop-social-actions';
 import { CommentsSheet } from '@/components/feed/comments-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useCurrentUserId } from '@/hooks/use-current-user-id';
 import {
@@ -19,6 +20,7 @@ import {
   type CurrencyRates,
   type Drop,
 } from '@/services/drops-api';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   /** Website: `/collection/:name/:id` lists every drop of a collection, `/drop/:name/:id` a single drop. */
@@ -29,6 +31,9 @@ type Props = {
 const DEFAULT_RATES: CurrencyRates = { GBP: 1, USD: 1.27, EUR: 1.2, ETH: 0.00041 };
 
 export function DropDetailsScreen({ mode, id }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const currentUserId = useCurrentUserId();
   const [drops, setDrops] = useState<Drop[]>([]);
@@ -58,24 +63,45 @@ export function DropDetailsScreen({ mode, id }: Props) {
     };
   }, [mode, id, token]);
 
+  // Refresh one drop after an in-app purchase so editions left / Sold Out update in place.
+  const refreshDrop = (dropId: string) => {
+    fetchDropById(dropId, token)
+      .then((fresh) => {
+        if (fresh) setDrops((prev) => prev.map((d) => (d._id === dropId ? fresh : d)));
+      })
+      .catch(() => {});
+  };
+
   const headerTitle =
-    mode === 'collection' ? (drops[0]?.collections_data?.title ?? 'Collection') : (drops[0]?.title ?? '');
+    mode === 'collection' ? (drops[0]?.collections_data?.title ?? t('Collection')) : (drops[0]?.title ?? '');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {headerTitle}
-        </Text>
-        <View style={styles.backButton} />
+        {mode === 'collection' ? (
+          <>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {headerTitle}
+            </Text>
+            <View style={styles.backButton} />
+          </>
+        ) : drops[0] ? (
+          // Single drop: no title — back on the left, like / comment / share on the right.
+          <DropSocialActions
+            key={drops[0]._id}
+            drop={drops[0]}
+            commentsCount={commentCounts[drops[0]._id] ?? 0}
+            onOpenComments={(d) => setCommentsDropId(d._id)}
+          />
+        ) : null}
       </View>
 
       {isLoading ? (
@@ -83,8 +109,8 @@ export function DropDetailsScreen({ mode, id }: Props) {
       ) : drops.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="cube-outline" size={32} color={AppColors.textSecondary} />
-          <Text style={styles.emptyTitle}>No drop found</Text>
-          <Text style={styles.emptyText}>This item isn&apos;t available anymore.</Text>
+          <Text style={styles.emptyTitle}>{t('No drop found')}</Text>
+          <Text style={styles.emptyText}>{t('This item isn\'t available anymore.')}</Text>
         </View>
       ) : (
         <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -104,7 +130,7 @@ export function DropDetailsScreen({ mode, id }: Props) {
                       {drop.title}
                     </Text>
                     <Text style={styles.thumbMeta}>
-                      Total: {drop.total_editions || 0} · Remaining: {remaining}
+                      {t('Total: {{total}} · Remaining: {{remaining}}', { total: drop.total_editions || 0, remaining })}
                     </Text>
                   </Pressable>
                 );
@@ -126,6 +152,8 @@ export function DropDetailsScreen({ mode, id }: Props) {
                 commentsCount={commentCounts[drop._id] ?? 0}
                 onOpenComments={(d) => setCommentsDropId(d._id)}
                 onOpenAllowlist={(d) => setAllowlistDropId(d._id)}
+                onPurchased={(d) => refreshDrop(d._id)}
+                socialInHeader={mode === 'drop'}
               />
               {index < drops.length - 1 ? <View style={styles.divider} /> : null}
             </View>
@@ -147,7 +175,7 @@ export function DropDetailsScreen({ mode, id }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -231,4 +259,4 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: AppColors.border,
   },
-});
+}));

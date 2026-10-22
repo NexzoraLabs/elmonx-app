@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, Text, View } from 'react-native';
 
 import { NewsDetailSheet } from '@/components/home/news-detail-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import type { NewsItem } from '@/services/home-api';
+import { appLocale } from '@/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 40) / 1.2;
@@ -11,13 +12,14 @@ const CARD_WIDTH = (SCREEN_WIDTH - 40) / 1.2;
 function formatDate(iso: string): string {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return new Date(iso).toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short' });
   } catch {
     return '';
   }
 }
 
 export function NewsCard({ item }: { item: NewsItem }) {
+  const styles = useStyles();
   const [detailOpen, setDetailOpen] = useState(false);
   return (
     <>
@@ -36,7 +38,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     width: CARD_WIDTH,
     minHeight: 160,
@@ -78,4 +80,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-});
+}));

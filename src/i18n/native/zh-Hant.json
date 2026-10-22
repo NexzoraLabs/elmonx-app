@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "NSCameraUsageDescription": "用於拍攝貼文相片，以及透過相機以擴增實境檢視你的收藏品。",
+    "NSMicrophoneUsageDescription": "用於錄製收藏品的 3D 與 AR 影片並收錄聲音。",
+    "NSPhotoLibraryAddUsageDescription": "用於將收藏品的相片和影片儲存到你的相簿。",
+    "NSPhotoLibraryUsageDescription": "用於選擇大頭貼和封面圖片的相片。"
+  }
+}

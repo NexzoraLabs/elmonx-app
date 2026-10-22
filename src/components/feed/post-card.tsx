@@ -3,10 +3,12 @@ import { Image } from 'expo-image';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { FeedRow } from '@/services/feed-api';
 import { isGifUrl } from '@/services/giphy-api';
 import { resolveAvatar, type Post, type PostAuthor, type UserRepost } from '@/services/profile-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 export type FeedItem =
   | { kind: 'post'; key: string; post: Post; repostedByMe?: boolean }
@@ -72,16 +74,16 @@ export function isOwnItem(item: FeedItem, currentUserId: string | null): boolean
 export function timeAgo(iso?: string): string {
   if (!iso) return '';
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  if (seconds < 60) return 'now';
+  if (seconds < 60) return i18n.t('now');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return i18n.t('{{n}}m', { n: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return i18n.t('{{n}}h', { n: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
+  if (days < 7) return i18n.t('{{n}}d', { n: days });
   const weeks = Math.floor(days / 7);
-  if (weeks < 52) return `${weeks}w`;
-  return `${Math.floor(days / 365)}y`;
+  if (weeks < 52) return i18n.t('{{n}}w', { n: weeks });
+  return i18n.t('{{n}}y', { n: Math.floor(days / 365) });
 }
 
 export function compactCount(value?: number): string {
@@ -104,6 +106,7 @@ type Props = {
 };
 
 function ContentText({ content }: { content: string }) {
+  const styles = useStyles();
   const parts = content.split(/(\s+)/);
   return (
     <Text style={styles.content}>
@@ -118,6 +121,7 @@ function ContentText({ content }: { content: string }) {
 
 // Website rule (`isSingleGif`): a lone GIF shows at its natural aspect ratio, never cropped.
 function SingleGif({ uri }: { uri: string }) {
+  const styles = useStyles();
   const [aspectRatio, setAspectRatio] = useState(1);
   return (
     <Image
@@ -134,6 +138,7 @@ function SingleGif({ uri }: { uri: string }) {
 }
 
 function PostImages({ images }: { images?: string[] }) {
+  const styles = useStyles();
   if (!images || images.length === 0) return null;
   if (images.length === 1) {
     if (isGifUrl(images[0])) return <SingleGif uri={images[0]} />;
@@ -159,6 +164,8 @@ function AuthorRow({
   trailing?: ReactNode;
   onPressAuthor: (author: PostAuthor) => void;
 }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.header}>
       <Pressable
@@ -172,7 +179,7 @@ function AuthorRow({
         />
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
-            {author?.user_name ?? 'Unknown'}
+            {author?.user_name ?? t('Unknown')}
           </Text>
           {date ? <Text style={styles.time}>· {timeAgo(date)}</Text> : null}
         </View>
@@ -193,6 +200,9 @@ export function PostCard({
   onMore,
   onPressAuthor,
 }: Props) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isRepost = item.kind === 'repost';
   const own = isOwnItem(item, currentUserId);
   const likesCount = isRepost ? item.likesCount : (item.post.likes_count ?? 0);
@@ -202,11 +212,11 @@ export function PostCard({
   const canRepost = item.post && !(isRepost && item.originalUnavailable);
 
   const trailing = own ? (
-    <Pressable accessibilityRole="button" accessibilityLabel="Delete" hitSlop={10} onPress={() => onDelete(item)}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('Delete')} hitSlop={10} onPress={() => onDelete(item)}>
       <Ionicons name="trash-outline" size={17} color={AppColors.textSecondary} />
     </Pressable>
   ) : (
-    <Pressable accessibilityRole="button" accessibilityLabel="More options" hitSlop={10} onPress={() => onMore(item)}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('More options')} hitSlop={10} onPress={() => onMore(item)}>
       <Ionicons name="ellipsis-horizontal" size={18} color={AppColors.textSecondary} />
     </Pressable>
   );
@@ -222,7 +232,9 @@ export function PostCard({
               disabled={own || !item.repostedBy}
               onPress={() => item.repostedBy && onPressAuthor(item.repostedBy)}>
               <Text style={styles.repostLabel} numberOfLines={1}>
-                {own ? 'You' : (item.repostedBy?.user_name ?? 'Someone')} reposted · {timeAgo(item.createdAt)}
+                {own
+                  ? t('You reposted · {{time}}', { time: timeAgo(item.createdAt) })
+                  : t('{{name}} reposted · {{time}}', { name: item.repostedBy?.user_name ?? t('Someone'), time: timeAgo(item.createdAt) })}
               </Text>
             </Pressable>
             {trailing}
@@ -230,7 +242,7 @@ export function PostCard({
           {item.comment ? <ContentText content={item.comment} /> : null}
           <View style={styles.quoteBox}>
             {item.originalUnavailable || !item.post ? (
-              <Text style={styles.unavailable}>This content is no longer available.</Text>
+              <Text style={styles.unavailable}>{t('This content is no longer available.')}</Text>
             ) : (
               <>
                 <AuthorRow author={item.post.author} date={item.post.created_at} onPressAuthor={onPressAuthor} />
@@ -292,7 +304,7 @@ export function PostCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   card: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -395,4 +407,4 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
     fontSize: 12,
   },
-});
+}));

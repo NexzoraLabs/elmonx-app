@@ -4,6 +4,7 @@ import type { CollectionCategory, CollectionGridItem } from '@/data/collections-
 import { appendCatalogParams, DEFAULT_CATALOG_FILTERS, type CatalogFilters } from '@/services/catalog-filters';
 
 import { API_BASE_URL } from '@/config/env';
+import i18n, { appLocale, currentLanguage } from '@/i18n';
 const ITEMS_PER_PAGE = 15;
 
 export type PagedResult<T> = {
@@ -50,6 +51,10 @@ export type BlindBoxItemData = {
 export type Drop = {
   _id: string;
   title: string;
+  /** 'Auction' for drops sold only through an auction (list_sell adds these three). */
+  sale_mode?: string;
+  auction_id?: string | null;
+  auction_status?: string | null;
   description: string;
   price: number;
   custom_eth_price: number;
@@ -64,6 +69,8 @@ export type Drop = {
   total_editions: number;
   consumed_editions: number;
   is_blind_box: boolean;
+  /** Admin flag: AR for everyone, not only owners (list_sell defaults it to false). */
+  is_ar_available_to_all?: boolean;
   is_sale_closed: boolean;
   is_open_drop: boolean;
   /**
@@ -71,6 +78,8 @@ export type Drop = {
    * individual=True response: single object — the specific blind box item for this card.
    */
   blind_box_items_data: BlindBoxItemData[] | BlindBoxItemData;
+  /** Rarity counts, shown under Editions when the drop has no blind-box items (website). */
+  editions_breakdown?: { rarity: string; count: number }[];
   // Fields the website's drop page reads.
   collection_id?: string;
   sale_title?: 'Private' | 'Public' | string;
@@ -117,7 +126,7 @@ export async function fetchFeaturedDrops(
 
   const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
   if (!response.ok) {
-    throw new Error(`Failed to load drops (${response.status})`);
+    throw new Error(i18n.t('Failed to load drops ({{status}})', { status: response.status }));
   }
   const json: DropListResponse = await response.json();
   return { items: json.data, totalRecords: json.total_records };
@@ -142,7 +151,7 @@ export async function fetchPartnerDrops(
 
   const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
   if (!response.ok) {
-    throw new Error(`Failed to load partner drops (${response.status})`);
+    throw new Error(i18n.t('Failed to load partner drops ({{status}})', { status: response.status }));
   }
   const json: DropListResponse = await response.json();
   return { items: json.data, totalRecords: json.total_records };
@@ -155,7 +164,7 @@ const authHeaders = (token?: string | null): Record<string, string> =>
 async function fetchDropList(params: URLSearchParams, token?: string | null): Promise<Drop[]> {
   const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`, { headers: authHeaders(token) });
   if (!response.ok) {
-    throw new Error(`Failed to load drop (${response.status})`);
+    throw new Error(i18n.t('Failed to load drop ({{status}})', { status: response.status }));
   }
   const json: DropListResponse = await response.json();
   if (json.status !== 200 || !json.data) return [];
@@ -178,7 +187,7 @@ export async function toggleDropLike(token: string, dropId: string): Promise<{ l
     body: '{}',
   });
   const json = (await response.json()) as { status?: number; message?: string; data?: { liked: boolean; likes_count: number } };
-  if (!json.data || (json.status && json.status !== 200)) throw new Error(json.message || 'Unable to like.');
+  if (!json.data || (json.status && json.status !== 200)) throw new Error(json.message || i18n.t('Unable to like.'));
   return json.data;
 }
 
@@ -244,11 +253,11 @@ export function formatDropDate(isoDate: string, withTime = false): string {
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  const day = date.toLocaleDateString('en-GB', { day: '2-digit' });
-  const month = date.toLocaleDateString('en-GB', { month: 'short' });
-  const year = date.toLocaleDateString('en-GB', { year: 'numeric' });
+  const day = date.toLocaleDateString(appLocale('en-GB'), { day: '2-digit' });
+  const month = date.toLocaleDateString(appLocale('en-GB'), { month: 'short' });
+  const year = date.toLocaleDateString(appLocale('en-GB'), { year: 'numeric' });
   if (!withTime) return `${day} ${month} ${year}`;
-  const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const time = date.toLocaleTimeString(appLocale('en-US'), { hour: '2-digit', minute: '2-digit', hour12: currentLanguage() === 'en' });
   return `${day} ${month} ${year} · ${time}`;
 }
 

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import i18n from '@/i18n';
 
 type ApiEnvelope = {
   status: boolean;
@@ -39,8 +40,8 @@ export async function applyPromoCode(
   const envelope = (await response.json()) as ApiEnvelope;
   const extra = formatData(envelope.data);
   const baseMessage = envelope.status
-    ? envelope.message || 'Success!'
-    : envelope.message || 'Invalid promo code or wallet address';
+    ? envelope.message || i18n.t('Success!')
+    : envelope.message || i18n.t('Invalid promo code or wallet address');
 
   return {
     success: Boolean(envelope.status),

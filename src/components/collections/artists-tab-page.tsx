@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 
 import { ArtistListRow } from '@/components/collections/artist-list-row';
 import { ArtistSkeletonList } from '@/components/collections/artist-skeleton-list';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { fetchBrands, type Brand } from '@/services/brands-api';
+import { useTranslation } from 'react-i18next';
 
 /** Parent remounts this (via `key`) when the search changes, so it loads once per search. */
 export function ArtistsTabPage({ search = '' }: { search?: string }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -42,7 +45,7 @@ export function ArtistsTabPage({ search = '' }: { search?: string }) {
   if (error) {
     return (
       <View style={[styles.page, styles.center]}>
-        <Text style={styles.emptyText}>Couldn&apos;t load artists. Pull to try again later.</Text>
+        <Text style={styles.emptyText}>{t('Couldn\'t load artists. Pull to try again later.')}</Text>
       </View>
     );
   }
@@ -50,7 +53,7 @@ export function ArtistsTabPage({ search = '' }: { search?: string }) {
   if (brands.length === 0) {
     return (
       <View style={[styles.page, styles.center]}>
-        <Text style={styles.emptyText}>{search.trim() ? `No artists found for "${search.trim()}".` : 'Nothing here yet.'}</Text>
+        <Text style={styles.emptyText}>{search.trim() ? t('No artists found for "{{search}}".', { search: search.trim() }) : t('Nothing here yet.')}</Text>
       </View>
     );
   }
@@ -67,7 +70,7 @@ export function ArtistsTabPage({ search = '' }: { search?: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   flexFill: {
     flex: 1,
   },
@@ -91,4 +94,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-});
+}));

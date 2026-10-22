@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAppKit } from '@reown/appkit-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { shortenAddress } from '@/services/collectibles-api';
+import { useTranslation } from 'react-i18next';
 
 export function ConnectWalletPrompt({ title, subtitle }: { title: string; subtitle: string }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { open } = useAppKit();
   return (
     <View style={styles.prompt}>
@@ -15,13 +19,15 @@ export function ConnectWalletPrompt({ title, subtitle }: { title: string; subtit
       <Text style={styles.promptTitle}>{title}</Text>
       <Text style={styles.promptSubtitle}>{subtitle}</Text>
       <Pressable onPress={() => open()} style={({ pressed }) => [styles.connectButton, pressed && styles.pressed]}>
-        <Text style={styles.connectText}>Connect Wallet</Text>
+        <Text style={styles.connectText}>{t('Connect Wallet')}</Text>
       </Pressable>
     </View>
   );
 }
 
 export function ConnectedWalletBar({ address }: { address: string }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const { disconnect } = useAppKit();
   return (
     <View style={styles.bar}>
@@ -30,13 +36,13 @@ export function ConnectedWalletBar({ address }: { address: string }) {
         <Text style={styles.barAddress}>{shortenAddress(address)}</Text>
       </View>
       <Pressable hitSlop={8} onPress={() => disconnect()} style={({ pressed }) => pressed && styles.pressed}>
-        <Text style={styles.disconnect}>Disconnect</Text>
+        <Text style={styles.disconnect}>{t('Disconnect')}</Text>
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   prompt: {
     alignItems: 'center',
     paddingVertical: 48,
@@ -109,4 +115,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-});
+}));

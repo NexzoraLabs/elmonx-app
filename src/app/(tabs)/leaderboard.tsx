@@ -5,19 +5,26 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import * as rewardsApi from '@/services/rewards-api';
 import type { LeaderboardUser } from '@/services/rewards-api';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 const ITEMS_PER_PAGE = 10;
 const RANK_COLORS = ['#F5B400', '#B5B8C0', '#C97B3D'] as const;
 
 function levelLabel(user: LeaderboardUser): string {
   if (!user.level) return '';
-  return user.tier_name ? `Level ${user.level} · ${user.tier_name}` : `Level ${user.level}`;
+  return user.tier_name
+    ? i18n.t('Level {{level}} · {{tier}}', { level: user.level, tier: user.tier_name })
+    : i18n.t('Level {{level}}', { level: user.level });
 }
 
 export default function LeaderboardScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const [rankings, setRankings] = useState<LeaderboardUser[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -54,19 +61,19 @@ export default function LeaderboardScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Leaderboard</Text>
+        <Text style={styles.headerTitle}>{t('Leaderboard')}</Text>
         <View style={styles.backButton} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Activity Rankings</Text>
-        <Text style={styles.subtitle}>Top performers in the all time period</Text>
+        <Text style={styles.title}>{t('Activity Rankings')}</Text>
+        <Text style={styles.subtitle}>{t('Top performers in the all time period')}</Text>
 
         {isLoading ? (
           <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
@@ -88,7 +95,7 @@ export default function LeaderboardScreen() {
                   {isLoadingMore ? (
                     <ActivityIndicator size="small" color={AppColors.link} />
                   ) : (
-                    <Text style={styles.loadMoreText}>Load more</Text>
+                    <Text style={styles.loadMoreText}>{t('Load more')}</Text>
                   )}
                 </Pressable>
               ) : null}
@@ -101,6 +108,9 @@ export default function LeaderboardScreen() {
 }
 
 function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const isTop3 = rank <= 3;
   return (
     <View style={styles.row}>
@@ -126,18 +136,18 @@ function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
           )}
           <View>
             <Text style={styles.userName} numberOfLines={1}>
-              {user.user_name || 'Unknown'}
+              {user.user_name || t('Unknown')}
             </Text>
             {levelLabel(user) ? <Text style={styles.levelText}>{levelLabel(user)}</Text> : null}
           </View>
         </Pressable>
       </View>
-      <Text style={styles.points}>{user.points || 0} XP</Text>
+      <Text style={styles.points}>{user.points || 0}{' '}{t('XP')}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -270,4 +280,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-});
+}));

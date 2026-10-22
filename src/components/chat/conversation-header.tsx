@@ -3,7 +3,8 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type ConversationHeaderProps = {
   username: string;
@@ -15,11 +16,14 @@ type ConversationHeaderProps = {
 };
 
 export function ConversationHeader({ username, avatarUrl, online, typing, onPressProfile, onPressMenu }: ConversationHeaderProps) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('Go back')}
         hitSlop={8}
         onPress={() => router.back()}
         style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -36,21 +40,21 @@ export function ConversationHeader({ username, avatarUrl, online, typing, onPres
             @{username}
           </Text>
           {typing ? (
-            <Text style={styles.typing}>typing…</Text>
+            <Text style={styles.typing}>{t('typing…')}</Text>
           ) : online ? (
-            <Text style={styles.status}>online</Text>
+            <Text style={styles.status}>{t('online')}</Text>
           ) : null}
         </View>
       </Pressable>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="More options" hitSlop={8} onPress={onPressMenu}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('More options')} hitSlop={8} onPress={onPressMenu}>
         <Ionicons name="ellipsis-horizontal" size={20} color={AppColors.textPrimary} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -113,4 +117,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 1,
   },
-});
+}));

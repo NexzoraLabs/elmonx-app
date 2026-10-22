@@ -1,19 +1,22 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { AuthHeader } from '@/components/auth/auth-header';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { NumericKeypad } from '@/components/auth/numeric-keypad';
 import { OtpInput } from '@/components/auth/otp-input';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
+import { useTranslation } from 'react-i18next';
 
 const CODE_LENGTH = 4;
 const RESEND_SECONDS = 24;
 
 export default function VerifyCodeScreen() {
+  const { t } = useTranslation();
+  const styles = useStyles();
   const { email, purpose } = useLocalSearchParams<{ email?: string; purpose?: 'login' | 'reset' }>();
   const { confirmSignInOtp, resendOtp } = useAuth();
   const [code, setCode] = useState('');
@@ -46,7 +49,7 @@ export default function VerifyCodeScreen() {
     try {
       await resendOtp(email);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to resend code.');
+      setError(e instanceof Error ? e.message : t('Unable to resend code.'));
     }
   };
 
@@ -62,7 +65,7 @@ export default function VerifyCodeScreen() {
       await confirmSignInOtp(email, code);
       router.replace('/home');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invalid or expired code.');
+      setError(e instanceof Error ? e.message : t('Invalid or expired code.'));
     } finally {
       setVerifying(false);
     }
@@ -74,15 +77,15 @@ export default function VerifyCodeScreen() {
       scrollable={false}
       footer={
         <AuthButton
-          label="Continue"
+          label={t('Continue')}
           onPress={handleContinue}
           disabled={!isComplete}
           loading={verifying}
         />
       }>
-      <Text style={styles.title}>Enter the code we sent you</Text>
+      <Text style={styles.title}>{t('Enter the code we sent you')}</Text>
       <Text style={styles.subtitle}>
-        We sent it to <Text style={styles.emailText}>{email ?? 'your email'}</Text> to verify
+        {t('We sent it to')}{' '}<Text style={styles.emailText}>{email ?? t('your email')}</Text>{' '}{t('to verify')}
       </Text>
 
       <View style={styles.otpSection}>
@@ -92,12 +95,12 @@ export default function VerifyCodeScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Text style={styles.resendText}>
-        Don&apos;t see it?{' '}
+        {t('Don\'t see it?')}{' '}
         {secondsLeft > 0 ? (
-          `Retry in ${secondsLeft} seconds`
+          t('Retry in {{n}} seconds', { n: secondsLeft })
         ) : (
           <Text style={styles.resendLink} onPress={handleResend}>
-            Resend code
+            {t('Resend code')}
           </Text>
         )}
       </Text>
@@ -109,7 +112,7 @@ export default function VerifyCodeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 26,
@@ -146,4 +149,4 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     paddingBottom: 8,
   },
-});
+}));

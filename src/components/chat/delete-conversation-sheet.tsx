@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 type DeleteConversationSheetProps = {
   visible: boolean;
@@ -10,15 +11,17 @@ type DeleteConversationSheetProps = {
 };
 
 export function DeleteConversationSheet({ visible, onClose, onConfirm }: DeleteConversationSheetProps) {
+  const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Delete Conversation</Text>
+      <Text style={styles.title}>{t('Delete Conversation')}</Text>
       <Text style={styles.subtitle}>
-        Are you sure you want to delete this conversation? This action cannot be undone.
+        {t('Are you sure you want to delete this conversation? This action cannot be undone.')}
       </Text>
       <View style={styles.buttonRow}>
         <Pressable style={[styles.button, styles.cancelButton]} onPress={onClose}>
-          <Text style={styles.cancelLabel}>Cancel</Text>
+          <Text style={styles.cancelLabel}>{t('Cancel')}</Text>
         </Pressable>
         <Pressable
           style={[styles.button, styles.deleteButton]}
@@ -26,14 +29,14 @@ export function DeleteConversationSheet({ visible, onClose, onConfirm }: DeleteC
             onConfirm();
             onClose();
           }}>
-          <Text style={styles.deleteLabel}>Delete Chat</Text>
+          <Text style={styles.deleteLabel}>{t('Delete Chat')}</Text>
         </Pressable>
       </View>
     </BottomSheet>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   title: {
     color: AppColors.textPrimary,
     fontSize: 17,
@@ -73,4 +76,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-});
+}));

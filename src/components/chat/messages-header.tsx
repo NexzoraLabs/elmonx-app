@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 export function MessagesHeader({ onPressCompose }: { onPressCompose: () => void }) {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>Messages</Text>
+      <Text style={styles.title}>{t('Messages')}</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="New message"
+        accessibilityLabel={t('New message')}
         hitSlop={8}
         onPress={onPressCompose}
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
@@ -19,7 +23,7 @@ export function MessagesHeader({ onPressCompose }: { onPressCompose: () => void 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -43,4 +47,4 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-});
+}));

@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Updates from 'expo-updates';
 import { useEffect } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
+import { useTranslation } from 'react-i18next';
 
 function checkAndDownload() {
   Updates.checkForUpdateAsync()
@@ -20,6 +21,9 @@ function checkAndDownload() {
  * If ignored, the update applies on the next cold start anyway.
  */
 export function UpdateBanner() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { isUpdatePending } = Updates.useUpdates();
 
@@ -37,21 +41,21 @@ export function UpdateBanner() {
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: insets.bottom + 84 }]}>
       <View style={styles.card}>
         <Ionicons name="sparkles-outline" size={18} color={AppColors.textPrimary} />
-        <Text style={styles.text}>A new version is ready</Text>
+        <Text style={styles.text}>{t('A new version is ready')}</Text>
         <Pressable
           accessibilityRole="button"
           style={({ pressed }) => [styles.button, pressed && styles.pressed]}
           onPress={() => {
             Updates.reloadAsync().catch(() => {});
           }}>
-          <Text style={styles.buttonText}>Restart</Text>
+          <Text style={styles.buttonText}>{t('Restart')}</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   wrap: {
     position: 'absolute',
     left: 16,
@@ -96,4 +100,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-});
+}));

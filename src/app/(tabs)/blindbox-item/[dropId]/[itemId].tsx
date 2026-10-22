@@ -6,34 +6,41 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DetailImageCarousel } from '@/components/collection-detail/detail-image-carousel';
 import { ViewIn3DButton } from '@/components/collection-detail/view-in-3d-button';
 import { Viewer3DModal } from '@/components/collection-detail/viewer-3d-modal';
-import { AppColors } from '@/constants/app-colors';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { isSpecialDrop, fetchDropById, type BlindBoxItemData, type Drop, type UnityAssetEntry, type UnityAssetFile } from '@/services/drops-api';
+import { useViewerAccess } from '@/hooks/use-viewer-access';
 import { isUnityViewerAvailable, presentUnityViewer } from '@/services/unity-bridge';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 type RarityStyle = { label: string; colors: [string, string] };
 
-function rarityStyle(rarity?: string): RarityStyle | null {
+function rarityStyle(rarity: string | undefined, fallbackColor: string): RarityStyle | null {
   if (!rarity) return null;
   const value = rarity.toLowerCase();
   if (value.includes('regular')) return { label: rarity, colors: ['#708090', '#4682b4'] };
   if (value.includes('secret')) return { label: 'Secret Rare', colors: ['#FFD700', '#B5A642'] };
   if (value.includes('legendary')) return { label: rarity, colors: ['#673AB7', '#3119bd'] };
   if (value.includes('rare')) return { label: rarity, colors: ['#228B22', '#50C878'] };
-  return { label: rarity, colors: [AppColors.border, AppColors.border] };
+  return { label: rarity, colors: [fallbackColor, fallbackColor] };
 }
 
 function oddsText(drop: Drop, item: BlindBoxItemData): string {
   const dropRemaining = (drop.total_editions || 0) - (drop.consumed_editions || 0);
   const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
-  if (item.total_editions === item.consumed_editions) return `0 in ${dropRemaining}`;
+  if (item.total_editions === item.consumed_editions) return i18n.t('{{a}} in {{b}}', { a: 0, b: dropRemaining });
   const calc = dropRemaining <= 0 || itemRemaining <= 0 ? '0' : (dropRemaining / itemRemaining).toFixed(2);
-  return `1 in ${calc}`;
+  return i18n.t('{{a}} in {{b}}', { a: 1, b: calc });
 }
 
 export default function BlindBoxItemScreen() {
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
   const { token } = useAuth();
   const { dropId, itemId } = useLocalSearchParams<{ dropId: string; itemId: string }>();
   const [drop, setDrop] = useState<Drop | null>(null);
@@ -58,22 +65,32 @@ export default function BlindBoxItemScreen() {
     return () => { active = false; };
   }, [dropId, itemId, token]);
 
-  const handleViewIn3D = () => {
-    if (!item) return;
+  const resolveAccess = useViewerAccess();
+  const [viewerLoading, setViewerLoading] = useState(false);
+
+  const handleViewIn3D = async () => {
+    if (!item || viewerLoading) return;
     // Each blind box item has its own unity_assets (per API response).
     const unityEntry: UnityAssetEntry | undefined = item.unity_assets?.[0];
     const platformAsset: UnityAssetFile | undefined = unityEntry
       ? (Platform.OS === 'ios' ? unityEntry.IOS_assets : unityEntry.Android_assets)
       : undefined;
     if (unityEntry && platformAsset?.original_url && isUnityViewerAvailable()) {
-      presentUnityViewer(unityEntry, platformAsset);
+      // Old app (BlindBoxItemDetails): owned = this revealed item; "AR for all" comes from the parent drop.
+      setViewerLoading(true);
+      try {
+        const access = await resolveAccess({ blindBoxItemId: item._id, arAvailableToAll: drop?.is_ar_available_to_all });
+        presentUnityViewer(unityEntry, platformAsset, access);
+      } finally {
+        setViewerLoading(false);
+      }
     } else {
       setViewerVisible(true);
     }
   };
 
   const image = item?.image?.[0]?.url;
-  const rarity = drop && !isSpecialDrop(drop._id) ? rarityStyle(item?.rarity) : null;
+  const rarity = drop && !isSpecialDrop(drop._id) ? rarityStyle(item?.rarity, AppColors.border) : null;
   const itemRemaining = item ? (item.total_editions || 0) - (item.consumed_editions || 0) : 0;
   const isSoldOut = item ? item.total_editions > 0 && item.consumed_editions >= item.total_editions : false;
 
@@ -82,7 +99,7 @@ export default function BlindBoxItemScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -99,27 +116,24 @@ export default function BlindBoxItemScreen() {
       ) : !item || !drop ? (
         <View style={styles.empty}>
           <Ionicons name="cube-outline" size={32} color={AppColors.textSecondary} />
-          <Text style={styles.emptyText}>Item not found.</Text>
+          <Text style={styles.emptyText}>{t('Item not found.')}</Text>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {/* Image */}
-          <View style={styles.imageBox}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.image} contentFit="contain" transition={150} />
-            ) : (
-              <Ionicons name="cube-outline" size={48} color={AppColors.textSecondary} />
-            )}
-          </View>
-
-          {/* View in 3D — always show; Unity if available, else image modal */}
-          {item ? <ViewIn3DButton onPress={handleViewIn3D} /> : null}
+          {/* Image + View in 3D (always shown; Unity if available, else image modal) */}
+          <DetailImageCarousel images={image ? [image] : []} color={AppColors.surface} />
+          {/* View in 3D: centred under the artwork, like the drop page. */}
+          {item ? (
+            <View style={styles.viewIn3D}>
+              <ViewIn3DButton onPress={() => void handleViewIn3D()} loading={viewerLoading} />
+            </View>
+          ) : null}
 
           {/* Info */}
           <View style={styles.infoBlock}>
             {rarity ? (
               <LinearGradient colors={rarity.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.rarityBadge}>
-                <Text style={styles.rarityText}>{rarity.label}</Text>
+                <Text style={styles.rarityText}>{t(rarity.label)}</Text>
               </LinearGradient>
             ) : null}
             <Text style={styles.collectionName} numberOfLines={1}>{drop.title}</Text>
@@ -130,24 +144,24 @@ export default function BlindBoxItemScreen() {
           {/* Stats card */}
           <View style={styles.statsCard}>
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Odds</Text>
+              <Text style={styles.statLabel}>{t('Odds')}</Text>
               <Text style={styles.statValue}>{oddsText(drop, item)}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Remaining</Text>
+              <Text style={styles.statLabel}>{t('Remaining')}</Text>
               <Text style={[styles.statValue, isSoldOut && styles.soldOut]}>
-                {isSoldOut ? 'Sold out' : `${itemRemaining} left`}
+                {isSoldOut ? t('Sold out') : t('{{n}} left', { n: itemRemaining })}
               </Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Total Editions</Text>
+              <Text style={styles.statLabel}>{t('Total Editions')}</Text>
               <Text style={styles.statValue}>{item.total_editions || 0}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Price</Text>
+              <Text style={styles.statLabel}>{t('Price')}</Text>
               {drop.type === 'Layer_2' ? (
                 <View style={styles.priceRow}>
                   <Image source={require('../../../../../assets/coin_icon.webp')} style={styles.coinIcon} contentFit="contain" />
@@ -163,7 +177,7 @@ export default function BlindBoxItemScreen() {
           <Pressable
             style={({ pressed }) => [styles.parentButton, pressed && styles.pressed]}
             onPress={() => router.push({ pathname: '/drop/[id]', params: { id: drop._id } })}>
-            <Text style={styles.parentButtonText}>See Drop Details</Text>
+            <Text style={styles.parentButtonText}>{t('See Drop Details')}</Text>
             <Ionicons name="arrow-forward" size={16} color={AppColors.buttonPrimaryText} />
           </Pressable>
 
@@ -179,7 +193,8 @@ export default function BlindBoxItemScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
+  viewIn3D: { alignItems: 'center', marginTop: 4 },
   safeArea: { flex: 1, backgroundColor: AppColors.background },
   header: {
     flexDirection: 'row',
@@ -209,15 +224,6 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 12, paddingTop: 80 },
   emptyText: { color: AppColors.textSecondary, fontSize: 14 },
   content: { paddingBottom: 40 },
-  imageBox: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: AppColors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  image: { width: '100%', height: '100%' },
   infoBlock: { paddingHorizontal: 20, paddingTop: 20, gap: 6 },
   rarityBadge: {
     alignSelf: 'flex-start',
@@ -271,4 +277,4 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.buttonPrimaryBg,
   },
   parentButtonText: { color: AppColors.buttonPrimaryText, fontSize: 15, fontWeight: '700' },
-});
+}));

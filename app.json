@@ -7,14 +7,17 @@
     "icon": "./assets/images/icon.png",
     "scheme": "elmonxapp",
     "userInterfaceStyle": "automatic",
-    "runtimeVersion": "1.0.1",
+    "runtimeVersion": "1.0.4",
     "updates": {
       "url": "https://u.expo.dev/3b3ce309-a3b1-4100-94d4-14f5217cb1b1"
     },
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.elmonx.app.dev",
-      "associatedDomains": ["applinks:elmonx.com", "applinks:www.elmonx.com"],
+      "associatedDomains": [
+        "applinks:elmonx.com",
+        "applinks:www.elmonx.com"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "This lets you take photos for your posts and view collectables in augmented reality using your camera.",
         "NSPhotoLibraryUsageDescription": "This lets you choose a photo for your profile picture and cover image.",
@@ -33,6 +36,15 @@
           "ledgerlive",
           "exodus",
           "argent"
+        ],
+        "CFBundleLocalizations": [
+          "en",
+          "ja",
+          "es",
+          "fr",
+          "zh-Hant",
+          "zh-Hans",
+          "ko"
         ]
       }
     },
@@ -55,9 +67,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0A0B",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash-logo-light.png",
+          "imageWidth": 140,
+          "dark": {
+            "backgroundColor": "#0A0A0B",
+            "image": "./assets/images/splash-logo-dark.png"
+          }
         }
       ],
       [
@@ -69,7 +85,8 @@
         }
       ],
       "expo-secure-store",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -81,6 +98,14 @@
         "projectId": "3b3ce309-a3b1-4100-94d4-14f5217cb1b1"
       }
     },
-    "owner": "yasirsaleem365"
+    "owner": "yasirsaleem365",
+    "locales": {
+      "fr": "./src/i18n/native/fr.json",
+      "ja": "./src/i18n/native/ja.json",
+      "es": "./src/i18n/native/es.json",
+      "zh-Hant": "./src/i18n/native/zh-Hant.json",
+      "zh-Hans": "./src/i18n/native/zh-Hans.json",
+      "ko": "./src/i18n/native/ko.json"
+    }
   }
 }

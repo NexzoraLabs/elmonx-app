@@ -1,44 +1,43 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccountSection } from '@/components/account/account-section';
-import { StatCard } from '@/components/account/stat-card';
 import { UserAvatar } from '@/components/account/user-avatar';
-import { AppColors } from '@/constants/app-colors';
+import { HomeHeader } from '@/components/home/home-header';
+import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_SECTIONS } from '@/data/account-menu';
-import { getUserBalance, type UserBalance } from '@/services/account-api';
+import { useMultiViewer } from '@/hooks/use-multi-viewer';
+import { useTranslation } from 'react-i18next';
 
 const ROW_ROUTES: Record<string, Href> = {
   'personal-information': '/personal-info',
   settings: '/settings',
+  language: '/language',
   'app-rewards': '/rewards',
   challenges: '/challenges',
   leaderboard: '/leaderboard',
   'shipping-address': '/shipping-address',
   'promo-code': '/promo-code',
   'my-wallet': '/wallet',
-  'my-vault-collectables': { pathname: '/collectibles', params: { tab: 'app' } },
-  'my-wallet-collectables': { pathname: '/collectibles', params: { tab: 'web' } },
+  'my-collectables': '/collectibles',
   'doodles-physicals': '/doodles-physicals',
   connections: '/connections',
-  notifications: '/notifications',
-  'my-auction-wins': { pathname: '/collectibles', params: { tab: 'auctions' } },
 };
 
 export default function AccountScreen() {
-  const { user, token, signOut } = useAuth();
-  const [balance, setBalance] = useState<UserBalance>({ xp_points: 0, x_coins: 0 });
-
-  useEffect(() => {
-    if (!token) return;
-    getUserBalance(token).then(setBalance).catch(() => {});
-  }, [token]);
-
+  const { t } = useTranslation();
+  const AppColors = useAppColors();
+  const styles = useStyles();
+  const { user, signOut } = useAuth();
+  const multiViewer = useMultiViewer();
   const handlePressRow = (key: string) => {
+    if (key === 'multi-viewer') {
+      multiViewer.open();
+      return;
+    }
     const route = ROW_ROUTES[key];
     if (route) router.push(route);
     // TODO: wire up remaining destinations once those screens are designed.
@@ -51,41 +50,17 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={8}
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-          <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>My Account</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Personal information"
-          hitSlop={8}
-          onPress={() => router.push('/personal-info')}
-          style={({ pressed }) => pressed && styles.pressed}>
-          <UserAvatar user={user} size={36} />
-        </Pressable>
-      </View>
+      {/* Main app header, with a back button in place of the menu + wordmark. */}
+      <HomeHeader variant="back" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.statsRow}>
-          <StatCard
-            label="XP Balance"
-            value={`${balance.xp_points.toLocaleString()} XP`}
-          />
-          <StatCard
-            imageIcon={require('../../../assets/coin_icon.webp')}
-            label="X-Coins Balance"
-            value={balance.x_coins.toLocaleString()}
-          />
-        </View>
-
         {ACCOUNT_SECTIONS.map((section) => (
-          <AccountSection key={section.title} section={section} onPressRow={handlePressRow} />
+          <AccountSection
+            key={section.title}
+            section={section}
+            onPressRow={handlePressRow}
+            loadingKey={multiViewer.loading ? 'multi-viewer' : undefined}
+          />
         ))}
 
         {user ? (
@@ -101,7 +76,7 @@ export default function AccountScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Log out"
+              accessibilityLabel={t('Log out')}
               hitSlop={10}
               style={({ pressed }) => [styles.logOutButton, pressed && styles.pressed]}
               onPress={handleLogOut}>
@@ -114,43 +89,18 @@ export default function AccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((AppColors) => ({
   safeArea: {
     flex: 1,
     backgroundColor: AppColors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: AppColors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   pressed: {
     opacity: 0.7,
-  },
-  headerTitle: {
-    color: AppColors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 32,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
   },
   userRow: {
     flexDirection: 'row',
@@ -181,4 +131,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: AppColors.surface,
   },
-});
+}));
