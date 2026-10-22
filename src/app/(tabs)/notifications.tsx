@@ -34,20 +34,12 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function groupByDay(items: AppNotification[]) {
-  const today: AppNotification[] = [];
-  const yesterday: AppNotification[] = [];
-  const thisWeek: AppNotification[] = [];
-  const older: AppNotification[] = [];
-  const now = Date.now();
-  items.forEach((n) => {
-    const diff = Math.floor((now - new Date(n.created_at).getTime()) / 86400000);
-    if (diff === 0) today.push(n);
-    else if (diff === 1) yesterday.push(n);
-    else if (diff <= 7) thisWeek.push(n);
-    else older.push(n);
-  });
-  return { today, yesterday, thisWeek, older };
+function dayBucket(dateStr: string, now: number): string {
+  const diff = Math.floor((now - new Date(dateStr).getTime()) / 86400000);
+  if (diff <= 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff <= 7) return 'This Week';
+  return 'Older';
 }
 
 export default function NotificationsScreen() {
@@ -59,6 +51,7 @@ export default function NotificationsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AppNotification | null>(null);
+  const [now] = useState(() => Date.now());
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
@@ -86,8 +79,6 @@ export default function NotificationsScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
     load(1);
   }, [load]);
-
-  const groups = groupByDay(items);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -117,7 +108,7 @@ export default function NotificationsScreen() {
         <View style={styles.centered}>
           <Ionicons name="notifications-off-outline" size={48} color={AppColors.textSecondary} />
           <Text style={styles.emptyTitle}>No notifications</Text>
-          <Text style={styles.emptySubtitle}>You don't have any notifications at the moment</Text>
+          <Text style={styles.emptySubtitle}>You don&apos;t have any notifications at the moment</Text>
         </View>
       ) : (
         <FlatList
@@ -128,22 +119,10 @@ export default function NotificationsScreen() {
           onEndReachedThreshold={0.4}
           onEndReached={() => { if (!loadingMore && page < totalPages) load(page + 1, true); }}
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={AppColors.link} /> : null}
-          ListHeaderComponent={
-            <>
-              {groups.today.length > 0 && <GroupLabel label="Today" />}
-            </>
-          }
           renderItem={({ item, index }) => {
-            const allItems = items;
-            const prev = index > 0 ? allItems[index - 1] : null;
-            let groupHeader: string | null = null;
-            if (prev) {
-              const prevDiff = Math.floor((Date.now() - new Date(prev.created_at).getTime()) / 86400000);
-              const currDiff = Math.floor((Date.now() - new Date(item.created_at).getTime()) / 86400000);
-              if (prevDiff === 0 && currDiff === 1) groupHeader = 'Yesterday';
-              else if (prevDiff <= 1 && currDiff >= 2 && currDiff <= 7) groupHeader = 'This Week';
-              else if (prevDiff <= 7 && currDiff > 7) groupHeader = 'Older';
-            }
+            const bucket = dayBucket(item.created_at, now);
+            const prev = index > 0 ? items[index - 1] : null;
+            const groupHeader = !prev || dayBucket(prev.created_at, now) !== bucket ? bucket : null;
             return (
               <>
                 {groupHeader ? <GroupLabel label={groupHeader} /> : null}

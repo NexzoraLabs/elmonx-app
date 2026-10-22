@@ -1,6 +1,7 @@
-import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { NewsDetailSheet } from '@/components/home/news-detail-sheet';
 import { AppColors } from '@/constants/app-colors';
 import type { NewsItem } from '@/services/home-api';
 
@@ -17,10 +18,11 @@ function formatDate(iso: string): string {
 }
 
 export function NewsCard({ item }: { item: NewsItem }) {
+  const [detailOpen, setDetailOpen] = useState(false);
   return (
-    <Pressable
-      style={styles.card}
-      onPress={() => WebBrowser.openBrowserAsync(`https://elmonx.com/news`)}>
+    <>
+    <NewsDetailSheet item={item} visible={detailOpen} onClose={() => setDetailOpen(false)} />
+    <Pressable style={styles.card} onPress={() => setDetailOpen(true)}>
       <View style={styles.header}>
         <View style={styles.sourcePill}>
           <Text style={styles.source}>{item.source || item.category}</Text>
@@ -30,6 +32,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
       <Text style={styles.title} numberOfLines={3}>{item.name}</Text>
       {item.summary ? <Text style={styles.summary} numberOfLines={2}>{item.summary}</Text> : null}
     </Pressable>
+    </>
   );
 }
 

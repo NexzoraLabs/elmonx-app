@@ -22,7 +22,7 @@ export function BlogCard({ blog }: { blog: HomeBlog }) {
   return (
     <Pressable
       style={styles.card}
-      onPress={() => WebBrowser.openBrowserAsync(`https://elmonx.com/blogs/${blog.slug}`)}>
+      onPress={() => WebBrowser.openBrowserAsync(`https://elmonx.com/articles/${blog.slug || blog.id}`)}>
       <View style={styles.imageWrap}>
         {blog.image ? (
           <Image source={{ uri: blog.image }} style={StyleSheet.absoluteFill} contentFit="cover" />

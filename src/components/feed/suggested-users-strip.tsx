@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { compactCount } from '@/components/feed/post-card';
+import { SectionHeader } from '@/components/home/section-header';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
@@ -15,7 +17,8 @@ function initialStatus(user: SuggestedUser): RelationshipStatus {
   return user.is_following ? 'Accepted' : 'None';
 }
 
-export function SuggestedUsersStrip() {
+/** `user/suggested` (website's Suggested Collectors). `home` matches the Home screen section style. */
+export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | 'home' }) {
   const { token } = useAuth();
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [statuses, setStatuses] = useState<Record<string, RelationshipStatus>>({});
@@ -50,23 +53,37 @@ export function SuggestedUsersStrip() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Collectors to Follow</Text>
+    <View style={variant === 'home' ? styles.homeContainer : styles.container}>
+      {variant === 'home' ? (
+        <SectionHeader title="Suggested Collectors" />
+      ) : (
+        <Text style={styles.title}>Collectors to Follow</Text>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {users.map((user) => {
           const status = statuses[user._id] ?? initialStatus(user);
-          const label = status === 'Accepted' ? 'Following' : status === 'Pending' ? 'Requested' : 'Follow';
+          const isPrivate = user.profile_privacy === 'Private';
+          const label =
+            status === 'Accepted' ? 'Following' : status === 'Pending' ? 'Requested' : isPrivate ? 'Request' : 'Follow';
           const active = status === 'Accepted' || status === 'Pending';
+          const followers = user.followers_count ?? 0;
           return (
             <Pressable
               key={user._id}
               style={styles.card}
               onPress={() => router.push({ pathname: '/profile/[id]', params: { id: user.user_name } })}>
               <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.avatar} contentFit="cover" />
-              <Text style={styles.name} numberOfLines={1}>
-                {user.user_name}
+              <View style={styles.nameRow}>
+                <Text style={styles.name} numberOfLines={1}>
+                  @{user.user_name}
+                </Text>
+                {isPrivate ? (
+                  <Ionicons name="lock-closed" size={10} color={AppColors.link} accessibilityLabel="Private account" />
+                ) : null}
+              </View>
+              <Text style={styles.followers}>
+                {compactCount(followers)} {followers === 1 ? 'follower' : 'followers'}
               </Text>
-              <Text style={styles.followers}>{compactCount(user.followers_count)} followers</Text>
               <Pressable
                 onPress={() => handleFollow(user)}
                 style={({ pressed }) => [styles.followButton, active && styles.followButtonActive, pressed && styles.pressed]}>
@@ -86,12 +103,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: AppColors.border,
   },
+  homeContainer: {
+    marginTop: 32,
+  },
   title: {
     color: AppColors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
     paddingHorizontal: 20,
     marginBottom: 12,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: '100%',
   },
   row: {
     gap: 12,
@@ -117,7 +143,7 @@ const styles = StyleSheet.create({
     color: AppColors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
-    maxWidth: '100%',
+    flexShrink: 1,
   },
   followers: {
     color: AppColors.textSecondary,

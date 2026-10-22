@@ -39,19 +39,24 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
 
-  // Reset the viewer every time it opens, computed during render (not an effect)
-  // so shared-value resets and state resets land in the same commit.
+  // State resets on open happen during render; shared values are reset on close
+  // because Reanimated forbids writing them while React renders.
   const [prevVisible, setPrevVisible] = useState(visible);
   if (visible !== prevVisible) {
     setPrevVisible(visible);
     if (visible) {
-      rotation.set(0);
-      scale.set(1);
-      savedScale.set(1);
       setIsPlaying(true);
       setSaveStatus('idle');
     }
   }
+
+  const handleClose = () => {
+    cancelAnimation(rotation);
+    rotation.set(0);
+    scale.set(1);
+    savedScale.set(1);
+    onClose();
+  };
 
   useEffect(() => {
     if (!visible || !isPlaying) {
@@ -126,7 +131,7 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
             : null;
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose} presentationStyle="fullScreen">
       {/* Modal renders in its own native surface, so gestures need their own root here too. */}
       <GestureHandlerRootView style={styles.safeArea}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -134,7 +139,7 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <Pressable accessibilityRole="button" hitSlop={8} onPress={onClose} style={styles.closeButton}>
+            <Pressable accessibilityRole="button" hitSlop={8} onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={20} color={AppColors.textPrimary} />
             </Pressable>
           </View>

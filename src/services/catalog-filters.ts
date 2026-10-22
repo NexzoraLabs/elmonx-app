@@ -1,6 +1,10 @@
 // Filters for the Collections tab listings, mirroring the website's shared filter-modal
 // (src/components/modals/filter-modal) and how each listing page maps it to query params.
 
+// ---- Option lists (same endpoints as the website) ----
+
+import { API_BASE_URL } from '@/config/env';
+
 export const BLOCKCHAIN_OPTIONS = ['All', 'Ethereum', 'Polygon'] as const;
 export const DESTINATION_OPTIONS = ['All', 'Wallet', 'Vault'] as const;
 export const EDITION_OPTIONS = ['all', 'Original', 'Animated', 'Artist Proof'] as const;
@@ -96,10 +100,6 @@ export function appendCatalogParams(
   if (filters.priceMin.trim()) params.append('price_min', filters.priceMin.trim());
   if (filters.priceMax.trim()) params.append('price_max', filters.priceMax.trim());
 }
-
-// ---- Option lists (same endpoints as the website) ----
-
-import { API_BASE_URL } from '@/config/env';
 const EXCLUDED_CATEGORY_ID = '6560e333566936cc1c70e25f';
 
 export type FilterOption = { _id: string; title: string };

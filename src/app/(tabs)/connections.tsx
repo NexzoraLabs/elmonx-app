@@ -16,10 +16,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const TABS: Tab[] = ['followers', 'following', 'blocked'];
-
-import { UserAvatar } from '@/components/account/user-avatar';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import * as feedApi from '@/services/feed-api';
@@ -28,6 +24,9 @@ import type {
   FollowListItem,
   FollowRequestItem,
 } from '@/services/feed-api';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const TABS: Tab[] = ['followers', 'following', 'blocked'];
 
 type Tab = 'followers' | 'following' | 'blocked';
 
@@ -154,7 +153,12 @@ function FollowersList({ token, userId }: { token: string | null; userId: string
   }, [load]);
 
   const setBusy = (id: string, busy: boolean) =>
-    setBusyIds((prev) => { const n = new Set(prev); busy ? n.add(id) : n.delete(id); return n; });
+    setBusyIds((prev) => {
+      const n = new Set(prev);
+      if (busy) n.add(id);
+      else n.delete(id);
+      return n;
+    });
 
   const handleAccept = async (req: FollowRequestItem) => {
     if (!token) return;
@@ -283,6 +287,8 @@ function FollowingList({ token, userId }: { token: string | null; userId: string
       setFollowing((prev) => (p === 1 ? data : [...prev, ...data]));
       setTotalPages(Math.ceil(total / PAGE_SIZE));
       setPage(p);
+    } catch {
+      // Keep whatever was already loaded on a transient failure.
     } finally {
       setLoading(false);
     }
@@ -294,7 +300,12 @@ function FollowingList({ token, userId }: { token: string | null; userId: string
   }, [load]);
 
   const setBusy = (id: string, busy: boolean) =>
-    setBusyIds((prev) => { const n = new Set(prev); busy ? n.add(id) : n.delete(id); return n; });
+    setBusyIds((prev) => {
+      const n = new Set(prev);
+      if (busy) n.add(id);
+      else n.delete(id);
+      return n;
+    });
 
   const handleUnfollow = async (item: FollowListItem) => {
     if (!token) return;
@@ -357,6 +368,8 @@ function BlockedList({ token }: { token: string | null }) {
       setBlocked((prev) => (p === 1 ? data : [...prev, ...data]));
       setTotalPages(Math.ceil(total / PAGE_SIZE));
       setPage(p);
+    } catch {
+      // Keep whatever was already loaded on a transient failure.
     } finally {
       setLoading(false);
     }
@@ -368,7 +381,12 @@ function BlockedList({ token }: { token: string | null }) {
   }, [load]);
 
   const setBusy = (id: string, busy: boolean) =>
-    setBusyIds((prev) => { const n = new Set(prev); busy ? n.add(id) : n.delete(id); return n; });
+    setBusyIds((prev) => {
+      const n = new Set(prev);
+      if (busy) n.add(id);
+      else n.delete(id);
+      return n;
+    });
 
   const handleUnblock = async (item: BlockedListItem) => {
     if (!token) return;

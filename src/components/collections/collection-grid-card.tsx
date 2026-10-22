@@ -12,54 +12,24 @@ type CollectionGridCardProps = {
   layout?: 'single' | 'grid';
 };
 
+// Same edition checks as the website's nft-card.
 function EditionBadge({ edition }: { edition: string }) {
+  const lower = edition.toLowerCase();
   const isDigitalProof = edition === 'Digital Proof';
-  const isArtistProof = edition === 'Artist Proof';
-  const isStudyEdition = edition === 'Study Edition';
+  const isArtistProof = lower === 'artist proof' || lower === 'artist_proof';
+  const isStudyEdition = edition === 'Study';
 
   if (!isDigitalProof && !isArtistProof && !isStudyEdition) return null;
 
-  const bg = isDigitalProof
-    ? '#0245c3'
-    : isArtistProof
-      ? '#FF6D00'
-      : '#EC407A';
+  const bg = isDigitalProof ? '#0245c3' : isArtistProof ? '#FF6D00' : '#EC407A';
+  const label = isDigitalProof ? 'DIGITAL PROOF' : isArtistProof ? 'ARTIST PROOF' : 'STUDY';
 
   return (
     <View style={[styles.editionBadge, { backgroundColor: bg }]}>
       <Ionicons name="star" size={8} color="#fff" />
-      <Text style={styles.editionBadgeText}>{edition.toUpperCase()}</Text>
+      <Text style={styles.editionBadgeText}>{label}</Text>
     </View>
   );
-}
-
-function PriceBadge({ item }: { item: CollectionGridItem }) {
-  if (!item.priceKind || item.priceKind === 'gbp' && !item.price) return null;
-
-  if (item.priceKind === 'xcoin') {
-    return (
-      <View style={styles.priceBadge}>
-        <Ionicons name="logo-bitcoin" size={11} color={AppColors.gold} />
-        <Text style={styles.priceBadgeText}>{item.price?.toLocaleString()}</Text>
-      </View>
-    );
-  }
-  if (item.priceKind === 'airdrop') {
-    return (
-      <View style={styles.priceBadge}>
-        <Ionicons name="gift-outline" size={11} color="#fff" />
-        <Text style={styles.priceBadgeText}>Airdrop</Text>
-      </View>
-    );
-  }
-  if (item.priceKind === 'gbp' && item.price) {
-    return (
-      <View style={styles.priceBadge}>
-        <Text style={styles.priceBadgeText}>£{item.price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
-      </View>
-    );
-  }
-  return null;
 }
 
 export function CollectionGridCard({ item, layout = 'grid' }: CollectionGridCardProps) {
@@ -252,23 +222,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-
-  priceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: AppColors.border,
-  },
-  priceBadgeText: {
-    color: AppColors.textPrimary,
-    fontSize: 11,
-    fontWeight: '700',
   },
 
   /* Body */

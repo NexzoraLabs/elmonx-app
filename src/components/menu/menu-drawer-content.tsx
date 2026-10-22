@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import type { DrawerContentComponentProps } from 'expo-router/drawer';
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,8 +9,6 @@ import { UserAvatar } from '@/components/account/user-avatar';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_MENU_ITEMS, type MenuItem } from '@/data/menu-items';
-
-type Segment = 'account' | 'market';
 
 // Temporary: these menu items open the public website until dedicated in-app
 // screens exist for them.
@@ -27,7 +24,6 @@ const MENU_ITEM_URLS: Record<string, string> = {
 
 export function MenuDrawerContent(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
-  const [segment, setSegment] = useState<Segment>('account');
   const items = ACCOUNT_MENU_ITEMS;
   const { user, signOut } = useAuth();
 
@@ -105,34 +101,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 20,
-  },
-  segmentRow: {
-    flexDirection: 'row',
-    backgroundColor: AppColors.surface,
-    borderRadius: 14,
-    padding: 4,
-    gap: 4,
-    marginBottom: 12,
-  },
-  segment: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  segmentActive: {
-    backgroundColor: AppColors.border,
-  },
-  segmentLabel: {
-    color: AppColors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  segmentLabelActive: {
-    color: AppColors.textPrimary,
   },
   list: {
     paddingBottom: 24,

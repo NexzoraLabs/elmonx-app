@@ -3,12 +3,12 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
-
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
 import type { CollectionGridItem } from '@/data/collections-mock';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
 function PriceLabel({ item }: { item: CollectionGridItem }) {
   if (!item.priceKind) return null;

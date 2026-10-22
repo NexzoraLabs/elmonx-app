@@ -1,4 +1,4 @@
-import { API_BASE_URL, SOCKET_URL } from '@/config/env';
+import { API_BASE_URL } from '@/config/env';
 export { SOCKET_URL as CHAT_SOCKET_URL } from '@/config/env';
 
 type ApiEnvelope<T> = {

@@ -360,12 +360,12 @@ export default function AuctionDetailScreen() {
             <View style={styles.priceRow}>
               <View>
                 <Text style={styles.priceLabel}>{auction.total_bids > 0 ? 'Current bid' : 'Starting bid'}</Text>
-                <Text style={styles.price}>{(auction.current_price ?? auction.leading_bid ?? auction.initial_price).toLocaleString()} X</Text>
+                <Text style={styles.price}>{(auction.current_price ?? auction.leading_bid ?? auction.initial_price ?? 0).toLocaleString()} X</Text>
               </View>
               <View style={styles.priceDivider} />
               <View>
                 <Text style={styles.priceLabel}>Min next bid</Text>
-                <Text style={styles.price}>{auction.min_next_bid.toLocaleString()} X</Text>
+                <Text style={styles.price}>{(auction.min_next_bid ?? 0).toLocaleString()} X</Text>
               </View>
               {auction.leading_bid != null && (
                 <>

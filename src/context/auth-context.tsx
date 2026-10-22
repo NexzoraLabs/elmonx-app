@@ -1,8 +1,12 @@
+import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Alert } from 'react-native';
 
 import * as authApi from '@/services/auth-api';
 import type { AuthSession, RegisterPayload, UserData } from '@/services/auth-api';
+import { setCrashReportingUser } from '@/services/crash-reporting';
+import { configureSessionGuard } from '@/services/session-guard';
 
 const TOKEN_KEY = 'elmonx_auth_token';
 const REFRESH_TOKEN_KEY = 'elmonx_auth_refresh_token';
@@ -46,6 +50,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Read by the fetch session guard outside React.
+  const tokenRef = useRef<string | null>(null);
+  const expiredHandledRef = useRef(false);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
+  useEffect(() => {
+    setCrashReportingUser(user ? { id: user.user_name, username: user.user_name } : null);
+  }, [user]);
+
+  useEffect(() => {
+    configureSessionGuard({
+      getToken: () => tokenRef.current,
+      refresh: async () => {
+        try {
+          const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+          if (!refreshToken) return null;
+          const renewed = await authApi.refreshSession(refreshToken);
+          await SecureStore.setItemAsync(TOKEN_KEY, renewed.token);
+          await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, renewed.refresh_token);
+          tokenRef.current = renewed.token;
+          setToken(renewed.token);
+          return renewed.token;
+        } catch {
+          return null;
+        }
+      },
+      onExpired: () => {
+        if (expiredHandledRef.current || !tokenRef.current) return;
+        expiredHandledRef.current = true;
+        tokenRef.current = null;
+        clearPersistedSession().catch(() => {});
+        setToken(null);
+        setUser(null);
+        router.replace('/(auth)/welcome');
+        Alert.alert('Session expired', 'Please log in again to continue.');
+      },
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -71,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback(async (session: AuthSession) => {
     await persistSession(session);
+    expiredHandledRef.current = false;
+    tokenRef.current = session.token;
     setToken(session.token);
     setUser(session.user_data);
   }, []);
@@ -117,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Best-effort — the local session is cleared regardless of server response.
       });
     }
+    tokenRef.current = null;
     await clearPersistedSession();
     setToken(null);
     setUser(null);

@@ -109,7 +109,7 @@ export async function updatePassword(token: string, payload: { old_password: str
 }
 
 export async function deleteAccount(token: string): Promise<void> {
-  await request<unknown>('/user/soft_delete', token);
+  assertSuccess(await request<unknown>('/user/soft_delete', token));
 }
 
 export type UserBalance = {

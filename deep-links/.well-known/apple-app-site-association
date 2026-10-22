@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["SDV2RY2CPC.com.elmonx.app.dev"],
+        "components": [
+          { "/": "/drop/*" },
+          { "/": "/collection/*" },
+          { "/": "/blindbox-item/*" },
+          { "/": "/auction/*" },
+          { "/": "/auctions" },
+          { "/": "/profile/*" }
+        ]
+      }
+    ]
+  }
+}

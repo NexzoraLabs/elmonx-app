@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { RankInfoSheet, type RankInfoTopic } from '@/components/rewards/rank-info-sheet';
 import { AppColors } from '@/constants/app-colors';
 import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
 
@@ -18,7 +19,7 @@ type Props = {
 };
 
 export function LevelRankCard({ loading, level, tier }: Props) {
-  const [infoOpen, setInfoOpen] = useState<'level' | 'rank' | null>(null);
+  const [infoOpen, setInfoOpen] = useState<RankInfoTopic | null>(null);
 
   if (loading) {
     return (
@@ -34,8 +35,6 @@ export function LevelRankCard({ loading, level, tier }: Props) {
 
   if (!level || !tier) return null;
 
-  const toggleInfo = (key: 'level' | 'rank') =>
-    setInfoOpen((prev) => (prev === key ? null : key));
 
   return (
     <View style={styles.card}>
@@ -48,12 +47,12 @@ export function LevelRankCard({ loading, level, tier }: Props) {
           <View style={styles.badgeTextCol}>
             <View style={styles.labelRow}>
               <Text style={styles.badgeLabel}>LEVEL</Text>
-              <Pressable hitSlop={8} onPress={() => toggleInfo('level')}>
-                <Ionicons
-                  name={infoOpen === 'level' ? 'information-circle' : 'information-circle-outline'}
-                  size={14}
-                  color={AppColors.textSecondary}
-                />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="How Levels works"
+                hitSlop={8}
+                onPress={() => setInfoOpen('level')}>
+                <Ionicons name="information-circle-outline" size={14} color={AppColors.textSecondary} />
               </Pressable>
             </View>
             <Text style={styles.badgeSubtext}>
@@ -66,12 +65,12 @@ export function LevelRankCard({ loading, level, tier }: Props) {
         <View style={[styles.badgeCol, styles.badgeColRight]}>
           <View style={styles.badgeTextColRight}>
             <View style={styles.labelRowRight}>
-              <Pressable hitSlop={8} onPress={() => toggleInfo('rank')}>
-                <Ionicons
-                  name={infoOpen === 'rank' ? 'information-circle' : 'information-circle-outline'}
-                  size={14}
-                  color={AppColors.textSecondary}
-                />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="How Rank works"
+                hitSlop={8}
+                onPress={() => setInfoOpen('rank')}>
+                <Ionicons name="information-circle-outline" size={14} color={AppColors.textSecondary} />
               </Pressable>
               <Text style={styles.badgeLabel}>RANK</Text>
             </View>
@@ -84,21 +83,7 @@ export function LevelRankCard({ loading, level, tier }: Props) {
         </View>
       </View>
 
-      {/* Info dropdowns */}
-      {infoOpen === 'level' ? (
-        <View style={styles.infoBubble}>
-          <Text style={styles.infoText}>
-            Your XP level increases as you earn XP by completing activities. Each level requires more XP to progress.
-          </Text>
-        </View>
-      ) : null}
-      {infoOpen === 'rank' ? (
-        <View style={styles.infoBubble}>
-          <Text style={styles.infoText}>
-            Your rank tier is determined by your current level. Progress through levels to advance to higher rank tiers and unlock more rewards.
-          </Text>
-        </View>
-      ) : null}
+      <RankInfoSheet topic={infoOpen} currentTier={tier.tier} onClose={() => setInfoOpen(null)} />
 
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(0, level.progress_percent))}%` }]} />
@@ -181,18 +166,6 @@ const styles = StyleSheet.create({
   },
   textRight: {
     textAlign: 'right',
-  },
-  infoBubble: {
-    backgroundColor: 'rgba(61,139,255,0.1)',
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(61,139,255,0.2)',
-  },
-  infoText: {
-    color: AppColors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
   },
   progressTrack: {
     height: 6,

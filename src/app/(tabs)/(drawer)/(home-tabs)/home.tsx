@@ -1,9 +1,10 @@
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SuggestedUsersStrip } from '@/components/feed/suggested-users-strip';
 import { AuctionCardHome } from '@/components/home/auction-card';
 import { BlogCard } from '@/components/home/blog-card';
 import { CollectibleCard } from '@/components/home/collectible-card';
@@ -13,9 +14,7 @@ import { FeaturedDropCard } from '@/components/home/featured-drop-card';
 import { HomeHeader } from '@/components/home/home-header';
 import { NewsCard } from '@/components/home/news-card';
 import { SectionHeader } from '@/components/home/section-header';
-import { Image } from 'expo-image';
 import { AppColors } from '@/constants/app-colors';
-import { useAuth } from '@/context/auth-context';
 import {
   type AuctionCard,
   fetchAuctions,
@@ -30,57 +29,8 @@ import {
   type StoreItems,
 } from '@/services/home-api';
 import type { CollectionGridItem } from '@/data/collections-mock';
-import { followUser, getSuggestedUsers, type SuggestedUser, unfollowUser } from '@/services/feed-api';
-import { isImageUrl } from '@/services/profile-api';
-
-function CollectorRow({ user, token }: { user: SuggestedUser; token: string | null }) {
-  const [following, setFollowing] = useState(!!user.is_following);
-  const [busy, setBusy] = useState(false);
-
-  const avatarUrl = isImageUrl(user.profile_avatar) ? user.profile_avatar : null;
-
-  async function toggle() {
-    if (!token || busy) return;
-    setBusy(true);
-    try {
-      if (following) {
-        await unfollowUser(token, user._id);
-        setFollowing(false);
-      } else {
-        await followUser(token, user._id);
-        setFollowing(true);
-      }
-    } catch { /* silent */ } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <View style={styles.collectorCard}>
-      <View style={styles.collectorAvatarWrap}>
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: AppColors.border }]} />
-        )}
-      </View>
-      <Text style={styles.collectorName} numberOfLines={1}>{user.user_name}</Text>
-      {token ? (
-        <Pressable
-          style={[styles.followBtn, following && styles.followBtnActive]}
-          onPress={toggle}
-          disabled={busy}>
-          <Text style={[styles.followBtnText, following && styles.followBtnTextActive]}>
-            {following ? 'Following' : 'Follow'}
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
 
 export default function HomeScreen() {
-  const { token } = useAuth();
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [upcoming, setUpcoming] = useState<CollectionGridItem[]>([]);
   const [featured, setFeatured] = useState<CollectionGridItem[]>([]);
@@ -89,7 +39,6 @@ export default function HomeScreen() {
   const [promoTitle, setPromoTitle] = useState<string | null>(null);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [auctions, setAuctions] = useState<AuctionCard[]>([]);
-  const [collectors, setCollectors] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [clockNow, setClockNow] = useState(() => Date.now());
 
@@ -105,11 +54,10 @@ export default function HomeScreen() {
 
     async function load() {
       try {
-        const [store, newsData, auctionRes, collectorRes] = await Promise.allSettled([
+        const [store, newsData, auctionRes] = await Promise.allSettled([
           fetchStoreItems(),
           fetchNews(),
           fetchAuctions({ limit: 12 }),
-          getSuggestedUsers(null, 10),
         ]);
 
         if (cancelled) return;
@@ -133,11 +81,6 @@ export default function HomeScreen() {
           nextChangeAt.current = auctionRes.value.data.next_change_at
             ? new Date(auctionRes.value.data.next_change_at).getTime()
             : null;
-        }
-
-        if (collectorRes.status === 'fulfilled') {
-          const users = collectorRes.value as SuggestedUser[];
-          setCollectors(Array.isArray(users) ? users.slice(0, 8) : []);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -274,19 +217,7 @@ export default function HomeScreen() {
               </View>
             ) : null}
 
-            {collectors.length > 0 ? (
-              <View style={styles.section}>
-                <SectionHeader title="Suggested Collectors" onPressSeeAll={() => {}} />
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalList}>
-                  {collectors.map((u) => (
-                    <CollectorRow key={u._id} user={u} token={token} />
-                  ))}
-                </ScrollView>
-              </View>
-            ) : null}
+            <SuggestedUsersStrip variant="home" />
           </>
         )}
       </ScrollView>
@@ -324,42 +255,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-  },
-  collectorCard: {
-    width: 90,
-    alignItems: 'center',
-    gap: 6,
-  },
-  collectorAvatarWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: AppColors.surface,
-    overflow: 'hidden',
-  },
-  collectorName: {
-    color: AppColors.textPrimary,
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  followBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 14,
-    backgroundColor: AppColors.buttonPrimaryBg,
-  },
-  followBtnActive: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: AppColors.border,
-  },
-  followBtnText: {
-    color: AppColors.buttonPrimaryText,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  followBtnTextActive: {
-    color: AppColors.textSecondary,
   },
 });

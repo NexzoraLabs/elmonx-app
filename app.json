@@ -7,9 +7,14 @@
     "icon": "./assets/images/icon.png",
     "scheme": "elmonxapp",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/3b3ce309-a3b1-4100-94d4-14f5217cb1b1"
+    },
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.elmonx.app.dev",
+      "associatedDomains": ["applinks:elmonx.com", "applinks:www.elmonx.com"],
       "infoPlist": {
         "NSCameraUsageDescription": "This lets you view collectables in augmented reality using your camera.",
         "NSPhotoLibraryUsageDescription": "This lets you choose a photo for your profile picture and cover image.",

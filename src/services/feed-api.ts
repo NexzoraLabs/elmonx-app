@@ -259,16 +259,24 @@ type PagedResponse<T> = {
   total_count?: number;
 };
 
+// List endpoints need the whole envelope (data + total_count), not just `data`.
+async function requestPaged<T>(path: string, token: string): Promise<PagedResponse<T>> {
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  const envelope = (await response.json()) as PagedResponse<T> & ApiEnvelope<T[]>;
+  assertSuccess(envelope);
+  return envelope;
+}
+
 export async function getFollowers(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
-  return (await request<PagedResponse<FollowListItem>>(`/follow/followers/${userId}?page=${page}&limit=${limit}`, token)) ?? {};
+  return requestPaged<FollowListItem>(`/follow/followers/${userId}?${pageQuery(page, limit)}`, token);
 }
 
 export async function getFollowing(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
-  return (await request<PagedResponse<FollowListItem>>(`/follow/following/${userId}?page=${page}&limit=${limit}`, token)) ?? {};
+  return requestPaged<FollowListItem>(`/follow/following/${userId}?${pageQuery(page, limit)}`, token);
 }
 
-export async function getFollowRequests(token: string, page = 1, limit = 50): Promise<{ status?: number; data?: FollowRequestItem[] }> {
-  return (await request<{ status?: number; data?: FollowRequestItem[] }>(`/follow/requests?page=${page}&limit=${limit}`, token)) ?? {};
+export async function getFollowRequests(token: string, page = 1, limit = 50): Promise<PagedResponse<FollowRequestItem>> {
+  return requestPaged<FollowRequestItem>(`/follow/requests?${pageQuery(page, limit)}`, token);
 }
 
 export async function acceptFollowRequest(token: string, userId: string): Promise<{ status?: number; message?: string }> {
@@ -280,5 +288,5 @@ export async function rejectFollowRequest(token: string, userId: string): Promis
 }
 
 export async function getBlockedUsers(token: string, page = 1, limit = 20): Promise<PagedResponse<BlockedListItem>> {
-  return (await request<PagedResponse<BlockedListItem>>(`/block/list?page=${page}&limit=${limit}`, token)) ?? {};
+  return requestPaged<BlockedListItem>(`/block/list?${pageQuery(page, limit)}`, token);
 }

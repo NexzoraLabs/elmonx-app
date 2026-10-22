@@ -33,6 +33,7 @@ export default function AppShellLayout() {
         <Stack.Screen name="connections" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="blindbox-item/[dropId]/[itemId]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="wallet" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </ChatProvider>
   );

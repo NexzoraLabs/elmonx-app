@@ -125,6 +125,8 @@ export type NewsItem = {
   source: string;
   category: string;
   created_at: string;
+  updated_at?: string;
+  cluster_posts_results?: { post_id: string }[];
 };
 
 export async function fetchNews(): Promise<NewsItem[]> {

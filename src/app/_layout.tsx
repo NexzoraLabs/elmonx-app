@@ -10,11 +10,22 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { WagmiProvider } from 'wagmi';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AppErrorScreen } from '@/components/app/app-error-screen';
+import { OfflineBanner } from '@/components/app/offline-banner';
+import { UpdateBanner } from '@/components/app/update-banner';
 import { AuthProvider } from '@/context/auth-context';
+import { initCrashReporting, wrapRootComponent } from '@/services/crash-reporting';
+import { installSessionGuard } from '@/services/session-guard';
 
+initCrashReporting();
+installSessionGuard();
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+export const ErrorBoundary = AppErrorScreen;
+
+export default wrapRootComponent(RootLayout);
+
+function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -28,6 +39,8 @@ export default function RootLayout() {
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(tabs)" />
                 </Stack>
+                <OfflineBanner />
+                <UpdateBanner />
               </ThemeProvider>
             </AuthProvider>
             {/* Expo Router needs the modal in an absolute overlay to render above the stack. */}

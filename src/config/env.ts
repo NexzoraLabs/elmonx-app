@@ -20,3 +20,7 @@ const ACTIVE_ENV: AppEnv = dev;
 export const API_BASE_URL = ACTIVE_ENV.apiUrl;
 export const SOCKET_URL = ACTIVE_ENV.socketUrl;
 export const IS_DEV = ACTIVE_ENV === dev;
+
+// Sentry project DSN (Sentry → Project Settings → Client Keys). Empty = crash reporting off.
+// A DSN is a public client key, safe to ship in the app.
+export const SENTRY_DSN = '';

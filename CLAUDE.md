@@ -75,7 +75,10 @@ The user writes in Roman Urdu/English mix. Reply in that same simple style, shor
 - Header shows user avatar (→ Personal Info). Bottom has drawer-style user row with logout icon (no "SESSION" heading). Rows route via `ROW_ROUTES` map. Dark Mode moved to Settings.
 - **App Rewards** `rewards.tsx`: level/rank card (`user/profile` → `profile/:username/stats`), earned/redeemed/net stats + transactions (`rewards/user-points`, load more).
 - **Quests, Earn XP** `challenges.tsx`: website's Actions + Social tabs merged into one scroll (user wanted no tabs). `rewards/tasks?type=actions|social`, claim `rewards/claim?type=<key>&action=actions|social`, spin `POST rewards/spin` (result shown in a banner, no wheel animation). Follow/follower tiers read from the actions payload. Static defs in `src/data/challenges.ts`, `src/data/social-tasks.ts`.
-- **Leaderboard** `leaderboard.tsx`: `rewards/leaderboard` (public), top-3 podium + ranked list, load more, no tabs.
+- **Leaderboard** `leaderboard.tsx`: `rewards/leaderboard` (public), plain ranked table (gold/silver/bronze rank badges, no podium), load more, no tabs.
+- Rewards shows only Total Earned + Net Balance (redeemed removed). `LevelRankCard` (with (i) info toggles) is also on the Profile tab.
+- Showroom tab hidden (`href: null`), file kept for later.
+- Follow/block list endpoints take `current_page` + `items_per_page` (AJV rejects `page`/`limit`) and return `{data,total_count}` → use `requestPaged` in `feed-api.ts`.
 - **Shipping Address** `shipping-address.tsx` + `components/address/*`: list `GET user/user_address`, add/edit `POST user/user_address` (edit = same call with `_id`; primary via `primary` flag). **No delete and no Home/Work/Other type** — backend has neither (user chose to omit).
 - **Promo Code** `promo-code.tsx`: `POST promo-codes/apply_promo_code` `{ code, wallet_address }` (wallet address typed manually).
 - **Personal Information** `personal-info.tsx`: load `GET user/profile`, save `POST user/profile_update`. Gender only Male/Female (backend 422s "Other"). DOB typed `YYYY-MM-DD` (no date picker lib). Updates auth user after save.
@@ -114,14 +117,14 @@ The user writes in Roman Urdu/English mix. Reply in that same simple style, shor
 - Per-drop block `drop-detail-section.tsx` copies website checks: PRIVATE SALE pill (`sale_title==='Private'`; tappable allowlist only for `Layer_2`), likes (`POST drop/:id/like`), comments (`drop/:id/comments` via shared `CommentsSheet` kind `drop`), share `https://elmonx.com/drop/<slugify(title)>/<id>`, country-block disclaimer, View in 3D (app-only, Unity).
 - `drop-info-card.tsx`: date label Private/Release (`public_sale_date`), countdown to `release_date` only, price (Layer_2 = X-Coin + raw price; else GBP base × `common/exchange_rate` with fallbacks, GBP/USD/EUR/ETH pills). Button chain in website order: timer → "Sale opens …" + Google Calendar link; closed/sold → Sold Out; Layer_2 → Buy With X-Coins; `customize_drop` → Customize And Buy; else Buy with Card (Public/no sale_title) + Buy with ETH. **Purchasing not built (user request)** — buy buttons show a "coming soon" alert.
 - `drop-accordion.tsx` (one open at a time): Description, Editions (+ blind box rows), Details (Drop Edition, Artist → `/artist/[id]`, Collection → `/collection/[id]`, dates, Secondary Fee, License(s), Contract copy via `expo-clipboard`, OpenSea, Drop Information), Physical Print, Allowlist (`marketplace/check_whitelist` with connected wallet, `allowlist-sheet.tsx`), Blind Box, Earn XP.
-- `blind-box-items.tsx`: website odds formula, "X left", rarity gradients (regular/secret/legendary/rare), rarity hidden for `SPECIAL_DROP_IDS` (Doodles/Wagner) in `drops-api.ts`. Blind-box item detail page (`/blindbox-item/...` on web) not built.
+- `blind-box-items.tsx`: website odds formula, "X left", rarity gradients (regular/secret/legendary/rare), rarity hidden for `SPECIAL_DROP_IDS` (Doodles/Wagner) in `drops-api.ts`. Cards open `(tabs)/blindbox-item/[dropId]/[itemId].tsx` (web `/blindbox-item/:name/:drop/:item`): item image, rarity, odds, stats, "See Drop Details". **Each blind box item has its own `unity_assets`** — View in 3D uses the item's, not the drop's (fallback `Viewer3DModal`).
 - Home `featured-carousel` still links mock ids to `/collection/` → shows "No drop found" until Home is made dynamic.
 
 ### Collections tab search + filters (done)
 - Header: search (toggles a search bar, 300ms debounce) + filters (sliders icon, badge = applied count). The old 3rd icon was removed. Filters hidden on Artists tab (website has none).
 - `services/catalog-filters.ts` = website filter-modal mapping: search → `filter` (regex-escaped client-side; backend doesn't escape). Blockchain × "Where it goes" → `type` (intersection; Collectibles falls back to all 3 types), Edition → `drop_edition`, Artist → `brand_id[]`, Category → `category_id`, Date → `date_from`/`date_to` (YYYY-MM-DD), Price → `price_min`/`price_max`. Partners: Artist/Date/Price only. Options from `brands/list` + `categories/list` (`get_all_records=True`).
 - Filters are per tab; chips under the tabs remove one filter. Changing search/filters remounts the page (`key`) → reload from page 1. Artists search → `brands/list?filter=`.
-- Website sends `individual=True` for Collectibles/Partners (blind boxes split per item); the app does not (lists unchanged).
+- Collectibles/Partners send `individual=True` like the website. Then a blind box row's `blind_box_items_data` is a **single object** (not array): card id/title/image/editions come from it, `parentDropId = drop._id`, tap → blindbox-item page (`dropToGridItem` in `drops-api.ts`). Always guard `Array.isArray(drop.blind_box_items_data)`.
 
 ### Chat (done — website DMs, same REST + socket)
 - `src/context/chat-context.tsx` (ChatProvider wraps the `(tabs)` stack): one socket.io connection to `https://api.elmonx.com` (default `/socket.io`), `auth: { token }`, **transports `['polling','websocket']`** (direct websocket handshake fails on production). Reconnect → REST re-sync.
@@ -134,6 +137,15 @@ The user writes in Roman Urdu/English mix. Reply in that same simple style, shor
 ### Bottom tab bar
 - Height/padding derived from safe-area bottom inset (`(home-tabs)/_layout.tsx`) so labels clear the rounded corners/home indicator.
 
+### Production hardening (root `src/app/_layout.tsx`)
+- **Error boundary**: root layout exports `ErrorBoundary = AppErrorScreen` (`components/app/app-error-screen.tsx`, "Try Again" = expo-router `retry`).
+- **Crash reporting**: Sentry (`@sentry/react-native`), `services/crash-reporting.ts`. Off until `SENTRY_DSN` in `config/env.ts` is set, and always off in `__DEV__`. Source-map upload is NOT set up (needs a Sentry auth token + sentry-cli build phase), so release stack traces are minified until then.
+- **Session guard** `services/session-guard.ts` wraps global fetch for `API_BASE_URL` calls: backend signals expiry as HTTP 200 + body `status: 440` (sessions last 7 days). It refreshes once via `POST user/refresh_token {refresh_token}` (15-day token, rotated), retries the request, and on failure clears the session and sends the user to welcome. Wired in `auth-context.tsx` (`configureSessionGuard`). It also sends API calls with `credentials: 'omit'`: the backend prefers its auth **cookie** over Bearer and RN keeps cookies across logout. Register returns no refresh token, so those users re-login after 7 days.
+- **Offline banner** `components/app/offline-banner.tsx` (NetInfo).
+- **OTA (EAS Update)**: `expo-updates`, runtimeVersion **`1.0.0`** (app.json + `ios/elmonxapp/Supporting/Expo.plist` + `android/.../strings.xml` `expo_runtime_version`), URL `https://u.expo.dev/3b3ce309-…`, channel header **`preview`** set natively in Expo.plist/AndroidManifest (local builds don't get EAS channel injection). Publish: `eas update --channel preview -m "msg"`. **Bump runtimeVersion in all 3 places on any native change** (new native package, Unity export, Info.plist/manifest), otherwise an OTA JS bundle can crash an older binary. Switch channel to `production` for the store build. `components/app/update-banner.tsx` offers "Restart" when an update has downloaded. Updates are inactive in debug builds.
+- **Deep links**: `src/app/+native-intent.tsx` maps website URLs (`/drop/<slug>/<id>`, `/collection/…`, `/blindbox-item/<slug>/<drop>/<item>`, `/auction/…`, `/auctions`, `/profile/<username>`) to app routes. iOS `elmonxapp.entitlements` has `applinks:elmonx.com` + `www`. Android manifest has an `autoVerify` https intent-filter for those paths. Website must host `deep-links/.well-known/*` (see `deep-links/README.md`). Until that's deployed, only `elmonxapp://` links open the app.
+- Android release is signed with the public RN **debug keystore** (fine for client APKs; Play Store needs a real upload key).
+
 ### Device build/install without Xcode UI
 - Build: `cd ios && xcodebuild -workspace elmonxapp.xcworkspace -scheme elmonxapp -configuration Debug -destination 'id=00008130-000E40920A51001C' -derivedDataPath /tmp/elmonx-dd-device -allowProvisioningUpdates build`
 - Install: `xcrun devicectl device install app --device 00008130-000E40920A51001C /tmp/elmonx-dd-device/Build/Products/Debug-iphoneos/elmonxapp.app`
@@ -144,10 +156,13 @@ The user writes in Roman Urdu/English mix. Reply in that same simple style, shor
 
 ## Open items / blocked
 
+- **`src/config/env.ts` has `ACTIVE_ENV = dev`** (api-dev.elmonx.com). Switch to `live` before any client/store build — ask the user first.
+
 - **Google Sign-In + Connect Google**: blocked until the user creates an iOS OAuth client ID in Google Cloud Console for `com.elmonx.app.dev`. Library: `@react-native-google-signin/google-signin` (free tier can't embed a custom nonce — that's why backend nonce was made optional).
 - **Reown dashboard**: user must add `com.elmonx.app.dev` under Mobile Application IDs for the project ID above, otherwise wallet connect is rejected. Then rebuild from Xcode and test Collectibles "Web" tab + Doodles.
 - **Unity**: waiting for fresh Unity export (Back button + rotate/zoom fix).
-- Not built yet: My Wallet (payments), Transactions, Update Password, Delete Account, Notifications, followers/following lists + follow requests + blocked list screens, single post page, Giphy in composer, repost-with-comment, light theme, phone country-code picker, date picker.
+- Not built yet: My Wallet (payments), Transactions, single post page, Giphy in composer, repost-with-comment, light theme, phone country-code picker, date picker. (Check `src/app` before claiming something is missing.)
+- Built since: Settings has Change Password (`POST user/update_password`) and **Delete Account** (`GET user/soft_delete`, same as website — satisfies Apple's in-app deletion rule); Notifications screen; Connections (followers/following/requests/blocked).
 - Phone must be on the same Wi-Fi as the Mac (Metro at `172.26.92.104:8081`) and have Local Network permission for the app, otherwise "Could not connect to development server". Metro: `nohup npx expo start --dev-client --port 8081 > /tmp/metro.log 2>&1 &`.
 - Account screen stat cards ("Total Rewards Earned", "Wallet Balance") are still hardcoded.
 

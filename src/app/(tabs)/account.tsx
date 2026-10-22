@@ -20,6 +20,7 @@ const ROW_ROUTES: Record<string, Href> = {
   leaderboard: '/leaderboard',
   'shipping-address': '/shipping-address',
   'promo-code': '/promo-code',
+  'my-wallet': '/wallet',
   'my-vault-collectables': { pathname: '/collectibles', params: { tab: 'app' } },
   'my-wallet-collectables': { pathname: '/collectibles', params: { tab: 'web' } },
   'doodles-physicals': '/doodles-physicals',

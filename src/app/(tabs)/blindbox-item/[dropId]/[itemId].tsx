@@ -42,6 +42,7 @@ export default function BlindBoxItemScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
     if (!dropId || !itemId) { setIsLoading(false); return; }
     let active = true;
     fetchDropById(dropId, token)

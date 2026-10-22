@@ -4,17 +4,15 @@ import type { DrawerNavigationProp } from 'expo-router/drawer';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { UserAvatar } from '@/components/account/user-avatar';
 import { LogoMark } from '@/components/auth/logo-mark';
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { AppColors } from '@/constants/app-colors';
 import { useAuth } from '@/context/auth-context';
-import { CURRENT_USER_ID, PROFILES } from '@/data/profile-mock';
 import { getUnreadCount } from '@/services/notifications-api';
 
 export function HomeHeader() {
   const navigation = useNavigation<DrawerNavigationProp<Record<string, object | undefined>>>();
-  const currentUser = PROFILES[CURRENT_USER_ID];
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -56,12 +54,7 @@ export function HomeHeader() {
           accessibilityLabel="Open account"
           hitSlop={8}
           onPress={() => router.push('/account')}>
-          <PlaceholderThumb
-            color={currentUser.avatarColor}
-            icon="person-outline"
-            style={styles.profileAvatar}
-            iconSize={14}
-          />
+          <UserAvatar user={user} size={26} />
         </Pressable>
       </View>
     </View>
@@ -80,11 +73,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-  },
-  profileAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
   },
   badge: {
     position: 'absolute',

@@ -8,7 +8,6 @@ import {
   Alert,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -325,11 +324,13 @@ function AuctionWinsList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [confirming, setConfirming] = useState<AuctionWinItem | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async (p: number, append = false) => {
     if (!token) return;
     if (!append) setLoading(true);
     else setLoadingMore(true);
+    setNow(Date.now());
     try {
       const res = await auctionApi.getMyAuctionWins(token, p, 20);
       if (res?.status === 200 && res.data) {
@@ -349,7 +350,7 @@ function AuctionWinsList() {
   }, [load]);
 
   const canClaim = (win: AuctionWinItem) =>
-    win.status === 'Claim_Pending' && new Date(win.claim_deadline).getTime() > Date.now();
+    win.status === 'Claim_Pending' && new Date(win.claim_deadline).getTime() > now;
 
   const handleClaim = async () => {
     if (!confirming || !token || claimingId) return;
