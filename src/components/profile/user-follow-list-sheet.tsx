@@ -27,7 +27,16 @@ type Props = {
  * Another user's followers / following (tap the counts on their profile). Backend gates it like the
  * profile itself: a private account's lists only go to the owner and approved followers.
  */
-export function UserFollowListSheet({ visible, onClose, kind, userId, username }: Props) {
+export function UserFollowListSheet(props: Props) {
+  return (
+    <BottomSheet visible={props.visible} onClose={props.onClose}>
+      {/* Remounted per open / per list, so state starts fresh without resetting it in an effect. */}
+      {props.visible && props.userId ? <FollowListBody key={`${props.userId}-${props.kind}`} {...props} /> : null}
+    </BottomSheet>
+  );
+}
+
+function FollowListBody({ onClose, kind, userId, username }: Props) {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
@@ -36,7 +45,7 @@ export function UserFollowListSheet({ visible, onClose, kind, userId, username }
   const [items, setItems] = useState<FollowListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [failed, setFailed] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -69,14 +78,9 @@ export function UserFollowListSheet({ visible, onClose, kind, userId, username }
   );
 
   useEffect(() => {
-    if (!visible || !userId) return;
-    setItems([]);
-    setTotal(0);
-    setIsPrivate(false);
-    setFailed(false);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch when the sheet opens
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
     load(1);
-  }, [visible, userId, kind, load]);
+  }, [load]);
 
   const hasMore = items.length < total;
   const openProfile = (name: string) => {
@@ -85,7 +89,7 @@ export function UserFollowListSheet({ visible, onClose, kind, userId, username }
   };
 
   return (
-    <BottomSheet visible={visible} onClose={onClose}>
+    <>
       <View style={[styles.container, { maxHeight: height * 0.65 }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
@@ -142,7 +146,7 @@ export function UserFollowListSheet({ visible, onClose, kind, userId, username }
           />
         )}
       </View>
-    </BottomSheet>
+    </>
   );
 }
 
