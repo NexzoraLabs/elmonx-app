@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import type { DrawerNavigationProp } from 'expo-router/drawer';
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { UserAvatar } from '@/components/account/user-avatar';
 import { LogoMark } from '@/components/auth/logo-mark';
 import { makeStyles, useAppColors, useTheme } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
-import { getUnreadCount } from '@/services/notifications-api';
+import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { useTranslation } from 'react-i18next';
 
 type HomeHeaderProps = {
@@ -25,16 +24,9 @@ export function HomeHeader({ variant = 'main' }: HomeHeaderProps) {
   const AppColors = useAppColors();
   const styles = useStyles();
   const navigation = useNavigation<DrawerNavigationProp<Record<string, object | undefined>>>();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { isDark, toggleMode } = useTheme();
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    if (!token) return;
-    getUnreadCount(token)
-      .then(setUnread)
-      .catch(() => {});
-  }, [token]);
+  const unread = useUnreadNotifications();
 
   return (
     <View style={styles.row}>
@@ -73,7 +65,8 @@ export function HomeHeader({ variant = 'main' }: HomeHeaderProps) {
           accessibilityRole="button"
           accessibilityLabel={t('Notifications')}
           hitSlop={8}
-          onPress={() => { router.push('/notifications'); setUnread(0); }}>
+          // The badge clears once the Notifications screen has loaded (the server marks them seen then).
+          onPress={() => router.push('/notifications')}>
           <View>
             <Ionicons name="notifications-outline" size={22} color={AppColors.textPrimary} />
             {unread > 0 && (

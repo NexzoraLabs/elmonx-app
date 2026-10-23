@@ -24,8 +24,13 @@ export function useCountdown(targetMs: number): CountdownParts {
   const [parts, setParts] = useState(() => toParts(targetMs - Date.now()));
 
   useEffect(() => {
+    // Nothing to count down (no date, or already passed): no timer at all. A collection page has two
+    // countdowns per drop, and these intervals used to tick forever.
+    if (targetMs <= Date.now()) return;
     const interval = setInterval(() => {
-      setParts(toParts(targetMs - Date.now()));
+      const next = toParts(targetMs - Date.now());
+      setParts(next);
+      if (next.isComplete) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
   }, [targetMs]);

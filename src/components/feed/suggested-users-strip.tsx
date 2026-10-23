@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { compactCount } from '@/components/feed/post-card';
@@ -12,6 +12,8 @@ import * as feedApi from '@/services/feed-api';
 import type { RelationshipStatus, SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
+import { followersLabel } from '@/i18n';
+import { haptic } from '@/components/motion';
 
 function initialStatus(user: SuggestedUser): RelationshipStatus {
   if (user.relationship_status) return user.relationship_status;
@@ -26,6 +28,8 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
   const { token } = useAuth();
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [statuses, setStatuses] = useState<Record<string, RelationshipStatus>>({});
+  // One follow/unfollow request per user at a time (a double tap used to send two).
+  const busyRef = useRef(new Set<string>());
 
   useEffect(() => {
     let active = true;
@@ -41,7 +45,9 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
   if (users.length === 0) return null;
 
   const handleFollow = async (user: SuggestedUser) => {
-    if (!token) return;
+    if (!token || busyRef.current.has(user._id)) return;
+    busyRef.current.add(user._id);
+    haptic('medium');
     const current = statuses[user._id] ?? initialStatus(user);
     try {
       if (current === 'Accepted' || current === 'Pending') {
@@ -53,6 +59,8 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
       }
     } catch (e) {
       Alert.alert(t('Error'), e instanceof Error ? e.message : t('Something went wrong.'));
+    } finally {
+      busyRef.current.delete(user._id);
     }
   };
 
@@ -86,7 +94,7 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
                 ) : null}
               </View>
               <Text style={styles.followers}>
-                {compactCount(followers)} {followers === 1 ? t('follower') : t('followers')}
+                {followersLabel(followers, compactCount(followers))}
               </Text>
               <Pressable
                 onPress={() => handleFollow(user)}

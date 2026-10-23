@@ -1,9 +1,10 @@
 import { Platform } from 'react-native';
 
-import type { CollectionCategory, CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionCategory, CollectionGridItem } from '@/data/collections';
 import { appendCatalogParams, DEFAULT_CATALOG_FILTERS, type CatalogFilters } from '@/services/catalog-filters';
 
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import i18n, { appLocale, currentLanguage } from '@/i18n';
 const ITEMS_PER_PAGE = 15;
 
@@ -124,11 +125,11 @@ export async function fetchFeaturedDrops(
   // Adds `type` (defaults to Eth_Product/Layer_2/Polygon) plus search and filters.
   appendCatalogParams(params, 'Collectibles', filters, search);
 
-  const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
+  const response = await apiFetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
   if (!response.ok) {
     throw new Error(i18n.t('Failed to load drops ({{status}})', { status: response.status }));
   }
-  const json: DropListResponse = await response.json();
+  const json = await readJson<DropListResponse>(response);
   return { items: json.data, totalRecords: json.total_records };
 }
 
@@ -149,11 +150,11 @@ export async function fetchPartnerDrops(
   params.append('items_per_page', String(ITEMS_PER_PAGE));
   appendCatalogParams(params, 'Partners', filters, search);
 
-  const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
+  const response = await apiFetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`);
   if (!response.ok) {
     throw new Error(i18n.t('Failed to load partner drops ({{status}})', { status: response.status }));
   }
-  const json: DropListResponse = await response.json();
+  const json = await readJson<DropListResponse>(response);
   return { items: json.data, totalRecords: json.total_records };
 }
 
@@ -162,11 +163,11 @@ const authHeaders = (token?: string | null): Record<string, string> =>
 
 /** Same call the website makes; the token is optional and only adds `self_like`. */
 async function fetchDropList(params: URLSearchParams, token?: string | null): Promise<Drop[]> {
-  const response = await fetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`, { headers: authHeaders(token) });
+  const response = await apiFetch(`${API_BASE_URL}/drop/list_sell?${params.toString()}`, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(i18n.t('Failed to load drop ({{status}})', { status: response.status }));
   }
-  const json: DropListResponse = await response.json();
+  const json = await readJson<DropListResponse>(response);
   if (json.status !== 200 || !json.data) return [];
   return Array.isArray(json.data) ? json.data : [json.data];
 }
@@ -181,12 +182,12 @@ export async function fetchDropsByCollection(collectionId: string, token?: strin
 }
 
 export async function toggleDropLike(token: string, dropId: string): Promise<{ liked: boolean; likes_count: number }> {
-  const response = await fetch(`${API_BASE_URL}/drop/${dropId}/like`, {
+  const response = await apiFetch(`${API_BASE_URL}/drop/${dropId}/like`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: '{}',
   });
-  const json = (await response.json()) as { status?: number; message?: string; data?: { liked: boolean; likes_count: number } };
+  const json = await readJson<{ status?: number; message?: string; data?: { liked: boolean; likes_count: number } }>(response);
   if (!json.data || (json.status && json.status !== 200)) throw new Error(json.message || i18n.t('Unable to like.'));
   return json.data;
 }
@@ -199,11 +200,8 @@ const FALLBACK_RATES: CurrencyRates = { GBP: 1, USD: 1.27, EUR: 1.2, ETH: 0.0004
 
 export async function fetchCurrencyRates(): Promise<CurrencyRates> {
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch(`${API_BASE_URL}/common/exchange_rate`, { signal: controller.signal });
-    clearTimeout(timer);
-    const json = (await response.json()) as { data?: Partial<CurrencyRates> };
+    const response = await apiFetch(`${API_BASE_URL}/common/exchange_rate`, {}, 8000);
+    const json = await readJson<{ data?: Partial<CurrencyRates> }>(response);
     return { ...FALLBACK_RATES, ...(json.data ?? {}) };
   } catch {
     return FALLBACK_RATES;
@@ -224,10 +222,10 @@ export async function checkWhitelist(
   walletAddress: string
 ): Promise<{ status: number; allocated?: number; consumed?: number }> {
   const params = new URLSearchParams({ drop_id: dropId, wallet_address: walletAddress });
-  const response = await fetch(`${API_BASE_URL}/marketplace/check_whitelist?${params.toString()}`, {
+  const response = await apiFetch(`${API_BASE_URL}/marketplace/check_whitelist?${params.toString()}`, {
     headers: authHeaders(token),
   });
-  return (await response.json()) as { status: number; allocated?: number; consumed?: number };
+  return readJson<{ status: number; allocated?: number; consumed?: number }>(response);
 }
 
 // Doodles / Wagner launch drops: the website hides rarity for these (environment.ts SPECIAL_DROP_IDS).

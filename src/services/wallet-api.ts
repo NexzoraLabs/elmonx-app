@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { getJson as fetchJson } from '@/services/http';
 import i18n, { appLocale, currentLanguage } from '@/i18n';
 
 // X-Coin wallet — same endpoints as the website's account/wallet page.
@@ -29,8 +30,7 @@ export const WALLET_PAGE_SIZE = 10;
 type Envelope<T> = { status?: number; message?: string; data?: T; totalCount?: number };
 
 async function getJson<T>(path: string, token: string): Promise<Envelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  const envelope = (await response.json()) as Envelope<T>;
+  const envelope = await fetchJson<Envelope<T>>(`${API_BASE_URL}${path}`, token);
   if (envelope.status && envelope.status !== 200) {
     throw new Error(envelope.message || i18n.t('Something went wrong.'));
   }
@@ -51,6 +51,50 @@ export async function getCaratHistory(
   const envelope = await getJson<CaratTransaction[]>(`/wallet/getCaratHistory?${params}`, token);
   const items = Array.isArray(envelope.data) ? envelope.data : [];
   return { items, totalCount: envelope.totalCount ?? items.length };
+}
+
+/**
+ * Every X-Coin transaction in [from, to) (the user's own month boundaries — the backend filters on
+ * `date_from` / `date_to`), paging through the history. Used by the statement export.
+ */
+export async function getCaratHistoryBetween(token: string, from: Date, to: Date): Promise<CaratTransaction[]> {
+  const pageSize = 200;
+  const rows: CaratTransaction[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const query = new URLSearchParams({
+      current_page: String(page),
+      items_per_page: String(pageSize),
+      date_from: from.toISOString(),
+      date_to: to.toISOString(),
+    });
+    const envelope = await getJson<CaratTransaction[]>(`/wallet/getCaratHistory?${query.toString()}`, token);
+    const batch = Array.isArray(envelope.data) ? envelope.data : [];
+    rows.push(...batch);
+    if (batch.length < pageSize || rows.length >= (envelope.totalCount ?? Infinity)) break;
+  }
+  return rows;
+}
+
+/** CSV (RFC 4180, CRLF) of a statement — same columns as the website export. */
+export function buildStatementCsv(rows: CaratTransaction[]): string {
+  const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const header = ['Date', 'Type', 'Amount (X-Coins)', 'Balance (X-Coins)', 'Description', 'Transaction ID', 'Source'];
+  const lines = rows.map((tx) => {
+    const credit = transactionDirection(tx) === 'Credit';
+    const amount = Math.abs(tx.amount || 0);
+    return [
+      new Date(tx.created_at).toISOString(),
+      credit ? 'Credit' : 'Debit',
+      credit ? amount : -amount,
+      tx.balance ?? 0,
+      tx.message || tx.transactionContext || 'Transaction',
+      tx.transaction_id || tx._id,
+      tx.plateform || 'Elmonx',
+    ]
+      .map(escape)
+      .join(',');
+  });
+  return [header.map(escape).join(','), ...lines].join('\r\n');
 }
 
 /** Website TransactionUtils: explicit type wins, else sign of the amount. */

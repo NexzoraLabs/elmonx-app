@@ -12,7 +12,7 @@ import * as feedApi from '@/services/feed-api';
 import type { SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
-import i18n from '@/i18n';
+import i18n, { followersLabel } from '@/i18n';
 
 export default function UserSearchScreen() {
   const { t } = useTranslation();
@@ -75,7 +75,7 @@ export default function UserSearchScreen() {
             style={styles.searchInput}
           />
           {query ? (
-            <Pressable hitSlop={8} onPress={() => setQuery('')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('Clear search')} hitSlop={8} onPress={() => setQuery('')}>
               <Ionicons name="close-circle" size={18} color={AppColors.textSecondary} />
             </Pressable>
           ) : null}
@@ -112,7 +112,7 @@ export default function UserSearchScreen() {
                   <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
                 ) : null}
               </View>
-              <Text style={styles.followers}>{compactCount(item.followers_count)}{' '}{t('followers')}</Text>
+              <Text style={styles.followers}>{followersLabel(item.followers_count ?? 0, compactCount(item.followers_count))}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={AppColors.textSecondary} />
           </Pressable>

@@ -110,7 +110,9 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
       // build (e.g. Expo Go without a matching dev client), so only touch it
       // once the user actually taps capture, and fail gracefully if missing.
       const MediaLibrary = await import('expo-media-library');
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      // Write-only, photos only: saving needs nothing else (and the Android manifest has no audio
+      // permission, so asking for the full set would come back denied).
+      const { status } = await MediaLibrary.requestPermissionsAsync(true, ['photo']);
       if (status !== 'granted') {
         setSaveStatus('error');
         return;
@@ -143,7 +145,7 @@ export function Viewer3DModal({ visible, onClose, title, imageUrl }: Viewer3DMod
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <Pressable accessibilityRole="button" hitSlop={8} onPress={handleClose} style={styles.closeButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={20} color={AppColors.textPrimary} />
             </Pressable>
           </View>

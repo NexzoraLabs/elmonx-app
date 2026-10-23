@@ -36,7 +36,7 @@ export function DetailImageCarousel({ images, color }: DetailImageCarouselProps)
     <View style={styles.container}>
       <View style={[styles.imageArea, { aspectRatio: ratio }]}>
         {currentImage ? (
-          <Image
+          <Image cachePolicy="memory-disk"
             source={{ uri: currentImage }}
             style={styles.image}
             contentFit="contain"

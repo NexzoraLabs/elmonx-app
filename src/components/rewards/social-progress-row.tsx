@@ -46,7 +46,7 @@ export function SocialProgressRow({ row, variant, resetCountdownLabel, isClaimin
           <View style={[styles.progressFill, { width: `${percent}%` }]} />
         </View>
         <Text style={styles.progressLabel}>
-          {row.completed_today}{' '}{t('of')}{' '}{row.daily_limit}{' '}{t('today')}
+          {t('{{done}} of {{limit}} today', { done: row.completed_today, limit: row.daily_limit })}
         </Text>
       </View>
       {row.is_capped ? (

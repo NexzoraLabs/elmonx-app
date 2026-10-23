@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChatFilterTabs, type ChatFilter } from '@/components/chat/chat-filter-tabs';
@@ -12,17 +12,19 @@ import { MessagesHeader } from '@/components/chat/messages-header';
 import { HomeHeader } from '@/components/home/home-header';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
-import { useChat } from '@/context/chat-context';
+import { useChat, useChatPresence } from '@/context/chat-context';
 import { searchUsers, type SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
+import { followersLabel } from '@/i18n';
 
 export default function ChatListScreen() {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   const { token } = useAuth();
-  const { conversations, isLoadingConversations, refreshConversations, isOnline, isTyping, currentUserId } = useChat();
+  const { conversations, isLoadingConversations, refreshConversations, currentUserId } = useChat();
+  const { isOnline, isTyping } = useChatPresence();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ChatFilter>('All');
   const [people, setPeople] = useState<SuggestedUser[]>([]);
@@ -71,58 +73,63 @@ export default function ChatListScreen() {
       <ChatSearchBar value={query} onChangeText={setQuery} />
       <ChatFilterTabs selected={filter} onSelect={setFilter} unreadCount={unreadCount} />
 
-      <ScrollView
+      {/* FlatList: only the visible conversations are mounted. */}
+      <FlatList
+        data={isLoadingConversations && conversations.length === 0 ? [] : filtered}
+        keyExtractor={(conversation) => conversation.conversation_id}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={AppColors.textSecondary} />}>
-        {isLoadingConversations && conversations.length === 0 ? (
-          <ActivityIndicator style={styles.loading} color={AppColors.link} />
-        ) : filtered.length === 0 && newPeople.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
-              {trimmed ? t('No people found.') : filter === 'Unread' ? t('No unread conversations.') : t('No conversations yet.')}
-            </Text>
-          </View>
-        ) : (
-          filtered.map((conversation) => (
-            <ConversationRow
-              key={conversation.conversation_id}
-              conversation={conversation}
-              online={isOnline(conversation.participant._id)}
-              typing={isTyping(conversation.participant._id)}
-            />
-          ))
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={AppColors.textSecondary} />}
+        renderItem={({ item: conversation }) => (
+          <ConversationRow
+            conversation={conversation}
+            online={isOnline(conversation.participant._id)}
+            typing={isTyping(conversation.participant._id)}
+          />
         )}
-
-        {newPeople.length > 0 ? (
-          <View>
-            <Text style={styles.sectionTitle}>{t('People')}</Text>
-            {newPeople.map((user) => (
-              <Pressable
-                key={user._id}
-                style={({ pressed }) => [styles.personRow, pressed && styles.pressed]}
-                onPress={() =>
-                  router.push({
-                    pathname: '/chat/[id]',
-                    params: { id: 'new', userId: user._id, username: user.user_name, avatar: user.profile_avatar ?? '' },
-                  })
-                }>
-                <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.personAvatar} contentFit="cover" />
-                <View style={styles.personText}>
-                  <View style={styles.personNameRow}>
-                    <Text style={styles.personName}>@{user.user_name}</Text>
-                    {user.profile_privacy === 'Private' ? (
-                      <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
-                    ) : null}
+        ListEmptyComponent={
+          isLoadingConversations && conversations.length === 0 ? (
+            <ActivityIndicator style={styles.loading} color={AppColors.link} />
+          ) : newPeople.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {trimmed ? t('No people found.') : filter === 'Unread' ? t('No unread conversations.') : t('No conversations yet.')}
+              </Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          newPeople.length > 0 ? (
+            <View>
+              <Text style={styles.sectionTitle}>{t('People')}</Text>
+              {newPeople.map((user) => (
+                <Pressable
+                  key={user._id}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.personRow, pressed && styles.pressed]}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/chat/[id]',
+                      params: { id: 'new', userId: user._id, username: user.user_name, avatar: user.profile_avatar ?? '' },
+                    })
+                  }>
+                  <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.personAvatar} contentFit="cover" />
+                  <View style={styles.personText}>
+                    <View style={styles.personNameRow}>
+                      <Text style={styles.personName}>@{user.user_name}</Text>
+                      {user.profile_privacy === 'Private' ? (
+                        <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
+                      ) : null}
+                    </View>
+                    <Text style={styles.personMeta}>{followersLabel(user.followers_count ?? 0)}</Text>
                   </View>
-                  <Text style={styles.personMeta}>{user.followers_count ?? 0}{' '}{t('followers')}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-      </ScrollView>
+                </Pressable>
+              ))}
+            </View>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }

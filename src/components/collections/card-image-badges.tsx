@@ -3,7 +3,7 @@ import { Image, type ImageSource } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 
 /**
  * Badges laid over the bottom-left of an NFT card's artwork (Collections grid + Home cards), same

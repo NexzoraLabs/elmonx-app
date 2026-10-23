@@ -67,10 +67,7 @@ function ThemedRoot() {
             <AppKitThemeSync />
             <AuthProvider>
               <NavigationThemeProvider value={navigationTheme}>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen name="(tabs)" />
-                </Stack>
+                <RootStack />
                 <OfflineBanner />
                 <UpdateBanner />
                 <AppSplash />
@@ -84,6 +81,26 @@ function ThemedRoot() {
         </QueryClientProvider>
       </WagmiProvider>
     </>
+  );
+}
+
+/**
+ * Signed-out users can't reach the app area (a deep link used to open (tabs) screens with no
+ * session: empty screens and no way to sign in), and signed-in users skip the auth flow. While the
+ * saved session is still loading both stay reachable so a cold-start deep link isn't dropped;
+ * the animated splash covers that moment.
+ */
+function RootStack() {
+  const { isLoading, isSignedIn } = useAuth();
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isLoading || !isSignedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected guard={isLoading || isSignedIn}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 

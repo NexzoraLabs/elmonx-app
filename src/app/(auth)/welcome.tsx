@@ -7,6 +7,8 @@ import { CollectibleHero } from '@/components/auth/collectible-hero';
 import { LogoMark } from '@/components/auth/logo-mark';
 import { makeStyles } from '@/context/theme-context';
 import { useTranslation } from 'react-i18next';
+import { rich, slots } from '@/i18n/rich';
+import { LegalLink } from '@/components/auth/legal-link';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
@@ -19,8 +21,12 @@ export default function WelcomeScreen() {
           <AuthButton label={t('Create an account')} onPress={() => router.push('/(auth)/create-account')} />
 
           <Text style={styles.terms}>
-            {t('By continuing, you agree to our')}{' '}<Text style={styles.link}>{t('terms')}</Text>,{' '}
-            <Text style={styles.link}>{t('Privacy Policy')}</Text>{' '}{t('and')}{' '}<Text style={styles.link}>{t('Cookie Use')}</Text>.
+            {/* These words looked like links but did nothing; they open the website pages now. */}
+            {rich(t('By continuing, you agree to our {{terms}}, {{privacy}} and {{cookies}}.', slots('terms', 'privacy', 'cookies')), {
+              terms: <LegalLink path="/terms-and-conditions" label={t('terms')} style={styles.link} />,
+              privacy: <LegalLink path="/privacy-policy" label={t('Privacy Policy')} style={styles.link} />,
+              cookies: <LegalLink path="/privacy-policy" label={t('Cookie Use')} style={styles.link} />,
+            })}
           </Text>
 
           <AuthButton

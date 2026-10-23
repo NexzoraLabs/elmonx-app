@@ -33,6 +33,7 @@ export function AccountSection({
         return (
           <Pressable
             key={row.key}
+            accessibilityRole={isToggle ? undefined : 'button'}
             style={({ pressed }) => [styles.row, pressed && !isToggle && styles.rowPressed]}
             disabled={isToggle || isLoading}
             onPress={() => onPressRow(row.key)}>

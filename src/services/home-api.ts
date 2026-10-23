@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import type { Drop } from '@/services/drops-api';
 import i18n from '@/i18n';
 
@@ -67,14 +68,26 @@ type StoreResponse = {
 
 function extractExcerpt(html: string): string {
   if (!html) return '';
-  const text = html.replace(/<[^>]*>/g, '');
+  // Block ends / <br> become spaces first — stripping tags alone glues paragraphs together.
+  const text = html
+    .replace(/<\s*br\s*\/?>/gi, ' ')
+    .replace(/<\/\s*(p|div|h[1-6]|li|ul|ol|blockquote|tr|table|section|article|pre|figure|figcaption)\s*>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
   return text.length > 150 ? text.slice(0, 150) + '…' : text;
 }
 
 export async function fetchStoreItems(): Promise<StoreItems> {
-  const response = await fetch(`${API_BASE_URL}/store/store`);
+  const response = await apiFetch(`${API_BASE_URL}/store/store`);
   if (!response.ok) throw new Error(i18n.t('Failed to load store ({{status}})', { status: response.status }));
-  const json: StoreResponse = await response.json();
+  const json = await readJson<StoreResponse>(response);
   if (json.status !== 200 || !Array.isArray(json.data)) throw new Error(i18n.t('Unexpected store response'));
 
   let banners: HomeBanner[] = [];
@@ -131,10 +144,10 @@ export type NewsItem = {
 };
 
 export async function fetchNews(): Promise<NewsItem[]> {
-  const res = await fetch(
+  const res = await apiFetch(
     'https://data.fungibull.com/api/common/x-news?start=1&limit=9',
   );
   if (!res.ok) return [];
-  const json = await res.json();
+  const json = await readJson<{ data?: NewsItem[] }>(res);
   return Array.isArray(json.data) ? json.data : [];
 }

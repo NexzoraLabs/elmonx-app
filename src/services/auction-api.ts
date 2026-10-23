@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import i18n from '@/i18n';
 const BASE = `${API_BASE_URL}/`;
 
@@ -144,8 +145,8 @@ export async function fetchAuctions(params: {
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
   const qs = query.toString();
-  const res = await fetch(`${BASE}auction/list${qs ? `?${qs}` : ''}`);
-  return res.json();
+  const res = await apiFetch(`${BASE}auction/list${qs ? `?${qs}` : ''}`);
+  return readJson(res);
 }
 
 export async function fetchAuction(
@@ -156,8 +157,8 @@ export async function fetchAuction(
   const query = wallet ? `?wallet=${encodeURIComponent(wallet)}` : '';
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${BASE}auction/${auctionId}${query}`, { headers });
-  return res.json();
+  const res = await apiFetch(`${BASE}auction/${auctionId}${query}`, { headers });
+  return readJson(res);
 }
 
 export async function fetchAuctionState(
@@ -168,8 +169,8 @@ export async function fetchAuctionState(
   const query = wallet ? `?wallet=${encodeURIComponent(wallet)}` : '';
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${BASE}auction/${auctionId}/state${query}`, { headers });
-  return res.json();
+  const res = await apiFetch(`${BASE}auction/${auctionId}/state${query}`, { headers });
+  return readJson(res);
 }
 
 export async function placeAuctionBid(
@@ -177,12 +178,12 @@ export async function placeAuctionBid(
   payload: PlaceBidPayload,
   token: string,
 ): Promise<{ status: number; data?: BidResult; message?: string }> {
-  const res = await fetch(`${BASE}auction/${auctionId}/bid`, {
+  const res = await apiFetch(`${BASE}auction/${auctionId}/bid`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
-  return res.json();
+  return readJson(res);
 }
 
 export async function raiseAuctionBid(
@@ -191,12 +192,12 @@ export async function raiseAuctionBid(
   walletAddress: string,
   token: string,
 ): Promise<{ status: number; data?: BidResult; message?: string }> {
-  const res = await fetch(`${BASE}auction/bid/${bidId}/raise`, {
+  const res = await apiFetch(`${BASE}auction/bid/${bidId}/raise`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ amount, wallet_address: walletAddress }),
   });
-  return res.json();
+  return readJson(res);
 }
 
 export function auctionImage(
@@ -265,17 +266,17 @@ export type AuctionWinList = {
 type WinEnvelope<T> = { status?: number; success?: boolean; message?: string; data?: T };
 
 export async function getMyAuctionWins(token: string, page = 1, limit = 20): Promise<WinEnvelope<AuctionWinList>> {
-  const res = await fetch(`${BASE}auction/my-wins?page=${page}&limit=${limit}`, {
+  const res = await apiFetch(`${BASE}auction/my-wins?page=${page}&limit=${limit}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return (await res.json()) as WinEnvelope<AuctionWinList>;
+  return readJson<WinEnvelope<AuctionWinList>>(res);
 }
 
 export async function claimAuctionWin(token: string, winId: string): Promise<WinEnvelope<AuctionWinItem>> {
-  const res = await fetch(`${BASE}auction/win/${winId}/claim`, {
+  const res = await apiFetch(`${BASE}auction/win/${winId}/claim`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: '{}',
   });
-  return (await res.json()) as WinEnvelope<AuctionWinItem>;
+  return readJson<WinEnvelope<AuctionWinItem>>(res);
 }

@@ -1,36 +1,18 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, assertSuccess as assertEnvelope, readJson, type ApiEnvelope } from '@/services/http';
 import { appendLocalFile } from '@/services/upload-file';
 import i18n from '@/i18n';
 export { SOCKET_URL as CHAT_SOCKET_URL } from '@/config/env';
 
-type ApiEnvelope<T> = {
-  status?: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-};
-
-class ChatApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ChatApiError';
-  }
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // Errors come back as HTTP 200 with body `status: 201` (validation/business) or 440 (auth).
-  if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new ChatApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
-}
+// Errors come back as HTTP 200 with body `status: 201` (validation/business) or 440 (auth).
+const assertSuccess = <T,>(envelope: ApiEnvelope<T>): T => assertEnvelope(envelope, { rejectStatus201: true });
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
   });
-  return assertSuccess((await response.json()) as ApiEnvelope<T>);
+  return assertSuccess(await readJson<ApiEnvelope<T>>(response));
 }
 
 export type ChatParticipant = {

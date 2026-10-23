@@ -10,17 +10,18 @@ import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { ACCOUNT_MENU_ITEMS, type MenuItem } from '@/data/menu-items';
 import { useTranslation } from 'react-i18next';
+import { SHARE_URL } from '@/config/env';
 
 // Temporary: these menu items open the public website until dedicated in-app
 // screens exist for them.
 const MENU_ITEM_URLS: Record<string, string> = {
-  explorer: 'https://elmonx.com/explorer',
-  community: 'https://elmonx.com/feed',
-  blogs: 'https://elmonx.com/articles',
-  news: 'https://elmonx.com/news',
-  faqs: 'https://elmonx.com/faqs',
-  privacy: 'https://elmonx.com/privacy-policy',
-  terms: 'https://elmonx.com/terms-and-conditions',
+  explorer: `${SHARE_URL}/explorer`,
+  community: `${SHARE_URL}/feed`,
+  blogs: `${SHARE_URL}/articles`,
+  news: `${SHARE_URL}/news`,
+  faqs: `${SHARE_URL}/faqs`,
+  privacy: `${SHARE_URL}/privacy-policy`,
+  terms: `${SHARE_URL}/terms-and-conditions`,
 };
 
 export function MenuDrawerContent(props: DrawerContentComponentProps) {

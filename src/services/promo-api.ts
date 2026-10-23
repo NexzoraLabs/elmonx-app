@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import i18n from '@/i18n';
 
 type ApiEnvelope = {
@@ -29,7 +30,7 @@ export async function applyPromoCode(
   code: string,
   walletAddress: string
 ): Promise<PromoCodeResult> {
-  const response = await fetch(`${API_BASE_URL}/promo-codes/apply_promo_code`, {
+  const response = await apiFetch(`${API_BASE_URL}/promo-codes/apply_promo_code`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -37,7 +38,7 @@ export async function applyPromoCode(
     },
     body: JSON.stringify({ code, wallet_address: walletAddress }),
   });
-  const envelope = (await response.json()) as ApiEnvelope;
+  const envelope = await readJson<ApiEnvelope>(response);
   const extra = formatData(envelope.data);
   const baseMessage = envelope.status
     ? envelope.message || i18n.t('Success!')

@@ -1,39 +1,20 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, assertSuccess as assertEnvelope, readJson, type ApiEnvelope } from '@/services/http';
 import { appendLocalFile } from '@/services/upload-file';
-import i18n from '@/i18n';
 
 // Same fallbacks the website uses when a user has no avatar/cover.
 const DEFAULT_AVATAR_PATH = 'images/avatar/default.png';
 export const DEFAULT_AVATAR_URL = 'https://assets.elmonx.com/default.png';
 
-type ApiEnvelope<T> = {
-  status?: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-};
-
-class ProfileApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ProfileApiError';
-  }
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // HTTP 200 comes back even for logical failures; 201 in the body means a validation error here.
-  if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new ProfileApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
-}
+// HTTP 200 comes back even for logical failures; 201 in the body means a validation error here.
+const assertSuccess = <T,>(envelope: ApiEnvelope<T>): T => assertEnvelope(envelope, { rejectStatus201: true });
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
   });
-  return assertSuccess((await response.json()) as ApiEnvelope<T>);
+  return assertSuccess(await readJson<ApiEnvelope<T>>(response));
 }
 
 const jsonPost = (body: object = {}): RequestInit => ({

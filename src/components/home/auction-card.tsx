@@ -1,10 +1,20 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import { type AuctionCard as AuctionCardData, auctionImage, formatCountdown } from '@/services/auction-api';
+import { AuctionTimeLeft } from '@/components/auction/auction-time-left';
+import { MOTION } from '@/constants/motion';
+import { type AuctionCard as AuctionCardData, auctionImage } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
 import { PressableScale } from '@/components/motion';
 
@@ -12,27 +22,27 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Show 2 full cards + gap in the scroll view (20px padding each side, 12px gap between)
 const CARD_WIDTH = (SCREEN_WIDTH - 40 - 12) / 2;
 
-function LiveDot() {
+/** Blinking "live" dot, animated on the UI thread (it used to re-render the card every 700 ms). */
+export function LiveDot() {
   const styles = useStyles();
-  const [visible, setVisible] = useState(true);
+  const reduceMotion = useReducedMotion();
+  const opacity = useSharedValue(1);
   useEffect(() => {
-    const id = setInterval(() => setVisible((v) => !v), 700);
-    return () => clearInterval(id);
-  }, []);
-  return <View style={[styles.dot, visible ? styles.dotVisible : styles.dotHidden]} />;
+    if (reduceMotion) return;
+    opacity.set(withRepeat(withTiming(0.2, { duration: MOTION.duration.slow * 2 }), -1, true));
+    return () => cancelAnimation(opacity);
+  }, [reduceMotion, opacity]);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  return <Animated.View style={[styles.dot, styles.dotVisible, animatedStyle]} />;
 }
 
-export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; now: number }) {
+export function AuctionCardHome({ auction }: { auction: AuctionCardData }) {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   const img = auctionImage(auction.drop);
   const isLive = auction.status === 'Live';
   const isUpcoming = auction.status === 'Upcoming';
-
-  let timeLeft = '';
-  if (isLive) timeLeft = formatCountdown(new Date(auction.end_time).getTime() - now);
-  else if (isUpcoming) timeLeft = formatCountdown(new Date(auction.start_time).getTime() - now);
 
   const priceLabel = auction.status === 'Ended'
     ? (auction.clearing_price != null ? t('Sold at') : t('Ended'))
@@ -46,7 +56,7 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
       onPress={() => router.push({ pathname: '/auction/[id]', params: { id: auction._id } })}>
       <View style={styles.imageWrap}>
         {img ? (
-          <Image source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image cachePolicy="memory-disk" source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: AppColors.surface }]} />
         )}
@@ -65,13 +75,11 @@ export function AuctionCardHome({ auction, now }: { auction: AuctionCardData; no
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{auction.drop?.title ?? '—'}</Text>
-        {timeLeft ? (
-          <Text style={styles.countdown}>{isLive ? '⏱ ' : '🗓 '}{timeLeft}</Text>
-        ) : null}
+        <AuctionTimeLeft auction={auction} style={styles.countdown} />
         <View style={styles.priceRow}>
           <Text style={styles.priceLabel}>{priceLabel}</Text>
           {price != null ? (
-            <Text style={styles.price}>{price.toLocaleString()}{' '}{t('X')}</Text>
+            <Text style={styles.price}>{t('{{amount}} X', { amount: price.toLocaleString() })}</Text>
           ) : null}
         </View>
       </View>

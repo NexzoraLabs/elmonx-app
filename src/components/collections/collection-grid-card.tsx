@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { openGridItem } from '@/components/collections/open-grid-item';
 import { CardImageBadges } from '@/components/collections/card-image-badges';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 import { useTranslation } from 'react-i18next';
 import Animated from 'react-native-reanimated';
 
 import { enterAt, PressableScale } from '@/components/motion';
+import { rich, slots } from '@/i18n/rich';
 
 type CollectionGridCardProps = {
   item: CollectionGridItem;
@@ -53,17 +54,9 @@ export function CollectionGridCard({ item, layout = 'grid', index }: CollectionG
     <PressableScale
       pressScale="card"
       style={styles.card}
-      onPress={() => {
-        if (item.parentDropId) {
-          // Individual blind box item — open its detail page
-          router.push({ pathname: '/blindbox-item/[dropId]/[itemId]', params: { dropId: item.parentDropId, itemId: item.id } });
-        } else {
-          router.push({
-            pathname: item.category === 'Collections' ? '/collection/[id]' : '/drop/[id]',
-            params: { id: item.id },
-          });
-        }
-      }}>
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+      onPress={() => openGridItem(item)}>
 
       {/* ── Image area ── a very faint well (`imageWell`) running edge to edge across the top of
            the card (VeVe-style; the card's own radius rounds its top corners, the bottom stays
@@ -75,7 +68,7 @@ export function CollectionGridCard({ item, layout = 'grid', index }: CollectionG
             // (no crop) with the same 12pt gap on all four sides.
             <View style={[styles.bannerFrame, { aspectRatio: bannerRatio }]}>
               {item.imageUrl ? (
-                <Image
+                <Image cachePolicy="memory-disk"
                   source={{ uri: item.imageUrl }}
                   style={StyleSheet.absoluteFill}
                   contentFit="contain"
@@ -93,7 +86,7 @@ export function CollectionGridCard({ item, layout = 'grid', index }: CollectionG
             </View>
           ) : item.imageUrl ? (
             // Drop artwork is shown whole (contain) — it carries its own transparent margin.
-            <Image source={{ uri: item.imageUrl }} style={styles.artInset} contentFit="contain" transition={150} />
+            <Image cachePolicy="memory-disk" source={{ uri: item.imageUrl }} style={styles.artInset} contentFit="contain" transition={150} />
           ) : (
             <PlaceholderThumb color={item.color} icon="image-outline" style={StyleSheet.absoluteFill} />
           )}
@@ -117,10 +110,10 @@ export function CollectionGridCard({ item, layout = 'grid', index }: CollectionG
             <View style={styles.editionLeft}>
               <Ionicons name="layers-outline" size={11} color={AppColors.textSecondary} />
               {total === 1 ? (
-                <Text style={styles.editionText}>{t('1 of 1 · Unique')}</Text>
+                <Text style={styles.editionText}>{t('1 of 1')}</Text>
               ) : (
                 <Text style={styles.editionText}>
-                  {t('Edition of')}{' '}<Text style={styles.editionCount}>{total.toLocaleString()}</Text>
+                  {rich(t('Edition of {{n}}', slots('n')), { n: <Text style={styles.editionCount}>{total.toLocaleString()}</Text> })}
                 </Text>
               )}
             </View>
@@ -130,7 +123,7 @@ export function CollectionGridCard({ item, layout = 'grid', index }: CollectionG
               <Text style={styles.lowStock}>{t('Only {{n}} left!', { n: remaining })}</Text>
             ) : (
               <Text style={styles.remaining}>
-                <Text style={styles.remainingCount}>{remaining.toLocaleString()}</Text>{' '}{t('left')}
+                {rich(t('{{n}} left', slots('n')), { n: <Text style={styles.remainingCount}>{remaining.toLocaleString()}</Text> })}
               </Text>
             )}
           </View>

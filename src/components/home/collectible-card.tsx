@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { openGridItem } from '@/components/collections/open-grid-item';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { CardImageBadges } from '@/components/collections/card-image-badges';
 import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 import { PressableScale } from '@/components/motion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -43,10 +43,12 @@ export function CollectibleCard({ item }: { item: CollectionGridItem }) {
     <PressableScale
       pressScale="card"
       style={styles.card}
-      onPress={() => router.push({ pathname: '/drop/[id]', params: { id: item.id } })}>
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+      onPress={() => openGridItem(item)}>
       <View style={styles.imageOuter}>
         {item.imageUrl ? (
-          <Image
+          <Image cachePolicy="memory-disk"
             source={{ uri: item.imageUrl }}
             style={styles.artInset}
             contentFit="contain"

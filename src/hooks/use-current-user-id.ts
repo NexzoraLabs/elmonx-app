@@ -1,25 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { API_BASE_URL } from '@/config/env';
 import { useAuth } from '@/context/auth-context';
+import { fetchUserId } from '@/services/current-user-id';
 
-// The stored login payload isn't guaranteed to carry `_id`, so resolve it once per token.
-const cache = new Map<string, Promise<string | null>>();
-
-export function fetchUserId(token: string): Promise<string | null> {
-  let pending = cache.get(token);
-  if (!pending) {
-    pending = fetch(`${API_BASE_URL}/user/profile`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then((body: { data?: { _id?: string } }) => body.data?._id ?? null)
-      .catch(() => {
-        cache.delete(token);
-        return null;
-      });
-    cache.set(token, pending);
-  }
-  return pending;
-}
+// The id lookup + cache live in services/current-user-id.ts (auth-context clears it on sign-out
+// without importing this hook, which would be a require cycle).
+export { fetchUserId } from '@/services/current-user-id';
 
 export function useCurrentUserId(): string | null {
   const { token } = useAuth();

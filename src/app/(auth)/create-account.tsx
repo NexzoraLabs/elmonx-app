@@ -12,6 +12,8 @@ import { useAuth } from '@/context/auth-context';
 import { isValidEmail, isValidPassword } from '@/utils/auth-validation';
 import { dialCodeOf, phoneValidationError } from '@/services/phone';
 import { useTranslation } from 'react-i18next';
+import { rich, slots } from '@/i18n/rich';
+import { LegalLink } from '@/components/auth/legal-link';
 
 export default function CreateAccountScreen() {
   const { t } = useTranslation();
@@ -133,8 +135,10 @@ export default function CreateAccountScreen() {
         <AuthButton label={t('Continue')} onPress={handleContinue} loading={loading} />
 
         <Text style={styles.terms}>
-          {t('By creating an account, you agree to our')}{' '}<Text style={styles.link}>{t('Terms of Service')}</Text>{' '}{t('and')}{' '}
-          <Text style={styles.link}>{t('Privacy Policy')}</Text>.
+          {rich(t('By creating an account, you agree to our {{terms}} and {{privacy}}.', slots('terms', 'privacy')), {
+            terms: <LegalLink path="/terms-and-conditions" label={t('Terms of Service')} style={styles.link} />,
+            privacy: <LegalLink path="/privacy-policy" label={t('Privacy Policy')} style={styles.link} />,
+          })}
         </Text>
       </View>
     </AuthScreen>

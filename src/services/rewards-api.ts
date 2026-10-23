@@ -1,36 +1,10 @@
 import { API_BASE_URL } from '@/config/env';
-import i18n from '@/i18n';
+import { apiFetch, assertSuccess, getJson as fetchJson, readJson, type ApiEnvelope as BaseEnvelope } from '@/services/http';
 
-type ApiEnvelope<T> = {
-  status: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-  pagination?: Pagination;
-};
+type ApiEnvelope<T> = BaseEnvelope<T> & { pagination?: Pagination };
 
-class RewardsApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'RewardsApiError';
-  }
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // This backend often responds with HTTP 200 regardless of logical outcome — the real
-  // success/failure signal is `success`/`status` in the JSON body itself.
-  if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new RewardsApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
-}
-
-async function getJson<T>(path: string, token?: string): Promise<ApiEnvelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
-  return (await response.json()) as ApiEnvelope<T>;
-}
+const getJson = <T,>(path: string, token?: string): Promise<ApiEnvelope<T>> =>
+  fetchJson<ApiEnvelope<T>>(`${API_BASE_URL}${path}`, token);
 
 export type Pagination = {
   current_page: number;
@@ -121,15 +95,15 @@ export async function claimTask(
 ): Promise<{ message: string }> {
   const envelope = await getJson<{ message: string }>(`/rewards/claim?type=${type}&action=${action}`, token);
   assertSuccess(envelope);
-  return { message: envelope.message };
+  return { message: envelope.message ?? '' };
 }
 
 export async function spinReward(token: string): Promise<{ reward_label: string; points_assigned: number }> {
-  const response = await fetch(`${API_BASE_URL}/rewards/spin`, {
+  const response = await apiFetch(`${API_BASE_URL}/rewards/spin`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
-  const envelope = (await response.json()) as ApiEnvelope<{ reward_label: string; points_assigned: number }>;
+  const envelope = await readJson<ApiEnvelope<{ reward_label: string; points_assigned: number }>>(response);
   return assertSuccess(envelope);
 }
 

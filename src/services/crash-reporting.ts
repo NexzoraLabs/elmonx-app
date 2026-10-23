@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import type React from 'react';
 
 import { IS_DEV, SENTRY_DSN } from '@/config/env';
 
@@ -26,4 +27,7 @@ export function setCrashReportingUser(user: { id: string; username?: string } | 
   Sentry.setUser(user ? { id: user.id, username: user.username } : null);
 }
 
-export const wrapRootComponent = Sentry.wrap;
+/** Sentry.wrap only when Sentry is running — wrapping without init logs an "App Start Span" warning. */
+export function wrapRootComponent<P extends Record<string, unknown>>(component: React.ComponentType<P>): React.ComponentType<P> {
+  return enabled ? Sentry.wrap(component) : component;
+}

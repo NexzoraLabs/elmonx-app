@@ -39,6 +39,11 @@ export default function AppShellLayout() {
         <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="blindbox-item/[dropId]/[itemId]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="wallet" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="uk-verification" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chat/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="chat/new" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="post/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="post/repost/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </ChatProvider>
   );

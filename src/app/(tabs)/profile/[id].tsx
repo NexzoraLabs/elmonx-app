@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { compactCount, postToItem, userRepostToItem, type FeedItem } from '@/components/feed/post-card';
 import { PostList } from '@/components/feed/post-list';
 import { CoverBanner } from '@/components/profile/cover-banner';
+import { UserFollowListSheet } from '@/components/profile/user-follow-list-sheet';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
@@ -19,9 +20,10 @@ import * as profileApi from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 import { appLocale } from '@/i18n';
 import { TabIndicator } from '@/components/motion';
+import { appendUnique } from '@/services/http';
+import { SHARE_URL } from '@/config/env';
 
 type Tab = 'posts' | 'reposts';
-const SITE_URL = 'https://elmonx.com';
 
 function formatMemberSince(iso?: string): string {
   if (!iso) return '';
@@ -53,6 +55,8 @@ export default function PublicProfileScreen() {
   const [followBusy, setFollowBusy] = useState(false);
 
   const [tab, setTab] = useState<Tab>('posts');
+  // Followers / Following sheet (tap the counts).
+  const [followList, setFollowList] = useState<'followers' | 'following' | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -77,7 +81,7 @@ export default function PublicProfileScreen() {
               ? (await profileApi.getUserReposts(token, userId, nextPage)).map(userRepostToItem)
               : [];
         if (requestId !== listRequest.current) return;
-        setItems((prev) => (nextPage === 1 ? batch : [...prev, ...batch]));
+        setItems((prev) => appendUnique(nextPage === 1 ? [] : prev, batch, (item) => item.key));
         setPage(nextPage);
         setHasMore(batch.length === feedApi.FEED_PAGE_SIZE);
       } catch {
@@ -223,7 +227,7 @@ export default function PublicProfileScreen() {
       {
         text: t('Share profile'),
         onPress: () => {
-          const url = `${SITE_URL}/profile/${profile.user_name}`;
+          const url = `${SHARE_URL}/profile/${profile.user_name}`;
           Share.share({ message: url, url });
         },
       },
@@ -301,14 +305,14 @@ export default function PublicProfileScreen() {
         </View>
         {fullName ? <Text style={styles.fullName}>{fullName}</Text> : null}
         {profile.created_at ? (
-          <Text style={styles.memberSince}>{t('Member since')}{' '}{formatMemberSince(profile.created_at)}</Text>
+          <Text style={styles.memberSince}>{t('Member since {{date}}', { date: formatMemberSince(profile.created_at) })}</Text>
         ) : null}
         {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
         <View style={styles.statsRow}>
           <Stat value={compactCount(stats.posts_count)} label={t('Post')} />
-          <Stat value={compactCount(stats.followers_count)} label={t('Followers')} />
-          <Stat value={compactCount(stats.following_count)} label={t('Followings')} />
+          <Stat value={compactCount(stats.followers_count)} label={t('Followers')} onPress={() => setFollowList('followers')} />
+          <Stat value={compactCount(stats.following_count)} label={t('Followings')} onPress={() => setFollowList('following')} />
         </View>
 
         {block.is_blocked ? (
@@ -354,7 +358,12 @@ export default function PublicProfileScreen() {
             </View>
             <TabIndicator active={tab === 'posts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
           </Pressable>
-          <Pressable style={styles.tab} onPress={() => handleSelectTab('reposts')}>
+          <Pressable
+            style={styles.tab}
+            accessibilityRole="tab"
+            accessibilityLabel={t('Reposts')}
+            accessibilityState={{ selected: tab === 'reposts' }}
+            onPress={() => handleSelectTab('reposts')}>
             <View style={styles.tabContent}>
               <Ionicons name="repeat-outline" size={20} color={tab === 'reposts' ? AppColors.textPrimary : AppColors.textSecondary} />
             </View>
@@ -397,17 +406,30 @@ export default function PublicProfileScreen() {
           if (canSeePosts && !isLoadingList && !isLoadingMore && hasMore) loadList(tab, page + 1, profile._id);
         }}
       />
+      <UserFollowListSheet
+        visible={followList !== null}
+        onClose={() => setFollowList(null)}
+        kind={followList ?? 'followers'}
+        userId={profile?._id ?? ''}
+        username={profile?.user_name ?? ''}
+      />
     </SafeAreaView>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label, onPress }: { value: string; label: string; onPress?: () => void }) {
   const styles = useStyles();
-  return (
-    <View style={styles.stat}>
+  const content = (
+    <>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </>
+  );
+  if (!onPress) return <View style={styles.stat}>{content}</View>;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.stat, pressed && styles.pressed]}>
+      {content}
+    </Pressable>
   );
 }
 

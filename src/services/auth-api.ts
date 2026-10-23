@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
-import i18n from '@/i18n';
+import { apiFetch, assertSuccess, readJson, type ApiEnvelope } from '@/services/http';
 
 export type UserData = {
   first_name: string;
@@ -28,37 +28,13 @@ export type AuthSession = {
   refresh_token?: string;
 };
 
-type ApiEnvelope<T> = {
-  status: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-};
-
-class AuthApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AuthApiError';
-  }
-}
-
 async function postJson<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const json = (await response.json()) as ApiEnvelope<T>;
-  return json;
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // This backend often responds with HTTP 200/201 regardless of logical outcome —
-  // the real success/failure signal is `success`/`status` in the JSON body itself.
-  if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AuthApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
+  return readJson<ApiEnvelope<T>>(response);
 }
 
 /**
@@ -146,7 +122,6 @@ export async function refreshSession(refreshToken: string): Promise<{ token: str
   return assertSuccess(envelope);
 }
 
-/** Google Sign-In: exchange a Google ID token for an ElmonX session (same response shape as OTP verify). */
 /**
  * Website sign-in hand-off: trades the one-time code the website's /app-login page sent back
  * (plus this attempt's PKCE verifier) for a session of the app's own. See services/web-auth.ts.
@@ -157,7 +132,7 @@ export async function exchangeAppAuthCode(code: string, codeVerifier: string): P
 }
 
 export async function logout(token: string): Promise<void> {
-  await fetch(`${API_BASE_URL}/user/logout`, {
+  await apiFetch(`${API_BASE_URL}/user/logout`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

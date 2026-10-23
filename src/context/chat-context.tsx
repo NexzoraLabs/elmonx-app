@@ -6,6 +6,7 @@ import { useCurrentUserId } from '@/hooks/use-current-user-id';
 import * as chatApi from '@/services/chat-api';
 import type { AttachmentType, ChatMessage, ConversationItem } from '@/services/chat-api';
 import i18n from '@/i18n';
+import { bumpUnreadNotifications } from '@/services/unread-notifications';
 
 /** Events forwarded to an open thread screen. */
 export type ThreadEvent =
@@ -15,6 +16,9 @@ export type ThreadEvent =
   | { type: 'reconnected' };
 
 type Ack = { status?: number; message?: string; data?: ChatMessage };
+
+/** `auction:extended` — anti-sniping moved the end time (backend sockets/index.js). */
+export type AuctionExtendedEvent = { auction_id: string; end_time: string };
 
 type SendInput = {
   receiverId: string;
@@ -28,8 +32,6 @@ type ChatContextValue = {
   totalUnread: number;
   currentUserId: string | null;
   refreshConversations: () => Promise<void>;
-  isOnline: (userId: string) => boolean;
-  isTyping: (userId: string) => boolean;
   /** The thread screen registers the conversation it shows so it isn't counted as unread. */
   setActiveConversation: (conversationId: string | null) => void;
   subscribe: (listener: (event: ThreadEvent) => void) => () => void;
@@ -39,11 +41,33 @@ type ChatContextValue = {
   unsendMessage: (messageId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
   removeConversationLocally: (conversationId: string) => void;
+  /** Joins the auction's socket room (website watchAuction); returns the unsubscribe. */
+  watchAuction: (auctionId: string, onExtended: (event: AuctionExtendedEvent) => void) => () => void;
+};
+
+type ChatPresenceValue = {
+  isOnline: (userId: string) => boolean;
+  isTyping: (userId: string) => boolean;
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
+// Presence/typing change constantly; a context of their own keeps those updates from re-rendering
+// every chat consumer (tab badge, profile, new-chat screen).
+const ChatPresenceContext = createContext<ChatPresenceValue | null>(null);
 
+/**
+ * Chat state belongs to one account: keyed by the user so signing in as someone else starts from
+ * an empty list (no flash of the previous person's conversations, unread badge or presence).
+ */
 export function ChatProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  return <ChatSession key={user?.user_name ?? 'signed-out'}>{children}</ChatSession>;
+}
+
+// A "typing…" whose stop event got lost (dropped socket, app killed) clears itself after this.
+const TYPING_TIMEOUT_MS = 6000;
+
+function ChatSession({ children }: { children: ReactNode }) {
   const { token } = useAuth();
   const currentUserId = useCurrentUserId();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -55,6 +79,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const listenersRef = useRef(new Set<(event: ThreadEvent) => void>());
   const activeConversationRef = useRef<string | null>(null);
   const meRef = useRef<string | null>(null);
+  const conversationsRef = useRef<ConversationItem[]>([]);
+  const typingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const auctionWatchersRef = useRef(new Map<string, Set<(event: AuctionExtendedEvent) => void>>());
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   useEffect(() => {
     meRef.current = currentUserId;
@@ -88,6 +119,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     let connectedOnce = false;
 
     socket.on('connect', () => {
+      // Rooms don't survive a reconnect: re-join every auction page that is open.
+      auctionWatchersRef.current.forEach((_, auctionId) => socket.emit('auction:watch', auctionId));
       // On every reconnect after the first, re-sync over REST (website behaviour).
       if (connectedOnce) {
         refreshConversations();
@@ -99,11 +132,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     socket.on('message:new', (message: ChatMessage) => {
       const mine = message.sender_id === meRef.current;
       const isActive = activeConversationRef.current === message.conversation_id;
-      let known = false;
+      // Decided from the latest rendered list: a state updater isn't guaranteed to run right away,
+      // so a flag set inside it made every message trigger a full REST refresh.
+      const known = conversationsRef.current.some((c) => c.conversation_id === message.conversation_id);
       setConversations((prev) => {
         const index = prev.findIndex((c) => c.conversation_id === message.conversation_id);
         if (index === -1) return prev;
-        known = true;
         const current = prev[index];
         const updated: ConversationItem = {
           ...current,
@@ -127,13 +161,27 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       refreshConversations();
     });
 
-    socket.on('message:typing', (payload: { sender_id: string; is_typing: boolean }) => {
+    const typingTimers = typingTimersRef.current;
+    const setTyping = (userId: string, isTyping: boolean) => {
+      clearTimeout(typingTimers.get(userId));
+      typingTimers.delete(userId);
+      if (isTyping) typingTimers.set(userId, setTimeout(() => setTyping(userId, false), TYPING_TIMEOUT_MS));
       setTypingUsers((prev) => {
+        if (prev.has(userId) === isTyping) return prev;
         const next = new Set(prev);
-        if (payload.is_typing) next.add(payload.sender_id);
-        else next.delete(payload.sender_id);
+        if (isTyping) next.add(userId);
+        else next.delete(userId);
         return next;
       });
+    };
+
+    socket.on('message:typing', (payload: { sender_id: string; is_typing: boolean }) => {
+      setTyping(payload.sender_id, payload.is_typing);
+    });
+
+    // A new message also means the sender stopped typing.
+    socket.on('message:new', (message: ChatMessage) => {
+      if (message.sender_id) setTyping(message.sender_id, false);
     });
 
     socket.on('presence:bulk', (list: { user_id: string; online: boolean }[]) => {
@@ -149,6 +197,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       });
     });
 
+    // Website: the bell counts up live when the server pushes a notification.
+    socket.on('notification:new', () => bumpUnreadNotifications());
+
+    socket.on('auction:extended', (payload: AuctionExtendedEvent) => {
+      auctionWatchersRef.current.get(payload.auction_id)?.forEach((listener) => listener(payload));
+    });
+
     socket.on('conversation:deleted', (payload: { conversation_id: string }) => {
       setConversations((prev) => prev.filter((c) => c.conversation_id !== payload.conversation_id));
     });
@@ -157,6 +212,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
+      typingTimers.forEach(clearTimeout);
+      typingTimers.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reconnect only when the token changes
   }, [token]);
@@ -243,6 +300,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [token]
   );
 
+  const watchAuction = useCallback((auctionId: string, onExtended: (event: AuctionExtendedEvent) => void) => {
+    const watchers = auctionWatchersRef.current;
+    let listeners = watchers.get(auctionId);
+    if (!listeners) {
+      listeners = new Set();
+      watchers.set(auctionId, listeners);
+      if (socketRef.current?.connected) socketRef.current.emit('auction:watch', auctionId);
+    }
+    listeners.add(onExtended);
+    return () => {
+      const current = watchers.get(auctionId);
+      current?.delete(onExtended);
+      if (current && current.size === 0) {
+        watchers.delete(auctionId);
+        socketRef.current?.emit('auction:unwatch', auctionId);
+      }
+    };
+  }, []);
+
   const removeConversationLocally = useCallback((conversationId: string) => {
     setConversations((prev) => prev.filter((c) => c.conversation_id !== conversationId));
   }, []);
@@ -257,8 +333,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       totalUnread: visibleConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
       currentUserId,
       refreshConversations,
-      isOnline: (userId: string) => onlineUsers.has(userId),
-      isTyping: (userId: string) => typingUsers.has(userId),
       setActiveConversation,
       subscribe,
       sendMessage,
@@ -267,14 +341,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       unsendMessage,
       deleteConversation,
       removeConversationLocally,
+      watchAuction,
     }),
     [
       visibleConversations,
       isLoadingConversations,
       currentUserId,
       refreshConversations,
-      onlineUsers,
-      typingUsers,
       setActiveConversation,
       subscribe,
       sendMessage,
@@ -283,16 +356,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       unsendMessage,
       deleteConversation,
       removeConversationLocally,
+      watchAuction,
     ]
   );
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  const presence = useMemo<ChatPresenceValue>(
+    () => ({
+      isOnline: (userId: string) => onlineUsers.has(userId),
+      isTyping: (userId: string) => typingUsers.has(userId),
+    }),
+    [onlineUsers, typingUsers]
+  );
+
+  return (
+    <ChatContext.Provider value={value}>
+      <ChatPresenceContext.Provider value={presence}>{children}</ChatPresenceContext.Provider>
+    </ChatContext.Provider>
+  );
 }
 
 export function useChat() {
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error('useChat must be used within a ChatProvider');
+  }
+  return context;
+}
+
+/** Online dot + "typing…" for chat rows and the thread header. */
+export function useChatPresence() {
+  const context = useContext(ChatPresenceContext);
+  if (!context) {
+    throw new Error('useChatPresence must be used within a ChatProvider');
   }
   return context;
 }

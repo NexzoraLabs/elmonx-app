@@ -1,6 +1,7 @@
 import { escapeSearch } from '@/services/catalog-filters';
 
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import i18n from '@/i18n';
 
 export type Brand = {
@@ -21,10 +22,10 @@ type BrandsListResponse = {
 export async function fetchBrands(search = ''): Promise<Brand[]> {
   const params = new URLSearchParams({ get_all_records: 'True' });
   if (search.trim()) params.append('filter', escapeSearch(search));
-  const response = await fetch(`${API_BASE_URL}/brands/list?${params.toString()}`);
+  const response = await apiFetch(`${API_BASE_URL}/brands/list?${params.toString()}`);
   if (!response.ok) {
     throw new Error(i18n.t('Failed to load artists ({{status}})', { status: response.status }));
   }
-  const json: BrandsListResponse = await response.json();
+  const json = await readJson<BrandsListResponse>(response);
   return json.data;
 }

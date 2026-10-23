@@ -164,7 +164,7 @@ function CommentsContent({
                   <Text style={styles.commentText}>{item.comment}</Text>
                 </View>
                 {own ? (
-                  <Pressable hitSlop={10} onPress={() => handleDelete(item)}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('Delete comment')} hitSlop={10} onPress={() => handleDelete(item)}>
                     <Ionicons name="trash-outline" size={16} color={AppColors.textSecondary} />
                   </Pressable>
                 ) : null}

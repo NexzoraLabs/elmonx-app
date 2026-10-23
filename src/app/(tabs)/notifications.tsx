@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +23,8 @@ import type { AppNotification } from '@/services/notifications-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
 import { Appear } from '@/components/motion';
+import { appendUnique } from '@/services/http';
+import { markNotificationsSeen } from '@/services/unread-notifications';
 
 const ITEMS_PER_PAGE = 10;
 // Website fallback for notifications without an NFT/drop image: black ElmonX logo on a white tile
@@ -75,30 +78,50 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A failed "load more" keeps the loaded list and shows a retry row instead of the error screen.
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadingMoreRef = useRef(false);
   const [selected, setSelected] = useState<AppNotification | null>(null);
   const [now] = useState(() => Date.now());
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
-  const load = useCallback(async (p: number, append = false) => {
+  const load = useCallback(async (p: number, mode: 'initial' | 'append' | 'refresh' = 'initial') => {
     if (!token) return;
-    if (!append) setLoading(true);
-    else setLoadingMore(true);
-    setError(null);
+    const append = mode === 'append';
+    if (append) {
+      if (loadingMoreRef.current) return;
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+      setLoadMoreFailed(false);
+    } else if (mode === 'initial') {
+      setLoading(true);
+    }
+    if (!append) setError(null);
     try {
       const res = await notifApi.getNotifications(token, p, ITEMS_PER_PAGE);
-      // Mark all as seen locally (backend marks them on fetch)
+      // Mark all as seen locally (backend marks them on fetch) — the header badge too.
       const seen = res.items.map((n) => ({ ...n, is_seen: true }));
-      setItems((prev) => (append ? [...prev, ...seen] : seen));
+      markNotificationsSeen();
+      setItems((prev) => appendUnique(append ? prev : [], seen, (n) => n._id));
       setTotal(res.total);
       setPage(p);
     } catch (e) {
-      setError(e instanceof Error ? e.message : i18n.t('Could not load notifications.'));
+      if (append) setLoadMoreFailed(true);
+      else setError(e instanceof Error ? e.message : i18n.t('Could not load notifications.'));
     } finally {
+      loadingMoreRef.current = false;
       setLoading(false);
       setLoadingMore(false);
     }
   }, [token]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await load(1, 'refresh');
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
@@ -111,6 +134,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t('Go back')}
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
@@ -142,8 +166,19 @@ export default function NotificationsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           onEndReachedThreshold={0.4}
-          onEndReached={() => { if (!loadingMore && page < totalPages) load(page + 1, true); }}
-          ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={AppColors.link} /> : null}
+          onEndReached={() => {
+            if (!loadMoreFailed && page < totalPages) load(page + 1, 'append');
+          }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={AppColors.textSecondary} />}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={styles.footerLoader} color={AppColors.link} />
+            ) : loadMoreFailed ? (
+              <Pressable accessibilityRole="button" style={styles.footerRetry} onPress={() => load(page + 1, 'append')}>
+                <Text style={styles.footerRetryText}>{t('Couldn\'t load more. Tap to retry.')}</Text>
+              </Pressable>
+            ) : null
+          }
           renderItem={({ item, index }) => {
             const bucket = dayBucket(item.created_at, now);
             const prev = index > 0 ? items[index - 1] : null;
@@ -217,7 +252,7 @@ function NotifDetailModal({
           {/* Title bar */}
           <View style={styles.dialogHeader}>
             <Text style={styles.dialogTitle} numberOfLines={2}>{notification.title}</Text>
-            <Pressable hitSlop={8} onPress={onClose}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} hitSlop={8} onPress={onClose}>
               <Ionicons name="close" size={22} color={AppColors.textSecondary} />
             </Pressable>
           </View>
@@ -359,6 +394,18 @@ const useStyles = makeStyles((AppColors) => ({
     paddingTop: 8,
     paddingBottom: 32,
     flexGrow: 1,
+  },
+  footerLoader: {
+    paddingVertical: 16,
+  },
+  footerRetry: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  footerRetryText: {
+    color: AppColors.link,
+    fontSize: 13,
+    fontWeight: '600',
   },
   groupLabel: {
     color: AppColors.textSecondary,

@@ -1,6 +1,7 @@
 // Giphy REST API v1 — mirrors the website's `src/services/giphy.ts` so both clients pick the same
 // renditions and apply the same rating rules. https://developers.giphy.com/docs/api/endpoint
 import { GIPHY_API_KEY, GIPHY_CHANNEL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 
 const GIPHY_BASE = 'https://api.giphy.com/v1/gifs';
 // Giphy's content rating. Applied to every open search; the @elmonx channel is our own content.
@@ -66,9 +67,9 @@ async function fetchGifs(
     ...(applyRating ? { rating: RATING } : {}),
   });
   try {
-    const res = await fetch(`${GIPHY_BASE}/${endpoint}?${query.toString()}`);
+    const res = await apiFetch(`${GIPHY_BASE}/${endpoint}?${query.toString()}`);
     if (!res.ok) return [];
-    const body = (await res.json()) as { data?: GiphyGifRaw[] };
+    const body = await readJson<{ data?: GiphyGifRaw[] }>(res);
     return Array.isArray(body.data) ? body.data.map(toGif).filter((gif) => gif.url) : [];
   } catch {
     return [];

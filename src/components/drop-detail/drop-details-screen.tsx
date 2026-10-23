@@ -52,6 +52,12 @@ export function DropDetailsScreen({ mode, id }: Props) {
     load
       .then((list) => {
         if (!active) return;
+        // Website: a single auction drop lives on its auction page — never show a Buy flow for it.
+        const only = list.length === 1 ? list[0] : null;
+        if (mode === 'drop' && only?.sale_mode === 'Auction' && only.auction_id) {
+          router.replace({ pathname: '/auction/[id]', params: { id: only.auction_id } });
+          return;
+        }
         setDrops(list);
         setCommentCounts(Object.fromEntries(list.map((d) => [d._id, d.total_comments ?? 0])));
       })

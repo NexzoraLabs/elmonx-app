@@ -77,7 +77,7 @@ export function BlindBoxItems({ drop }: { drop: Drop }) {
 
                 <View style={styles.oddsRow}>
                   <Text style={styles.meta}>{oddsText(drop, item)}</Text>
-                  <Text style={styles.meta}>{itemRemaining}{' '}{t('left')}</Text>
+                  <Text style={styles.meta}>{t('{{n}} left', { n: itemRemaining })}</Text>
                 </View>
 
                 <View style={styles.footerRow}>

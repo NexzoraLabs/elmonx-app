@@ -14,7 +14,7 @@ import { PaginatedGridPage } from '@/components/collections/paginated-grid-page'
 import { CategoryTabs } from '@/components/home/category-tabs';
 import { HomeHeader } from '@/components/home/home-header';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import { COLLECTIONS_CATEGORY_TABS } from '@/data/collections-mock';
+import { COLLECTIONS_CATEGORY_TABS } from '@/data/collections';
 import {
   DEFAULT_CATALOG_FILTERS,
   fetchFilterBrands,
@@ -212,7 +212,7 @@ export default function CollectionsScreen() {
             style={styles.searchInput}
           />
           {searchText ? (
-            <Pressable hitSlop={8} onPress={() => setSearchText('')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('Clear search')} hitSlop={8} onPress={() => setSearchText('')}>
               <Ionicons name="close-circle" size={18} color={AppColors.textSecondary} />
             </Pressable>
           ) : null}

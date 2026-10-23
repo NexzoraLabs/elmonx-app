@@ -1,25 +1,16 @@
 import { API_BASE_URL } from '@/config/env';
+import { ApiError, getJson as fetchJson } from '@/services/http';
 import i18n from '@/i18n';
 
-class CollectiblesApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CollectiblesApiError';
-  }
-}
-
-async function getJson<T>(path: string, token: string, params: Record<string, string>): Promise<T> {
+function getJson<T>(path: string, token: string, params: Record<string, string>): Promise<T> {
   const query = new URLSearchParams(params).toString();
-  const response = await fetch(`${API_BASE_URL}${path}?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return (await response.json()) as T;
+  return fetchJson<T>(`${API_BASE_URL}${path}?${query}`, token);
 }
 
 function assertOk(body: { status?: number | boolean; success?: boolean; message?: string }) {
   // HTTP 200 comes back even for logical failures, so check the body.
   if (body.success === false || (typeof body.status === 'number' && body.status >= 400)) {
-    throw new CollectiblesApiError(body.message || i18n.t('Something went wrong.'));
+    throw new ApiError(body.message || i18n.t('Something went wrong.'));
   }
 }
 

@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { WEB_URL } from '@/config/env';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import type { Drop } from '@/services/drops-api';
@@ -136,7 +135,13 @@ function Checkout({ drop, remaining, onClose, onPurchased }: Props & { drop: Dro
         t('To proceed with your purchase, please verify your UK identity.'),
         [
           { text: t('Not now'), style: 'cancel' },
-          { text: t('Go to Verification'), onPress: () => void WebBrowser.openBrowserAsync(`${WEB_URL}/account/uk-verification`) },
+          {
+            text: t('Go to Verification'),
+            onPress: () => {
+              onClose();
+              router.push('/uk-verification');
+            },
+          },
         ],
       );
       return;

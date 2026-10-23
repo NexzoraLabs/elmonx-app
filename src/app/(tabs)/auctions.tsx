@@ -16,13 +16,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
   fetchAuctions,
-  formatCountdown,
   auctionImage,
   type AuctionCard,
   type AuctionList,
 } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
-import { Appear } from '@/components/motion';
+import { AuctionTimeLeft } from '@/components/auction/auction-time-left';
+import { Appear, PressableScale } from '@/components/motion';
+import { appendUnique } from '@/services/http';
 
 type AuctionTab = 'live' | 'upcoming' | 'ended';
 
@@ -34,17 +35,13 @@ const TABS: { key: AuctionTab; label: string }[] = [
 
 const LIMIT = 12;
 
-function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }) {
+function AuctionListCard({ auction }: { auction: AuctionCard }) {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   const img = auctionImage(auction.drop);
   const isLive = auction.status === 'Live';
   const isUpcoming = auction.status === 'Upcoming';
-
-  let timeLeft = '';
-  if (isLive) timeLeft = formatCountdown(new Date(auction.end_time).getTime() - now);
-  else if (isUpcoming) timeLeft = formatCountdown(new Date(auction.start_time).getTime() - now);
 
   const priceLabel = isUpcoming
     ? t('Starting bid')
@@ -57,12 +54,14 @@ function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }
   const price = auction.status === 'Ended' ? auction.clearing_price : auction.current_price;
 
   return (
-    <Pressable
+    <PressableScale
+      pressScale="card"
+      accessibilityRole="button"
       style={styles.listCard}
       onPress={() => router.push({ pathname: '/auction/[id]', params: { id: auction._id } })}>
       <View style={styles.listImageWrap}>
         {img ? (
-          <Image source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image cachePolicy="memory-disk" source={{ uri: img }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: AppColors.border }]} />
         )}
@@ -75,22 +74,26 @@ function AuctionListCard({ auction, now }: { auction: AuctionCard; now: number }
       </View>
       <View style={styles.listInfo}>
         <Text style={styles.listTitle} numberOfLines={2}>{auction.drop?.title ?? '—'}</Text>
-        {timeLeft ? (
-          <Text style={styles.listTime}>{isLive ? t('Ends in ') : t('Starts in ')}{timeLeft}</Text>
-        ) : null}
+        <AuctionTimeLeft auction={auction} variant="label" style={styles.listTime} />
         <View style={styles.listPriceRow}>
           <Text style={styles.listPriceLabel}>{priceLabel}</Text>
           {price != null ? (
-            <Text style={styles.listPrice}>{price.toLocaleString()}{' '}{t('X')}</Text>
+            <Text style={styles.listPrice}>{t('{{amount}} X', { amount: price.toLocaleString() })}</Text>
           ) : null}
         </View>
         <Text style={styles.listEditions}>
           {auction.editions === 1 ? t('1 of 1') : t('{{n}} editions', { n: auction.editions })}
         </Text>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
+
+const EMPTY_LABEL: Record<AuctionTab, string> = {
+  live: 'No live auctions',
+  upcoming: 'No upcoming auctions',
+  ended: 'No past auctions',
+};
 
 export default function AuctionsScreen() {
   const { t } = useTranslation();
@@ -102,19 +105,16 @@ export default function AuctionsScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [clockNow, setClockNow] = useState(() => Date.now());
+  // When the next auction in this list starts or ends (backend next_change_at): re-read the tab then,
+  // so a Live auction moves to Past without the user pulling to refresh.
+  const [nextChangeAt, setNextChangeAt] = useState<number | null>(null);
 
   const pageRef = useRef(1);
-  const nextChangeAt = useRef<number | null>(null);
   const tabRef = useRef<AuctionTab>('live');
-
-  useEffect(() => {
-    const id = setInterval(() => setClockNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const loadingMoreRef = useRef(false);
 
   function applyTiming(data: AuctionList) {
-    nextChangeAt.current = data.next_change_at ? new Date(data.next_change_at).getTime() : null;
+    setNextChangeAt(data.next_change_at ? new Date(data.next_change_at).getTime() : null);
   }
 
   async function fetchPage(tab: AuctionTab, page: number, append: boolean) {
@@ -125,7 +125,7 @@ export default function AuctionsScreen() {
       const res = await fetchAuctions({ status: tab, page, limit: LIMIT });
       if (tab !== tabRef.current) return;
       if (res.status !== 200) { setError(true); return; }
-      setAuctions((prev) => append ? [...prev, ...res.data.items] : res.data.items);
+      setAuctions((prev) => appendUnique(append ? prev : [], res.data.items, (a) => a._id));
       setTotal(res.data.total);
       applyTiming(res.data);
     } catch {
@@ -144,9 +144,12 @@ export default function AuctionsScreen() {
   }
 
   function loadMore() {
-    if (auctions.length >= total || loadingMore) return;
+    if (auctions.length >= total || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     pageRef.current += 1;
-    fetchPage(tabRef.current, pageRef.current, true);
+    fetchPage(tabRef.current, pageRef.current, true).finally(() => {
+      loadingMoreRef.current = false;
+    });
   }
 
   function selectTab(tab: AuctionTab) {
@@ -159,10 +162,19 @@ export default function AuctionsScreen() {
     load('live'); // eslint-disable-line react-hooks/set-state-in-effect
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (nextChangeAt === null) return;
+    const wait = nextChangeAt - Date.now() + 1000;
+    if (wait > 60 * 60 * 1000) return;
+    const timer = setTimeout(() => fetchPage(tabRef.current, 1, false), Math.max(wait, 0));
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchPage reads the current tab from a ref
+  }, [nextChangeAt]);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable hitSlop={8} onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Go back')} hitSlop={8} onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={AppColors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('Auctions')}</Text>
@@ -190,7 +202,7 @@ export default function AuctionsScreen() {
         </View>
       ) : auctions.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>{t('No')}{' '}{activeTab}{' '}{t('auctions')}</Text>
+          <Text style={styles.emptyText}>{t(EMPTY_LABEL[activeTab])}</Text>
         </View>
       ) : (
         <FlatList
@@ -199,7 +211,7 @@ export default function AuctionsScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item, index }) => (
             <Appear index={index}>
-              <AuctionListCard auction={item} now={clockNow} />
+              <AuctionListCard auction={item} />
             </Appear>
           )}
           onEndReached={loadMore}

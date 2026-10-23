@@ -17,6 +17,7 @@ import * as feedApi from '@/services/feed-api';
 import { onFeedChanged } from '@/services/feed-events';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { appendUnique } from '@/services/http';
 
 const SEGMENTS = ['For you', 'Following'] as const;
 type Segment = (typeof SEGMENTS)[number];
@@ -52,11 +53,7 @@ export default function FeedScreen() {
               : [];
         if (requestId !== requestRef.current) return;
         const batch = rows.map(feedRowToItem);
-        setItems((prev) => {
-          if (nextPage === 1) return batch;
-          const seen = new Set(prev.map((item) => item.key));
-          return [...prev, ...batch.filter((item) => !seen.has(item.key))];
-        });
+        setItems((prev) => appendUnique(nextPage === 1 ? [] : prev, batch, (item) => item.key));
         setPage(nextPage);
         setHasMore(rows.length === feedApi.FEED_PAGE_SIZE);
         setMessage(null);

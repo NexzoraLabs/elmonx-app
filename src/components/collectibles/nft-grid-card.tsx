@@ -27,7 +27,7 @@ export function NftGridCard({ width, name, image, fields }: Props) {
       {/* Image area — portrait ratio matching 660×870 NFT images */}
       <View style={styles.imageOuter}>
         {image ? (
-          <Image
+          <Image cachePolicy="memory-disk"
             source={{ uri: image }}
             style={styles.artInset}
             contentFit="cover"

@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SuggestedUsersStrip } from '@/components/feed/suggested-users-strip';
@@ -13,6 +13,9 @@ import { FeaturedCarousel } from '@/components/home/featured-carousel';
 import { FeaturedDropCard } from '@/components/home/featured-drop-card';
 import { HomeHeader } from '@/components/home/home-header';
 import { NewsCard } from '@/components/home/news-card';
+import { PartnersStrip } from '@/components/home/partners-strip';
+import { WhoWeAreCard } from '@/components/home/who-we-are-card';
+import { SHARE_URL } from '@/config/env';
 import { SectionHeader } from '@/components/home/section-header';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import {
@@ -28,7 +31,7 @@ import {
   type NewsItem,
   type StoreItems,
 } from '@/services/home-api';
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 import { useTranslation } from 'react-i18next';
 
 export default function HomeScreen() {
@@ -44,28 +47,21 @@ export default function HomeScreen() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [auctions, setAuctions] = useState<AuctionCard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clockNow, setClockNow] = useState(() => Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+  // The store call is what fills Home; when it fails there is nothing to show but a retry.
+  const [storeFailed, setStoreFailed] = useState(false);
 
-  const nextChangeAt = useRef<number | null>(null);
-
-  useEffect(() => {
-    const id = setInterval(() => setClockNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
+  const load = useCallback(async (isCancelled: () => boolean = () => false) => {
+    try {
         const [store, newsData, auctionRes] = await Promise.allSettled([
           fetchStoreItems(),
           fetchNews(),
           fetchAuctions({ limit: 12 }),
         ]);
 
-        if (cancelled) return;
+        if (isCancelled()) return;
 
+        setStoreFailed(store.status === 'rejected');
         if (store.status === 'fulfilled') {
           const s: StoreItems = store.value;
           setBanners(s.banners);
@@ -82,24 +78,44 @@ export default function HomeScreen() {
 
         if (auctionRes.status === 'fulfilled' && auctionRes.value.status === 200) {
           setAuctions(auctionRes.value.data.items);
-          nextChangeAt.current = auctionRes.value.data.next_change_at
-            ? new Date(auctionRes.value.data.next_change_at).getTime()
-            : null;
         }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    } finally {
+      if (!isCancelled()) setLoading(false);
     }
-
-    load();
-    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  const retry = () => {
+    setLoading(true);
+    load();
+  };
+
+  // Website "View all" for the drop rows → Collections → Collectibles. `t` makes a repeat tap
+  // re-select Collectibles even if the user swiped away since.
+  const openCollectibles = () =>
+    router.navigate({ pathname: '/collections', params: { tab: 'Collectibles', t: String(Date.now()) } });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* Header stays pinned; only the content below scrolls (same as the other tabs). */}
       <HomeHeader />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={AppColors.textSecondary} />}>
 
         {promoTitle ? (
           <View style={styles.promoRow}>
@@ -110,6 +126,13 @@ export default function HomeScreen() {
         {loading ? (
           <View style={styles.loadingRow}>
             <ActivityIndicator color={AppColors.textSecondary} />
+          </View>
+        ) : storeFailed && banners.length === 0 && featured.length === 0 ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{t("Couldn't load the latest drops.")}</Text>
+            <Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}>
+              <Text style={styles.retryText}>{t('Try Again')}</Text>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -127,7 +150,7 @@ export default function HomeScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.horizontalList}>
                   {auctions.map((a) => (
-                    <AuctionCardHome key={a._id} auction={a} now={clockNow} />
+                    <AuctionCardHome key={a._id} auction={a} />
                   ))}
                 </ScrollView>
               </View>
@@ -135,7 +158,8 @@ export default function HomeScreen() {
 
             {upcoming.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader title={t('Upcoming Drops')} onPressSeeAll={() => {}} />
+                {/* Website shows no "View all" for upcoming drops. */}
+                <SectionHeader title={t('Upcoming Drops')} />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -149,13 +173,7 @@ export default function HomeScreen() {
 
             {featured.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader
-                  title={t('Featured Drops')}
-                  // `t` makes a repeat tap re-select Collectibles even if the user swiped away since.
-                  onPressSeeAll={() =>
-                    router.navigate({ pathname: '/collections', params: { tab: 'Collectibles', t: String(Date.now()) } })
-                  }
-                />
+                <SectionHeader title={t('Featured Drops')} onPressSeeAll={openCollectibles} />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -171,7 +189,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionHeader
                   title={t('ElmonX 101')}
-                  onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/articles')}
+                  onPressSeeAll={() => WebBrowser.openBrowserAsync(`${SHARE_URL}/articles`)}
                 />
                 <ScrollView
                   horizontal
@@ -186,7 +204,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionHeader
                   title={t('ElmonX 101')}
-                  onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/articles')}
+                  onPressSeeAll={() => WebBrowser.openBrowserAsync(`${SHARE_URL}/articles`)}
                 />
               </View>
             )}
@@ -195,7 +213,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionHeader
                   title={t('News')}
-                  onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/news')}
+                  onPressSeeAll={() => WebBrowser.openBrowserAsync(`${SHARE_URL}/news`)}
                 />
                 <ScrollView
                   horizontal
@@ -210,14 +228,14 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <SectionHeader
                   title={t('News')}
-                  onPressSeeAll={() => WebBrowser.openBrowserAsync('https://elmonx.com/news')}
+                  onPressSeeAll={() => WebBrowser.openBrowserAsync(`${SHARE_URL}/news`)}
                 />
               </View>
             )}
 
             {collectibles.length > 0 ? (
               <View style={styles.section}>
-                <SectionHeader title={t('Collectibles')} onPressSeeAll={() => {}} />
+                <SectionHeader title={t('Collectibles')} onPressSeeAll={openCollectibles} />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -230,6 +248,14 @@ export default function HomeScreen() {
             ) : null}
 
             <SuggestedUsersStrip variant="home" />
+
+            {/* Website order after Suggested Collectors: Who We Are, then Partnerships. */}
+            <View style={styles.section}>
+              <WhoWeAreCard />
+            </View>
+            <View style={styles.section}>
+              <PartnersStrip />
+            </View>
           </>
         )}
       </ScrollView>
@@ -248,6 +274,28 @@ const useStyles = makeStyles((AppColors) => ({
   loadingRow: {
     paddingVertical: 40,
     alignItems: 'center',
+  },
+  errorBox: {
+    paddingVertical: 48,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorText: {
+    color: AppColors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: AppColors.textPrimary,
+  },
+  retryText: {
+    color: AppColors.background,
+    fontSize: 13,
+    fontWeight: '700',
   },
   promoRow: {
     paddingHorizontal: 20,

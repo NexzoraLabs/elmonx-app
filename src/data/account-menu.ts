@@ -52,3 +52,6 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     ],
   },
 ];
+
+/** Added to ACCOUNT for UK residents only (user/check_user_uk_status), like the website's menu. */
+export const UK_VERIFICATION_ROW: AccountRow = { key: 'uk-verification', label: 'UK Verification', icon: 'shield-checkmark-outline' };

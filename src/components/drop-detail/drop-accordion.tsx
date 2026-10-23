@@ -11,8 +11,10 @@ import { BURNED_EDITIONS } from '@/data/burned-editions';
 import { isSpecialDrop, type Drop } from '@/services/drops-api';
 import { useTranslation } from 'react-i18next';
 import { appLocale } from '@/i18n';
+import { SHARE_URL } from '@/config/env';
+import { rich, slots } from '@/i18n/rich';
 
-const XP_ARTICLE_URL = 'https://elmonx.com/articles/69cffe439d809e19546d7bc7';
+const XP_ARTICLE_URL = `${SHARE_URL}/articles/69cffe439d809e19546d7bc7`;
 
 function isNA(value?: string | null): boolean {
   return !value || value.toLowerCase().includes('n/a');
@@ -53,6 +55,8 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
   const contract = drop.contract_address;
   const hideRarity = isSpecialDrop(drop._id);
   const burnedEditions = BURNED_EDITIONS[drop._id] ?? [];
+  // Total after the burn: previous total minus the burned editions (website postBurnTotal).
+  const postBurnTotal = Math.max(0, (drop.total_editions || 0) - burnedEditions.length);
   const editionsBreakdown = drop.editions_breakdown ?? [];
 
   return (
@@ -62,8 +66,26 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
       </Section>
 
       <Section title={t('Editions')} open={open === 'editions'} onToggle={() => toggle('editions')}>
-        <Row label={t('Total Editions')} value={String(drop.total_editions || 0)} />
-        <Row label={t('Remaining Editions')} value={String(remaining)} />
+        {burnedEditions.length > 0 ? (
+          <>
+            {/* Drop with burned editions: previous total, remaining, burned, post-burn total, then the list. */}
+            <Row label={t('Previous Total Editions')} value={String(drop.total_editions || 0)} />
+            <Row label={t('Remaining Editions')} value={String(remaining)} />
+            <Row label={t('Burned Editions')} value={String(burnedEditions.length)} />
+            <Row label={t('Post Total Editions')} value={String(postBurnTotal)} />
+            <View style={styles.burnedList}>
+              <Text style={styles.text}>{t('These editions have been permanently burned and are no longer in circulation.')}</Text>
+              {burnedEditions.map((edition) => (
+                <Row key={edition.tokenId} label={edition.name} value={`#${edition.tokenId}`} />
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            <Row label={t('Total Editions')} value={String(drop.total_editions || 0)} />
+            <Row label={t('Remaining Editions')} value={String(remaining)} />
+          </>
+        )}
         {blindBoxItems.length > 0
           ? blindBoxItems.map((item) => {
               const itemRemaining = (item.total_editions || 0) - (item.consumed_editions || 0);
@@ -169,11 +191,16 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
       {drop.is_physical ? (
         <Section title={t('Physical Print')} open={open === 'physical'} onToggle={() => toggle('physical')}>
           <Text style={styles.text}>
-            {t('This drop includes a physical print. To receive it, you must have a')}{' '}
-            <Text style={styles.link} onPress={() => router.push('/shipping-address')}>
-              {t('shipping address')}
-            </Text>{' '}
-            {t('saved on your account before purchasing.')}
+            {rich(
+              t('This drop includes a physical print. To receive it, you must have a {{address}} saved on your account before purchasing.', slots('address')),
+              {
+                address: (
+                  <Text style={styles.link} accessibilityRole="link" onPress={() => router.push('/shipping-address')}>
+                    {t('shipping address')}
+                  </Text>
+                ),
+              }
+            )}
           </Text>
         </Section>
       ) : null}
@@ -194,19 +221,6 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
           <Text style={styles.text}>
             {t('When you purchase from a Blind Box, you will receive a RANDOM collectible from this series, and you won\'t know which collectible you get until after payment.')}
           </Text>
-        </Section>
-      ) : null}
-
-      {burnedEditions.length > 0 ? (
-        <Section
-          title={t('Burned Editions')}
-          badge={burnedEditions.length}
-          open={open === 'burned'}
-          onToggle={() => toggle('burned')}>
-          <Text style={styles.text}>{t('These editions have been permanently burned and are no longer in circulation.')}</Text>
-          {burnedEditions.map((edition) => (
-            <Row key={edition.tokenId} label={edition.name} value={`#${edition.tokenId}`} />
-          ))}
         </Section>
       ) : null}
 
@@ -233,14 +247,11 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
 
 function Section({
   title,
-  badge,
   open,
   onToggle,
   children,
 }: {
   title: string;
-  /** Small count pill next to the title (Burned Editions). */
-  badge?: number;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -250,14 +261,7 @@ function Section({
   return (
     <View style={styles.section}>
       <Pressable style={styles.header} onPress={onToggle}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{title}</Text>
-          {badge ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{badge}</Text>
-            </View>
-          ) : null}
-        </View>
+        <Text style={styles.title}>{title}</Text>
         <Ionicons name={open ? 'remove' : 'add'} size={20} color={AppColors.textPrimary} />
       </Pressable>
       {open ? <View style={styles.body}>{children}</View> : null}
@@ -311,28 +315,17 @@ const useStyles = makeStyles((AppColors) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   title: {
     color: AppColors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
-  badge: {
-    minWidth: 22,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 11,
-    backgroundColor: AppColors.subtleFill,
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: AppColors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
+  // Burned list under the totals, separated by a line.
+  burnedList: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: AppColors.border,
   },
   licenseSheet: {
     gap: 8,

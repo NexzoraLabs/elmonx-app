@@ -5,6 +5,7 @@ import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { HomeBlog } from '@/services/home-api';
 import { appLocale } from '@/i18n';
+import { SHARE_URL } from '@/config/env';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Show 1.2 cards: full card + peek of next
@@ -25,10 +26,10 @@ export function BlogCard({ blog }: { blog: HomeBlog }) {
   return (
     <Pressable
       style={styles.card}
-      onPress={() => WebBrowser.openBrowserAsync(`https://elmonx.com/articles/${blog.slug || blog.id}`)}>
+      onPress={() => WebBrowser.openBrowserAsync(`${SHARE_URL}/articles/${blog.slug || blog.id}`)}>
       <View style={styles.imageWrap}>
         {blog.image ? (
-          <Image source={{ uri: blog.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image cachePolicy="memory-disk" source={{ uri: blog.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: AppColors.border }]} />
         )}

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LevelRankCard } from '@/components/rewards/level-rank-card';
@@ -10,9 +10,13 @@ import { useAuth } from '@/context/auth-context';
 import * as rewardsApi from '@/services/rewards-api';
 import type { PointsTransaction, ProfileLevel, ProfileTier } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
-import i18n from '@/i18n';
+import i18n, { appLocale } from '@/i18n';
+import { appendUnique } from '@/services/http';
 
 const ITEMS_PER_PAGE = 10;
+
+// Points rows carry no id; these fields together identify one.
+const transactionKey = (tx: PointsTransaction) => `${tx.createdAt}|${tx.type}|${tx.tx_type}|${tx.amount}`;
 
 function formatTitle(type: string): string {
   if (!type) return i18n.t('Transaction');
@@ -52,7 +56,7 @@ export default function RewardsScreen() {
         setTotalEarned(data.total_earned);
         setTotalEarnedCount(data.total_earned_count);
         setNetBalance(data.net_balance);
-        setTransactions((prev) => (append ? [...prev, ...(data.transactions || [])] : data.transactions || []));
+        setTransactions((prev) => appendUnique(append ? prev : [], data.transactions || [], transactionKey));
         setTotalPages(data.pagination?.total_pages || 1);
         setCurrentPage(page);
       } catch {
@@ -117,90 +121,102 @@ export default function RewardsScreen() {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.subtitle}>{t('View all your app rewards transactions and activity')}</Text>
+      {/* FlatList, not ScrollView + map: the history grows with every "Load more". */}
+      <FlatList
+        data={isLoading ? [] : transactions}
+        keyExtractor={transactionKey}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.subtitle}>{t('View all your app rewards transactions and activity')}</Text>
 
-        <View style={styles.levelCardWrap}>
-          <LevelRankCard loading={isLoadingLevel} level={level} tier={tier} />
-        </View>
-
-        <View style={styles.statsRow}>
-          <StatBlock
-            title={t('Total Earned')}
-            value={totalEarned}
-            subtext={t('From {{n}} activities', { n: totalEarnedCount })}
-            icon="trending-up"
-            tone="up"
-            loading={isLoading}
-          />
-          <StatBlock
-            title={t('Net Balance')}
-            value={netBalance}
-            subtext={t('Current available balance')}
-            icon="calendar-outline"
-            tone="neutral"
-            loading={isLoading}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
-        <View style={styles.card}>
-          {isLoading ? (
-            <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
-          ) : transactions.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="receipt-outline" size={28} color={AppColors.textSecondary} />
-              <Text style={styles.emptyText}>{t('No transactions found')}</Text>
+            <View style={styles.levelCardWrap}>
+              <LevelRankCard loading={isLoadingLevel} level={level} tier={tier} />
             </View>
-          ) : (
-            <>
-              {transactions.map((tx, index) => {
-                const isEarned = tx.tx_type === 'credit';
-                return (
-                  <View key={`${tx.createdAt}-${index}`}>
-                    <View style={styles.txRow}>
-                      <View style={styles.txLeft}>
-                        <View style={styles.txIcon}>
-                          <Ionicons name="diamond-outline" size={16} color={AppColors.textSecondary} />
-                        </View>
-                        <View>
-                          <Text style={styles.txTitle}>{formatTitle(tx.type)}</Text>
-                          <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleString()}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.txRight}>
-                        <View style={[styles.txBadge, isEarned ? styles.txBadgeEarned : styles.txBadgeRedeemed]}>
-                          <Text style={[styles.txBadgeText, isEarned ? styles.txBadgeTextEarned : styles.txBadgeTextRedeemed]}>
-                            {isEarned ? t('earned') : t('redeemed')}
-                          </Text>
-                        </View>
-                        <Text style={[styles.txAmount, isEarned ? styles.txAmountEarned : styles.txAmountRedeemed]}>
-                          {isEarned ? '+' : '-'}
-                          {tx.amount}{' '}{t('XP')}
-                        </Text>
-                      </View>
-                    </View>
-                    {index < transactions.length - 1 ? <View style={styles.divider} /> : null}
-                  </View>
-                );
-              })}
 
-              {currentPage < totalPages ? (
-                <Pressable
-                  onPress={handleLoadMore}
-                  disabled={isLoadingMore}
-                  style={({ pressed }) => [styles.loadMoreButton, pressed && styles.pressed]}>
-                  {isLoadingMore ? (
-                    <ActivityIndicator size="small" color={AppColors.link} />
-                  ) : (
-                    <Text style={styles.loadMoreText}>{t('Load more')}</Text>
-                  )}
-                </Pressable>
-              ) : null}
-            </>
-          )}
-        </View>
-      </ScrollView>
+            <View style={styles.statsRow}>
+              <StatBlock
+                title={t('Total Earned')}
+                value={totalEarned}
+                subtext={t('From {{n}} activities', { n: totalEarnedCount })}
+                icon="trending-up"
+                tone="up"
+                loading={isLoading}
+              />
+              <StatBlock
+                title={t('Net Balance')}
+                value={netBalance}
+                subtext={t('Current available balance')}
+                icon="calendar-outline"
+                tone="neutral"
+                loading={isLoading}
+              />
+            </View>
+
+            <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
+          </>
+        }
+        ListEmptyComponent={
+          <View style={styles.card}>
+            {isLoading ? (
+              <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="receipt-outline" size={28} color={AppColors.textSecondary} />
+                <Text style={styles.emptyText}>{t('No transactions found')}</Text>
+              </View>
+            )}
+          </View>
+        }
+        renderItem={({ item: tx, index }) => {
+          const isEarned = tx.tx_type === 'credit';
+          const isFirst = index === 0;
+          const isLast = index === transactions.length - 1 && currentPage >= totalPages;
+          return (
+            <View style={[styles.cardRow, isFirst && styles.cardRowFirst, isLast && styles.cardRowLast]}>
+              <View style={styles.txRow}>
+                <View style={styles.txLeft}>
+                  <View style={styles.txIcon}>
+                    <Ionicons name="diamond-outline" size={16} color={AppColors.textSecondary} />
+                  </View>
+                  <View>
+                    <Text style={styles.txTitle}>{formatTitle(tx.type)}</Text>
+                    <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleString(appLocale('en-GB'))}</Text>
+                  </View>
+                </View>
+                <View style={styles.txRight}>
+                  <View style={[styles.txBadge, isEarned ? styles.txBadgeEarned : styles.txBadgeRedeemed]}>
+                    <Text style={[styles.txBadgeText, isEarned ? styles.txBadgeTextEarned : styles.txBadgeTextRedeemed]}>
+                      {isEarned ? t('earned') : t('redeemed')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.txAmount, isEarned ? styles.txAmountEarned : styles.txAmountRedeemed]}>
+                    {isEarned ? t('+{{n}} XP', { n: tx.amount }) : t('-{{n}} XP', { n: tx.amount })}
+                  </Text>
+                </View>
+              </View>
+              {!isLast ? <View style={styles.divider} /> : null}
+            </View>
+          );
+        }}
+        ListFooterComponent={
+          !isLoading && transactions.length > 0 && currentPage < totalPages ? (
+            <View style={[styles.cardRow, styles.cardRowLast]}>
+              <Pressable
+                onPress={handleLoadMore}
+                disabled={isLoadingMore}
+                style={({ pressed }) => [styles.loadMoreButton, pressed && styles.pressed]}>
+                {isLoadingMore ? (
+                  <ActivityIndicator size="small" color={AppColors.link} />
+                ) : (
+                  <Text style={styles.loadMoreText}>{t('Load more')}</Text>
+                )}
+              </Pressable>
+            </View>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -237,7 +253,7 @@ function StatBlock({
       {loading ? (
         <View style={statStyles.loadingValue} />
       ) : (
-        <Text style={statStyles.value}>{value}{' '}{t('XP')}</Text>
+        <Text style={statStyles.value}>{t('{{n}} XP', { n: value })}</Text>
       )}
       <Text style={statStyles.subtext}>{subtext}</Text>
     </View>
@@ -352,6 +368,19 @@ const useStyles = makeStyles((AppColors) => ({
     backgroundColor: AppColors.surface,
     borderRadius: 16,
     paddingHorizontal: 14,
+  },
+  // One history row; the first/last rows round the card's corners.
+  cardRow: {
+    backgroundColor: AppColors.surface,
+    paddingHorizontal: 14,
+  },
+  cardRowFirst: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  cardRowLast: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   loadingIndicator: {
     paddingVertical: 24,

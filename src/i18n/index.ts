@@ -104,3 +104,12 @@ export function appLocale(englishLocale = 'en-GB'): string {
 }
 
 export default i18n;
+
+/**
+ * "1 follower" / "12 followers". Keys are English strings, so plural forms are separate keys picked
+ * here (`shown` lets callers pass a compact "1.2K").
+ */
+export function followersLabel(count: number, shown: string = String(count)): string {
+  // eslint-disable-next-line import/no-named-as-default-member -- i18next's documented instance API
+  return count === 1 ? i18n.t('{{n}} follower', { n: shown }) : i18n.t('{{n}} followers', { n: shown });
+}

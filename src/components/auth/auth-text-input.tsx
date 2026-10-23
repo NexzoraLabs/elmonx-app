@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, useState } from 'react';
 import { Pressable, TextInput, type TextInputProps, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
 
@@ -13,6 +14,7 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
   { secureToggle, secureTextEntry, error, style, onFocus, onBlur, ...props },
   ref
 ) {
+  const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   const [isFocused, setIsFocused] = useState(false);
@@ -42,7 +44,11 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(function 
           {...props}
         />
         {secureToggle ? (
-          <Pressable hitSlop={12} onPress={() => setIsHidden((prev) => !prev)}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isHidden ? t('Show password') : t('Hide password')}
+            hitSlop={12}
+            onPress={() => setIsHidden((prev) => !prev)}>
             <Ionicons
               name={isHidden ? 'eye-off-outline' : 'eye-outline'}
               size={20}

@@ -4,9 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Alert } from 'react-native';
 
 import * as authApi from '@/services/auth-api';
+import { clearUserIdCache } from '@/services/current-user-id';
 import type { AuthSession, RegisterPayload, UserData } from '@/services/auth-api';
 import { setCrashReportingUser } from '@/services/crash-reporting';
+import { clearOwnedCollectiblesCache } from '@/services/owned-collectibles';
 import { configureSessionGuard } from '@/services/session-guard';
+import { resetUnreadNotifications } from '@/services/unread-notifications';
+import { appKit, queryClient } from '@/services/wallet/appkit';
 import { signInWithWebsite } from '@/services/web-auth';
 import i18n from '@/i18n';
 
@@ -41,6 +45,19 @@ async function persistSession(session: AuthSession) {
   if (session.refresh_token) {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, session.refresh_token);
   }
+}
+
+/**
+ * Everything tied to the signed-in person that outlives the auth state: the connected wallet
+ * (otherwise the next account on this phone bids / views AR / opens the Multi-Viewer with the
+ * previous person's wallet), the ownership + user-id caches and cached queries.
+ */
+function clearAccountState() {
+  appKit.disconnect().catch(() => {});
+  clearOwnedCollectiblesCache();
+  clearUserIdCache();
+  resetUnreadNotifications();
+  queryClient.clear();
 }
 
 async function clearPersistedSession() {
@@ -86,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (expiredHandledRef.current || !tokenRef.current) return;
         expiredHandledRef.current = true;
         tokenRef.current = null;
+        clearAccountState();
         clearPersistedSession().catch(() => {});
         setToken(null);
         setUser(null);
@@ -167,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
     tokenRef.current = null;
+    clearAccountState();
     await clearPersistedSession();
     setToken(null);
     setUser(null);

@@ -4,6 +4,7 @@
 // ---- Option lists (same endpoints as the website) ----
 
 import { API_BASE_URL } from '@/config/env';
+import { getJson } from '@/services/http';
 
 export const BLOCKCHAIN_OPTIONS = ['All', 'Ethereum', 'Polygon'] as const;
 export const DESTINATION_OPTIONS = ['All', 'Wallet', 'Vault'] as const;
@@ -105,13 +106,13 @@ const EXCLUDED_CATEGORY_ID = '6560e333566936cc1c70e25f';
 export type FilterOption = { _id: string; title: string };
 
 export async function fetchFilterBrands(): Promise<FilterOption[]> {
-  const response = await fetch(`${API_BASE_URL}/brands/list?is_deleted=False&get_all_records=True`);
-  const json = (await response.json()) as { data?: FilterOption[] };
+  const json = await getJson<{ data?: FilterOption[] }>(`${API_BASE_URL}/brands/list?is_deleted=False&get_all_records=True`);
   return (json.data ?? []).filter((brand) => brand.title?.trim());
 }
 
 export async function fetchFilterCategories(): Promise<FilterOption[]> {
-  const response = await fetch(`${API_BASE_URL}/categories/list?is_deleted=False&get_all_records=True`);
-  const json = (await response.json()) as { data?: FilterOption[] };
+  const json = await getJson<{ data?: FilterOption[] }>(
+    `${API_BASE_URL}/categories/list?is_deleted=False&get_all_records=True`
+  );
   return (json.data ?? []).filter((category) => category._id !== EXCLUDED_CATEGORY_ID);
 }

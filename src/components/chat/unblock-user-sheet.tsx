@@ -16,7 +16,7 @@ export function UnblockUserSheet({ visible, onClose, username, onConfirm }: Unbl
   const styles = useStyles();
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>{t('Unblock')}{' '}{username}</Text>
+      <Text style={styles.title}>{t('Unblock {{username}}', { username })}</Text>
       <Text style={styles.subtitle}>{t('Are you sure you want to unblock this user.')}</Text>
       <View style={styles.buttonRow}>
         <Pressable style={[styles.button, styles.cancelButton]} onPress={onClose}>

@@ -1,5 +1,6 @@
 import { Image, type ImageLoadEventData } from 'expo-image';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
@@ -12,18 +13,31 @@ import {
 } from 'react-native';
 
 import { makeStyles } from '@/context/theme-context';
+import { SHARE_URL } from '@/config/env';
 import type { HomeBanner } from '@/services/home-api';
+import { appRouteForWebsiteUrl } from '@/services/website-links';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDE_INNER = SCREEN_WIDTH - 40;
 // Fallback aspect ratio while image loads (roughly square-ish)
 const FALLBACK_RATIO = 1;
 
+/** Website banner.ts: collection → its page, internal → that site path (in the app when we have the
+ * screen, else the website), external → browser. */
 function handleBannerPress(banner: HomeBanner) {
-  if (banner.collectionId) {
-    const path = banner.linkType === 'drop' ? '/drop/[id]' : '/collection/[id]';
-    router.push({ pathname: path, params: { id: banner.collectionId } });
+  if (banner.linkType === 'collection' && banner.collectionId) {
+    router.push({ pathname: '/collection/[id]', params: { id: banner.collectionId } });
+    return;
   }
+  const url = banner.linkUrl?.trim();
+  if (!url) return;
+  if (banner.linkType === 'internal') {
+    const route = appRouteForWebsiteUrl(url);
+    if (route) router.push(route as Href);
+    else WebBrowser.openBrowserAsync(/^https?:/i.test(url) ? url : `${SHARE_URL}${url.startsWith('/') ? '' : '/'}${url}`);
+    return;
+  }
+  if (banner.linkType === 'external') WebBrowser.openBrowserAsync(url);
 }
 
 function BannerSlide({ banner, onPress }: { banner: HomeBanner; onPress: () => void }) {
@@ -37,7 +51,7 @@ function BannerSlide({ banner, onPress }: { banner: HomeBanner; onPress: () => v
   };
 
   return (
-    <Pressable style={styles.page} onPress={onPress}>
+    <Pressable style={styles.page} onPress={onPress} accessibilityRole="button" accessibilityLabel={banner.collectionTitle ?? undefined}>
       <View style={[styles.slide, { height: SLIDE_INNER / ratio }]}>
         {imageUrl ? (
           <Image

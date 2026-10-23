@@ -6,9 +6,11 @@ import { makeStyles, useAppColors } from '@/context/theme-context';
 import type { SuggestedUser } from '@/services/feed-api';
 import { resolveAvatar } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
+import { followersLabel } from '@/i18n';
 
 export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPress: () => void }) {
-  const { t } = useTranslation();
+  // Re-render on language change (the follower label is translated via i18n).
+  useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
   return (
@@ -23,7 +25,7 @@ export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPre
             <Ionicons name="lock-closed" size={12} color={AppColors.textSecondary} />
           ) : null}
         </View>
-        <Text style={styles.meta}>{user.followers_count ?? 0}{' '}{t('followers')}</Text>
+        <Text style={styles.meta}>{followersLabel(user.followers_count ?? 0)}</Text>
       </View>
     </Pressable>
   );

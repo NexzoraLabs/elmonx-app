@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { ExportStatementSheet } from '@/components/wallet/export-statement-sheet';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@/services/wallet-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { appendUnique } from '@/services/http';
 
 const COIN_ICON = require('../../../assets/coin_icon.webp');
 
@@ -35,6 +37,7 @@ export default function WalletScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<CaratTransaction | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const loadBalance = useCallback(async () => {
     if (!token) return;
@@ -55,7 +58,7 @@ export default function WalletScreen() {
       else setLoadingMore(true);
       try {
         const result = await getCaratHistory(token, nextPage);
-        setTransactions((prev) => (nextPage === 1 ? result.items : [...prev, ...result.items]));
+        setTransactions((prev) => appendUnique(nextPage === 1 ? [] : prev, result.items, (tx) => tx._id));
         setTotalCount(result.totalCount);
         setPage(nextPage);
       } catch {
@@ -138,7 +141,16 @@ export default function WalletScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
+      <View style={styles.historyHeader}>
+        <Text style={styles.sectionTitle}>{t('Transaction History')}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setExportOpen(true)}
+          style={({ pressed }) => [styles.exportPill, pressed && styles.dimmed]}>
+          <Ionicons name="download-outline" size={14} color={AppColors.textPrimary} />
+          <Text style={styles.exportPillText}>{t('Export')}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 
@@ -186,6 +198,7 @@ export default function WalletScreen() {
       />
 
       <TransactionDetailSheet tx={selected} onClose={() => setSelected(null)} />
+      <ExportStatementSheet visible={exportOpen} onClose={() => setExportOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -303,6 +316,27 @@ const useStyles = makeStyles((AppColors) => ({
   },
   dimmed: {
     opacity: 0.6,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  exportPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  exportPillText: {
+    color: AppColors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   content: {
     paddingHorizontal: 20,

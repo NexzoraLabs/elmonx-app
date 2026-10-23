@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { assertSuccess, getJson } from '@/services/http';
 
 export type AppNotification = {
   _id: string;
@@ -49,18 +50,18 @@ export async function getNotifications(
   page = 1,
   perPage = 10
 ): Promise<{ items: AppNotification[]; total: number }> {
-  const res = await fetch(
+  const json = await getJson<NotifListResponse>(
     `${API_BASE_URL}/notifications/user_notifications?current_page=${page}&items_per_page=${perPage}`,
-    { headers: { Authorization: `Bearer ${token}` } }
+    token
   );
-  const json: NotifListResponse = await res.json();
+  assertSuccess(json);
   return parseNotifications(json);
 }
 
 export async function getUnreadCount(token: string): Promise<number> {
-  const res = await fetch(`${API_BASE_URL}/notifications/unread_notifications`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const json = await res.json();
+  const json = await getJson<{ data?: { count?: number }; count?: number }>(
+    `${API_BASE_URL}/notifications/unread_notifications`,
+    token
+  );
   return (json?.data?.count ?? json?.count ?? 0) as number;
 }

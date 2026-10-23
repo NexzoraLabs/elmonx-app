@@ -27,11 +27,13 @@ export function useViewerAccess(): (target: Target) => Promise<ViewerAccess> {
   return async ({ dropId, blindBoxItemId, arAvailableToAll }) => {
     const userId = token ? await fetchUserId(token) : null;
     const isArAvailableToAll = arAvailableToAll === true || isArTestAccount(userId);
+    if (__DEV__) console.log('[AR access]', { userId, arAvailableToAll, isTestAccount: isArTestAccount(userId), dropId, blindBoxItemId });
     // Unity ignores `isOwned` once AR is open to all, so skip the (slow) ownership lookup then.
     if (!token || isArAvailableToAll) return { isOwned: false, isArAvailableToAll };
     try {
       const ids = ownedIds(await loadOwnedCollectibles(token, isConnected ? address : undefined));
       const isOwned = blindBoxItemId ? ids.blindBoxItemIds.has(blindBoxItemId) : !!dropId && ids.dropIds.has(dropId);
+      if (__DEV__) console.log('[AR access] owned =', isOwned);
       return { isOwned, isArAvailableToAll };
     } catch {
       // Can't tell → no AR (3D still works).

@@ -20,10 +20,11 @@ import type { ProfileLevel, ProfileTier } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
 import i18n, { appLocale } from '@/i18n';
 import { TabIndicator } from '@/components/motion';
+import { appendUnique } from '@/services/http';
+import { SHARE_URL } from '@/config/env';
 
 type Tab = 'posts' | 'reposts';
 
-const SITE_URL = 'https://elmonx.com';
 
 function formatMemberSince(iso?: string): string {
   if (!iso) return '';
@@ -84,7 +85,7 @@ export default function ProfileTabScreen() {
           batch = (await profileApi.getUserReposts(token, userId, nextPage)).map(userRepostToItem);
         }
         if (requestId !== listRequest.current) return;
-        setItems((prev) => (nextPage === 1 ? batch : [...prev, ...batch]));
+        setItems((prev) => appendUnique(nextPage === 1 ? [] : prev, batch, (item) => item.key));
         setPage(nextPage);
         setHasMore(batch.length === profileApi.POSTS_PAGE_SIZE);
       } catch (e) {
@@ -164,7 +165,7 @@ export default function ProfileTabScreen() {
 
   const handleShareProfile = () => {
     if (!header) return;
-    const url = `${SITE_URL}/profile/${header.userName}`;
+    const url = `${SHARE_URL}/profile/${header.userName}`;
     Share.share({ message: url, url });
   };
 
@@ -207,7 +208,7 @@ export default function ProfileTabScreen() {
 
         <Text style={styles.name}>{header?.userName ?? ''}</Text>
         {header?.createdAt ? (
-          <Text style={styles.memberSince}>{t('Member since')}{' '}{formatMemberSince(header.createdAt)}</Text>
+          <Text style={styles.memberSince}>{t('Member since {{date}}', { date: formatMemberSince(header.createdAt) })}</Text>
         ) : null}
 
         <View style={styles.statsRow}>
@@ -256,7 +257,12 @@ export default function ProfileTabScreen() {
           </View>
           <TabIndicator active={tab === 'posts'} style={[styles.tabIndicator, styles.tabIndicatorActive]} />
         </Pressable>
-        <Pressable style={styles.tab} onPress={() => handleSelectTab('reposts')}>
+        <Pressable
+          style={styles.tab}
+          accessibilityRole="tab"
+          accessibilityLabel={t('Reposts')}
+          accessibilityState={{ selected: tab === 'reposts' }}
+          onPress={() => handleSelectTab('reposts')}>
           <View style={styles.tabContent}>
             <Ionicons
               name="repeat-outline"

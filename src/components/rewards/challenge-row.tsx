@@ -60,7 +60,7 @@ export function ChallengeRow({ index, definition, tasks, isLoading, isClaiming, 
               loading={isClaiming}
               onPress={() => onPress(definition)}
             />
-            {showRepeatingCountdown ? <Text style={styles.countdown}>{t('Next in')}{' '}{resetCountdownLabel}</Text> : null}
+            {showRepeatingCountdown ? <Text style={styles.countdown}>{t('Next in {{time}}', { time: resetCountdownLabel })}</Text> : null}
           </View>
         )}
       </View>

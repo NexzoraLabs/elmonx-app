@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, ApiError, readJson } from '@/services/http';
 import i18n from '@/i18n';
 
 type ApiEnvelope<T> = {
@@ -10,16 +11,9 @@ type ApiEnvelope<T> = {
   result?: T;
 };
 
-class AddressApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AddressApiError';
-  }
-}
-
 function assertSuccess<T>(envelope: ApiEnvelope<T>, fallbackKeys: (keyof ApiEnvelope<T>)[] = []): T {
   if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AddressApiError(envelope.message || i18n.t('Something went wrong.'));
+    throw new ApiError(envelope.message || i18n.t('Something went wrong.'));
   }
   if (envelope.data !== undefined) return envelope.data;
   for (const key of fallbackKeys) {
@@ -30,7 +24,7 @@ function assertSuccess<T>(envelope: ApiEnvelope<T>, fallbackKeys: (keyof ApiEnve
 }
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -38,7 +32,7 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
       ...(init?.headers ?? {}),
     },
   });
-  return (await response.json()) as ApiEnvelope<T>;
+  return readJson<ApiEnvelope<T>>(response);
 }
 
 /** Matches the server's `UserShippingAddress` schema exactly — it has no home/work/other

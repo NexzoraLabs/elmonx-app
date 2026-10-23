@@ -23,6 +23,7 @@ import type { ProfileUpdatePayload } from '@/services/account-api';
 import { dialCodeOf, phoneValidationError } from '@/services/phone';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { isValidBirthDate } from '@/utils/auth-validation';
 
 // The backend only accepts these two (`config.users.gender.single_arr`); anything else is a 422.
 const GENDERS = ['Male', 'Female'];
@@ -91,8 +92,8 @@ export default function PersonalInfoScreen() {
 
   const handleSave = async () => {
     if (!token || !canSave) return;
-    if (form.dob && !/^\d{4}-\d{2}-\d{2}$/.test(form.dob)) {
-      setMessage({ type: 'error', text: t('Date of birth must be in YYYY-MM-DD format.') });
+    if (form.dob && !isValidBirthDate(form.dob)) {
+      setMessage({ type: 'error', text: t('Enter a valid date of birth (YYYY-MM-DD).') });
       return;
     }
     const phoneError = phoneValidationError(form.phone_number, form.iso_code);

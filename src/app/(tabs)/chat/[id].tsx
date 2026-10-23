@@ -16,7 +16,7 @@ import { NewConversationProfileCard } from '@/components/chat/new-conversation-p
 import { UnblockUserSheet } from '@/components/chat/unblock-user-sheet';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
-import { useChat } from '@/context/chat-context';
+import { useChat, useChatPresence } from '@/context/chat-context';
 import * as chatApi from '@/services/chat-api';
 import type { CanMessageReason, ChatMessage } from '@/services/chat-api';
 import * as feedApi from '@/services/feed-api';
@@ -48,8 +48,6 @@ export default function ConversationScreen() {
   const { token } = useAuth();
   const {
     currentUserId,
-    isOnline,
-    isTyping,
     setActiveConversation,
     subscribe,
     sendMessage,
@@ -60,6 +58,7 @@ export default function ConversationScreen() {
     removeConversationLocally,
     refreshConversations,
   } = useChat();
+  const { isOnline, isTyping } = useChatPresence();
 
   const [conversationId, setConversationId] = useState<string | null>(params.id && params.id !== 'new' ? params.id : null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -290,7 +289,7 @@ export default function ConversationScreen() {
                     <Text style={styles.typingText}>{t('typing…')}</Text>
                   </View>
                 ) : null}
-                {showSeen ? <Text style={styles.seen}>{t('Seen')}{' '}{formatSeen(lastMessage.read_at)}</Text> : null}
+                {showSeen ? <Text style={styles.seen}>{t('Seen {{time}}', { time: formatSeen(lastMessage.read_at) })}</Text> : null}
               </>
             }
             renderItem={({ item }) => (

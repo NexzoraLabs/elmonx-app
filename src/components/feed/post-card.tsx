@@ -125,7 +125,7 @@ function SingleGif({ uri }: { uri: string }) {
   const styles = useStyles();
   const [aspectRatio, setAspectRatio] = useState(1);
   return (
-    <Image
+    <Image cachePolicy="memory-disk"
       source={{ uri }}
       style={[styles.imageSingle, { aspectRatio }]}
       contentFit="contain"
@@ -143,12 +143,12 @@ function PostImages({ images }: { images?: string[] }) {
   if (!images || images.length === 0) return null;
   if (images.length === 1) {
     if (isGifUrl(images[0])) return <SingleGif uri={images[0]} />;
-    return <Image source={{ uri: images[0] }} style={styles.imageSingle} contentFit="cover" transition={150} />;
+    return <Image cachePolicy="memory-disk" source={{ uri: images[0] }} style={styles.imageSingle} contentFit="cover" transition={150} />;
   }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageRow}>
-      {images.slice(0, 4).map((uri) => (
-        <Image key={uri} source={{ uri }} style={styles.imageMulti} contentFit="cover" transition={150} />
+      {images.slice(0, 4).map((uri, index) => (
+        <Image cachePolicy="memory-disk" key={`${uri}-${index}`} source={{ uri }} style={styles.imageMulti} contentFit="cover" transition={150} />
       ))}
     </ScrollView>
   );
@@ -173,7 +173,7 @@ function AuthorRow({
         style={styles.authorTouch}
         disabled={!author}
         onPress={() => author && onPressAuthor(author)}>
-        <Image
+        <Image cachePolicy="memory-disk"
           source={{ uri: resolveAvatar(author?.profile_avatar || author?.profile_avatar_url) }}
           style={styles.avatar}
           contentFit="cover"
@@ -305,7 +305,7 @@ export function PostCard({
             ) : null}
           </Pressable>
         ) : null}
-        <Pressable style={styles.engagementItem} hitSlop={6} onPress={() => onShare(item)}>
+        <Pressable style={styles.engagementItem} accessibilityRole="button" accessibilityLabel={t('Share')} hitSlop={6} onPress={() => onShare(item)}>
           <Ionicons name="paper-plane-outline" size={17} color={AppColors.textSecondary} />
         </Pressable>
       </View>

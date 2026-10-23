@@ -10,6 +10,7 @@ import { OtpInput } from '@/components/auth/otp-input';
 import { makeStyles } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from 'react-i18next';
+import { rich, slots } from '@/i18n/rich';
 
 const CODE_LENGTH = 4;
 const RESEND_SECONDS = 24;
@@ -85,7 +86,9 @@ export default function VerifyCodeScreen() {
       }>
       <Text style={styles.title}>{t('Enter the code we sent you')}</Text>
       <Text style={styles.subtitle}>
-        {t('We sent it to')}{' '}<Text style={styles.emailText}>{email ?? t('your email')}</Text>{' '}{t('to verify')}
+        {rich(t('We sent it to {{email}} to verify', slots('email')), {
+          email: <Text style={styles.emailText}>{email ?? t('your email')}</Text>,
+        })}
       </Text>
 
       <View style={styles.otpSection}>

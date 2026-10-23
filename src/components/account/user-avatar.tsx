@@ -19,7 +19,7 @@ export function UserAvatar({ user, size }: Props) {
   const shape = { width: size, height: size, borderRadius: size / 2 };
 
   return avatarUrl ? (
-    <Image source={{ uri: avatarUrl }} style={[styles.image, shape]} contentFit="cover" />
+    <Image cachePolicy="memory-disk" source={{ uri: avatarUrl }} style={[styles.image, shape]} contentFit="cover" />
   ) : (
     <PlaceholderThumb color={AppColors.surface} icon="person-outline" style={shape} iconSize={size * 0.45} />
   );

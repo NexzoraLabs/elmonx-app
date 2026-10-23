@@ -21,13 +21,15 @@ const ROOT = path.join(__dirname, '..', 'src');
 const LOCALES = path.join(ROOT, 'i18n', 'locales');
 
 const EXTRA_CONSTANTS = {
-  'data/account-menu.ts': ['ACCOUNT_SECTIONS'],
+  'data/account-menu.ts': ['ACCOUNT_SECTIONS', 'UK_VERIFICATION_ROW'],
   'data/menu-items.ts': ['*'],
   'data/challenges.ts': ['CHALLENGES'],
   'data/social-tasks.ts': ['SOCIAL_ACTION_HINTS', 'FOLLOW_TIERS', 'FOLLOWER_TIERS'],
-  'data/collections-mock.ts': ['COLLECTIONS_CATEGORY_TABS'],
-  'app/(tabs)/collectibles.tsx': ['TABS', 'WIN_STATUS_LABEL'],
-  'app/(tabs)/auctions.tsx': ['TABS'],
+  'data/collections.ts': ['COLLECTIONS_CATEGORY_TABS'],
+  'app/(tabs)/collectibles.tsx': ['TABS'],
+  'components/collectibles/auction-wins-list.tsx': ['WIN_STATUS_LABEL'],
+  'app/(tabs)/auctions.tsx': ['TABS', 'EMPTY_LABEL'],
+  'app/(tabs)/auction/[id].tsx': ['STATUS_LABEL'],
   'app/(tabs)/(drawer)/(home-tabs)/feed.tsx': ['SEGMENTS'],
   'components/collections/auctions-tab-page.tsx': ['STATUS_FILTERS'],
   'services/catalog-filters.ts': ['BLOCKCHAIN_OPTIONS', 'DESTINATION_OPTIONS', 'EDITION_OPTIONS'],
@@ -55,7 +57,7 @@ const EXTRA_KEYS = [
 ];
 // Read the same in every language (brand names, units, numbers) — may be left out of a locale file.
 const SAME_IN_ALL = new Set(['0x...', '+10 XP', '+100 XP', '+15 XP', '+50 XP', '+500 XP', '+{{points}} XP', 'ElmonX',
-  'ElmonX 101', 'GIF', 'GIPHY', 'NFT', 'X', 'XP', 'xp', 'Polygon', 'Ethereum', 'i', '1 X-Coin = £1.00', 'Multi-Viewer', 'English']);
+  'ElmonX 101', 'GIF', 'GIPHY', '{{amount}} X', '{{n}} XP', '+{{n}} XP', '-{{n}} XP', '{{current}} / {{total}} XP', 'NFT', 'X', 'XP', 'xp', 'Polygon', 'Ethereum', 'i', '1 X-Coin = £1.00', 'Multi-Viewer', 'English']);
 const SKIP_PROPS = new Set(['key', 'icon', 'code', 'tier', 'type', 'route', 'url', 'href', 'nativeName', 'locale']);
 
 function sourceFiles(dir) {

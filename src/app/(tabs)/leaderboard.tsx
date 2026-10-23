@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
@@ -10,6 +10,7 @@ import * as rewardsApi from '@/services/rewards-api';
 import type { LeaderboardUser } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { appendUnique } from '@/services/http';
 
 const ITEMS_PER_PAGE = 10;
 const RANK_COLORS = ['#F5B400', '#B5B8C0', '#C97B3D'] as const;
@@ -36,7 +37,7 @@ export default function LeaderboardScreen() {
     else setIsLoading(true);
     try {
       const data = await rewardsApi.getLeaderboard({ current_page: page, items_per_page: ITEMS_PER_PAGE });
-      setRankings((prev) => (append ? [...prev, ...(data.rankings || [])] : data.rankings || []));
+      setRankings((prev) => appendUnique(append ? prev : [], data.rankings || [], (p) => p.user_id || p._id));
       setTotalPages(data.pagination?.total_pages || 1);
       setCurrentPage(page);
     } catch {
@@ -71,38 +72,45 @@ export default function LeaderboardScreen() {
         <View style={styles.backButton} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{t('Activity Rankings')}</Text>
-        <Text style={styles.subtitle}>{t('Top performers in the all time period')}</Text>
-
-        {isLoading ? (
-          <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} />
-        ) : (
+      {/* FlatList, not ScrollView + map: rankings grow with every "Load more". */}
+      <FlatList
+        data={isLoading ? [] : rankings}
+        keyExtractor={(player) => player.user_id || player._id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
           <>
-            <View style={styles.card}>
-              {rankings.map((player, index) => (
-                <View key={player._id || player.user_id}>
-                  <RankRow rank={index + 1} user={player} />
-                  {index < rankings.length - 1 ? <View style={styles.divider} /> : null}
-                </View>
-              ))}
-
-              {currentPage < totalPages ? (
-                <Pressable
-                  onPress={handleLoadMore}
-                  disabled={isLoadingMore}
-                  style={({ pressed }) => [styles.loadMoreButton, pressed && styles.pressed]}>
-                  {isLoadingMore ? (
-                    <ActivityIndicator size="small" color={AppColors.link} />
-                  ) : (
-                    <Text style={styles.loadMoreText}>{t('Load more')}</Text>
-                  )}
-                </Pressable>
-              ) : null}
-            </View>
+            <Text style={styles.title}>{t('Activity Rankings')}</Text>
+            <Text style={styles.subtitle}>{t('Top performers in the all time period')}</Text>
           </>
-        )}
-      </ScrollView>
+        }
+        ListEmptyComponent={isLoading ? <ActivityIndicator style={styles.loadingIndicator} color={AppColors.link} /> : null}
+        renderItem={({ item: player, index }) => {
+          const isLast = index === rankings.length - 1 && currentPage >= totalPages;
+          return (
+            <View style={[styles.cardRow, index === 0 && styles.cardRowFirst, isLast && styles.cardRowLast]}>
+              <RankRow rank={index + 1} user={player} />
+              {!isLast ? <View style={styles.divider} /> : null}
+            </View>
+          );
+        }}
+        ListFooterComponent={
+          !isLoading && rankings.length > 0 && currentPage < totalPages ? (
+            <View style={[styles.cardRow, styles.cardRowLast]}>
+              <Pressable
+                onPress={handleLoadMore}
+                disabled={isLoadingMore}
+                style={({ pressed }) => [styles.loadMoreButton, pressed && styles.pressed]}>
+                {isLoadingMore ? (
+                  <ActivityIndicator size="small" color={AppColors.link} />
+                ) : (
+                  <Text style={styles.loadMoreText}>{t('Load more')}</Text>
+                )}
+              </Pressable>
+            </View>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -142,7 +150,7 @@ function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
           </View>
         </Pressable>
       </View>
-      <Text style={styles.points}>{user.points || 0}{' '}{t('XP')}</Text>
+      <Text style={styles.points}>{t('{{n}} XP', { n: user.points || 0 })}</Text>
     </View>
   );
 }
@@ -194,10 +202,18 @@ const useStyles = makeStyles((AppColors) => ({
   loadingIndicator: {
     paddingVertical: 40,
   },
-  card: {
+  // One ranking row; the first/last rows round the card's corners.
+  cardRow: {
     backgroundColor: AppColors.surface,
-    borderRadius: 16,
     paddingHorizontal: 14,
+  },
+  cardRowFirst: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  cardRowLast: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

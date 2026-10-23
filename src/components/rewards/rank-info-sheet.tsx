@@ -82,8 +82,8 @@ export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
             <View style={styles.grid}>
               {LEVEL_XP_TABLE.map((row) => (
                 <View key={row.level} style={styles.gridCell}>
-                  <Text style={styles.cellLevel}>{t('LVL')}{' '}{row.level}</Text>
-                  <Text style={styles.cellXp}>{row.xp}{' '}{t('XP')}</Text>
+                  <Text style={styles.cellLevel}>{t('LVL {{n}}', { n: row.level })}</Text>
+                  <Text style={styles.cellXp}>{t('{{n}} XP', { n: row.xp })}</Text>
                 </View>
               ))}
             </View>
@@ -109,7 +109,7 @@ export function RankInfoSheet({ topic, currentTier, onClose }: Props) {
                       ) : null}
                     </View>
                     <Text style={styles.tierRange}>
-                      {t('Level')}{' '}{tier.minLevel}–{tier.maxLevel}
+                      {t('Level {{min}}–{{max}}', { min: tier.minLevel, max: tier.maxLevel })}
                     </Text>
                   </View>
                 );

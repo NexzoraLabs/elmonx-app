@@ -14,7 +14,7 @@ export function BlockedFooter({ username, onUnblock, onDelete }: BlockedFooterPr
   const styles = useStyles();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('You blocked')}{' '}{username}</Text>
+      <Text style={styles.title}>{t('You blocked {{username}}', { username })}</Text>
       <Text style={styles.subtitle}>{t('You can\'t message this profile unless you unblock them.')}</Text>
       <View style={styles.buttonRow}>
         <Pressable style={[styles.button, styles.unblockButton]} onPress={onUnblock}>

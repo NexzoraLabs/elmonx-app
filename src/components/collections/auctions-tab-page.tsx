@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 
 import { AuctionCardHome } from '@/components/home/auction-card';
@@ -7,6 +7,7 @@ import { type AuctionCard, fetchAuctions } from '@/services/auction-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { Appear } from '@/components/motion';
+import { appendUnique } from '@/services/http';
 
 const PAGE_SIZE = 12;
 const STATUS_FILTERS = ['All', 'Live', 'Upcoming', 'Ended'] as const;
@@ -23,15 +24,8 @@ export function AuctionsTabPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-  const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  useEffect(() => {
-    clockRef.current = setInterval(() => setNow(Date.now()), 1000);
-    return () => { if (clockRef.current) clearInterval(clockRef.current); };
-  }, []);
 
   const load = useCallback(async (p: number, st: StatusFilter, append = false) => {
     if (!append) setLoading(true);
@@ -42,7 +36,7 @@ export function AuctionsTabPage() {
       if (st !== 'All') params.status = st.toLowerCase() as 'live' | 'upcoming' | 'ended';
       const res = await fetchAuctions(params);
       const list = res.data;
-      setItems((prev) => (append ? [...prev, ...list.items] : list.items));
+      setItems((prev) => appendUnique(append ? prev : [], list.items, (a) => a._id));
       setTotal(list.total);
       setPage(p);
     } catch (e) {
@@ -101,7 +95,7 @@ export function AuctionsTabPage() {
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={AppColors.link} /> : null}
           renderItem={({ item, index }) => (
             <Appear index={index}>
-              <AuctionCardHome auction={item} now={now} />
+              <AuctionCardHome auction={item} />
             </Appear>
           )}
         />

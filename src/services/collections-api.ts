@@ -3,10 +3,11 @@ import {
   DEFAULT_CATALOG_FILTERS,
   type CatalogFilters,
 } from '@/services/catalog-filters';
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 import { formatDropDate, type PagedResult } from '@/services/drops-api';
 
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, readJson } from '@/services/http';
 import i18n from '@/i18n';
 const ITEMS_PER_PAGE = 9;
 
@@ -37,11 +38,11 @@ export async function fetchCollectionsList(
   });
   appendCatalogParams(params, 'Collections', filters, search);
 
-  const response = await fetch(`${API_BASE_URL}/collections/list?${params.toString()}`);
+  const response = await apiFetch(`${API_BASE_URL}/collections/list?${params.toString()}`);
   if (!response.ok) {
     throw new Error(i18n.t('Failed to load collections ({{status}})', { status: response.status }));
   }
-  const json: CollectionsListResponse = await response.json();
+  const json = await readJson<CollectionsListResponse>(response);
   return { items: json.data, totalRecords: json.total_records };
 }
 

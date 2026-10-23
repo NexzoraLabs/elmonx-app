@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { useState, type Dispatch, type ReactElement, type SetStateAction } from 'react';
+import { useRef, useState, type Dispatch, type ReactElement, type SetStateAction } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Share, StyleSheet } from 'react-native';
 
+import { SHARE_URL } from '@/config/env';
 import { CommentsSheet } from '@/components/feed/comments-sheet';
 import { isOwnItem, PostCard, type FeedItem } from '@/components/feed/post-card';
 import { PostOptionsSheet, type PostOptionsTarget } from '@/components/feed/post-options-sheet';
@@ -13,7 +14,6 @@ import type { PostAuthor } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 import { Appear } from '@/components/motion';
 
-const SITE_URL = 'https://elmonx.com';
 
 type Props = {
   items: FeedItem[];
@@ -56,24 +56,34 @@ export function PostList({
   const showError = (e: unknown, fallback: string) =>
     Alert.alert(t('Error'), e instanceof Error ? e.message : fallback);
 
+  // Likes are optimistic (instant heart + count), reconciled with the server's answer and rolled
+  // back on failure; taps while a toggle is in flight are ignored so two toggles can't race.
+  const likeBusy = useRef(new Set<string>());
+
+  const setLiked = (key: string, liked: boolean, count: number) =>
+    updateItem(key, (current) =>
+      current.kind === 'post'
+        ? { ...current, post: { ...current.post, is_liked: liked, likes_count: Math.max(0, count) } }
+        : { ...current, isLiked: liked, likesCount: Math.max(0, count) }
+    );
+
   const handleToggleLike = async (item: FeedItem) => {
-    if (!token) return;
+    if (!token || likeBusy.current.has(item.key)) return;
+    likeBusy.current.add(item.key);
+    const wasLiked = item.kind === 'post' ? Boolean(item.post.is_liked) : item.isLiked;
+    const count = item.kind === 'post' ? (item.post.likes_count ?? 0) : item.likesCount;
+    setLiked(item.key, !wasLiked, count + (wasLiked ? -1 : 1));
     try {
-      if (item.kind === 'post') {
-        const res = await profileApi.togglePostLike(token, item.post._id);
-        updateItem(item.key, (current) =>
-          current.kind === 'post'
-            ? { ...current, post: { ...current.post, is_liked: res.liked, likes_count: res.likes_count } }
-            : current
-        );
-      } else {
-        const res = await profileApi.toggleRepostLike(token, item.repostId);
-        updateItem(item.key, (current) =>
-          current.kind === 'repost' ? { ...current, isLiked: res.liked, likesCount: res.likes_count } : current
-        );
-      }
+      const res =
+        item.kind === 'post'
+          ? await profileApi.togglePostLike(token, item.post._id)
+          : await profileApi.toggleRepostLike(token, item.repostId);
+      setLiked(item.key, res.liked, res.likes_count);
     } catch (e) {
+      setLiked(item.key, wasLiked, count);
       showError(e, t('Unable to update like.'));
+    } finally {
+      likeBusy.current.delete(item.key);
     }
   };
 
@@ -110,7 +120,7 @@ export function PostList({
 
   const handleShare = (item: FeedItem) => {
     const url =
-      item.kind === 'post' ? `${SITE_URL}/post/${item.post._id}` : `${SITE_URL}/post/repost/${item.repostId}`;
+      item.kind === 'post' ? `${SHARE_URL}/post/${item.post._id}` : `${SHARE_URL}/post/repost/${item.repostId}`;
     Share.share({ message: url, url });
   };
 

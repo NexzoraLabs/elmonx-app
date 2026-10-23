@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Pressable, Share, Text, View } from 'react-native';
 
+import { SHARE_URL } from '@/config/env';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
 import { slugify, toggleDropLike, type Drop } from '@/services/drops-api';
@@ -24,6 +25,7 @@ export function DropSocialActions({ drop, commentsCount, onOpenComments }: Props
   const { token } = useAuth();
   const [liked, setLiked] = useState(Boolean(drop.self_like));
   const [likes, setLikes] = useState(drop.total_likes ?? 0);
+  const likeBusy = useRef(false);
 
   const requireAuth = () => {
     if (token) return true;
@@ -32,7 +34,9 @@ export function DropSocialActions({ drop, commentsCount, onOpenComments }: Props
   };
 
   const handleLike = async () => {
-    if (!requireAuth() || !token) return;
+    // Website dropLikeBusyIds: ignore taps while a toggle is in flight, or two toggles race.
+    if (!requireAuth() || !token || likeBusy.current) return;
+    likeBusy.current = true;
     // Optimistic like, then trust the server's count (website behaviour).
     const nextLiked = !liked;
     setLiked(nextLiked);
@@ -45,12 +49,14 @@ export function DropSocialActions({ drop, commentsCount, onOpenComments }: Props
       setLiked(!nextLiked);
       setLikes((prev) => Math.max(0, prev + (nextLiked ? -1 : 1)));
       Alert.alert(t('Error'), e instanceof Error ? e.message : t('Unable to like.'));
+    } finally {
+      likeBusy.current = false;
     }
   };
 
+  // Website: sharing needs no sign-in.
   const handleShare = () => {
-    if (!requireAuth()) return;
-    const url = `https://elmonx.com/drop/${slugify(drop.title)}/${drop._id}`;
+    const url = `${SHARE_URL}/drop/${slugify(drop.title)}/${drop._id}`;
     Share.share({ message: url, url });
   };
 

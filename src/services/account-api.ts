@@ -1,31 +1,10 @@
 import { API_BASE_URL } from '@/config/env';
-import i18n from '@/i18n';
-
-type ApiEnvelope<T> = {
-  status?: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-};
-
-class AccountApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AccountApiError';
-  }
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // HTTP 200 is returned even for logical failures (e.g. duplicate username comes back as
-  // body `{status: 400}`), so the body is the source of truth.
-  if (envelope.success === false || (envelope.status && envelope.status >= 400)) {
-    throw new AccountApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
-}
+// HTTP 200 is returned even for logical failures (e.g. duplicate username comes back as
+// body `{status: 400}`), so assertSuccess checks the body.
+import { apiFetch, assertSuccess, readJson, type ApiEnvelope } from '@/services/http';
 
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -33,7 +12,7 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
       ...(init?.headers ?? {}),
     },
   });
-  return (await response.json()) as ApiEnvelope<T>;
+  return readJson<ApiEnvelope<T>>(response);
 }
 
 export type ProfilePrivacy = 'Public' | 'Private';

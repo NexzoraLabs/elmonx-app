@@ -253,7 +253,7 @@ export default function ChallengesScreen() {
             ) : goalClaimedToday ? (
               <View style={styles.buttonCol}>
                 <RewardPillButton tone="done" label={t('Claimed')} />
-                <Text style={styles.countdown}>{t('Next in')}{' '}{resetCountdownLabel}</Text>
+                <Text style={styles.countdown}>{t('Next in {{time}}', { time: resetCountdownLabel })}</Text>
               </View>
             ) : (
               <RewardPillButton tone="pending" label={t('{{done}}/{{goal}} done', { done: goalActionsToday, goal: dailyGoal })} />

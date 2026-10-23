@@ -32,5 +32,7 @@ export const MOTION = {
   stagger: 45,
   /** Only the first screenful is staggered; later items (pagination, scroll-back) just fade in. */
   staggerMax: 10,
+  /** Endless logo strip (Home → ElmonX Partnerships): scroll speed in points per second. */
+  marqueeSpeed: 30,
   reduceMotion: ReduceMotion.System,
 } as const;

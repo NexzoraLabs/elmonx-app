@@ -111,8 +111,9 @@ export function DropDetailSection({
         <View style={styles.disclaimer}>
           <Ionicons name="warning-outline" size={16} color={AppColors.gold} />
           <Text style={styles.disclaimerText}>
-            {t('Due to licensing restrictions, this drop is not accessible to users located in')}{' '}
-            {(drop.block_country_list ?? []).map((c) => `"${c.name}"`).join(', ')}.
+            {t('Due to licensing restrictions, this drop is not accessible to users located in {{countries}}.', {
+              countries: (drop.block_country_list ?? []).map((c) => `"${c.name}"`).join(', '),
+            })}
           </Text>
         </View>
       ) : null}

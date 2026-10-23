@@ -4,7 +4,7 @@ import { CollectionGridCard } from '@/components/collections/collection-grid-car
 import { SkeletonGrid } from '@/components/collections/skeleton-grid';
 import { useTranslation } from 'react-i18next';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import type { CollectionGridItem } from '@/data/collections-mock';
+import type { CollectionGridItem } from '@/data/collections';
 import { usePaginatedList } from '@/hooks/use-paginated-list';
 import type { PagedResult } from '@/services/drops-api';
 

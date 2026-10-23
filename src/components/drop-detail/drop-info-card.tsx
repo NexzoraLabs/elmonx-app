@@ -80,16 +80,16 @@ export function DropInfoCard({ drop, remaining, currency, rates, onCurrencyChang
   const publicCountdown = useCountdown(publicMs);
   const showPublicTimer = publicMs > 0 && !publicCountdown.isComplete;
   const isLayer2 = drop.type === 'Layer_2';
+  // Free drop (price 0): nothing to convert, so no currency pills and the price stays in £.
+  const isFree = !drop.price;
   const isSold = remaining <= 0;
   const isSaleClosed = Boolean(drop.is_sale_closed);
   const isAuction = drop.sale_mode === 'Auction';
-  // Collaborator drops are not sold through ElmonX — no buy button at all.
-  const isCollaborator = drop.type === 'Collaborator';
 
+  // Same chain as the website's drop-info-card (Collaborator drops included — they come back sold
+  // out, so they show "Sold Out" like on the website).
   let actions: React.ReactNode = null;
-  if (isCollaborator) {
-    actions = null;
-  } else if (isAuction) {
+  if (isAuction) {
     // Auction drops never show Buy buttons — they sell only through the auction.
     actions = drop.auction_id ? (
       <ActionButton
@@ -102,7 +102,7 @@ export function DropInfoCard({ drop, remaining, currency, rates, onCurrencyChang
   } else if (showTimer) {
     actions = (
       <View style={styles.opensBanner}>
-        <Text style={styles.opensText}>{t('Sale opens')}{' '}{formatSaleOpens(drop.release_date)}</Text>
+        <Text style={styles.opensText}>{t('Sale opens {{date}}', { date: formatSaleOpens(drop.release_date) })}</Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync(googleCalendarUrl(drop))} hitSlop={6}>
           <View style={styles.calendarLink}>
             <Ionicons name="calendar-outline" size={14} color={AppColors.link} />
@@ -154,13 +154,13 @@ export function DropInfoCard({ drop, remaining, currency, rates, onCurrencyChang
                 <Text style={styles.value}>{drop.price || 0}</Text>
               </View>
             ) : (
-              <Text style={styles.value}>{formatPrice(drop.price, currency, rates)}</Text>
+              <Text style={styles.value}>{formatPrice(drop.price, isFree ? 'GBP' : currency, rates)}</Text>
             )}
           </InfoRow>
         ) : null}
       </View>
 
-      {!isLayer2 && !isAuction ? (
+      {!isLayer2 && !isAuction && !isFree ? (
         <View style={styles.currencyRow}>
           {CURRENCIES.map((c) => (
             <Pressable

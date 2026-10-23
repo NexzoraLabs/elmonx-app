@@ -67,7 +67,7 @@ export function LevelRankCard({ loading, level, tier }: Props) {
               <InfoButton label={t('How Rank works')} onPress={() => setInfoOpen('rank')} />
             </View>
             <Text style={styles.valueText} numberOfLines={1}>{tier.name}</Text>
-            <Text style={styles.subText}>{t('Level')}{' '}{tier.min_level}–{tier.max_level}</Text>
+            <Text style={styles.subText}>{t('Level {{min}}–{{max}}', { min: tier.min_level, max: tier.max_level })}</Text>
           </View>
           <HexBadge value={tierNumeral(tier.tier)} fontSize={16} />
         </View>
@@ -78,7 +78,7 @@ export function LevelRankCard({ loading, level, tier }: Props) {
       <View>
         <View style={styles.progressLabelRow}>
           <Text style={styles.progressLabel}>
-            {level.xp_into_level} / {level.xp_into_level + level.xp_to_next_level}{' '}{t('XP')}
+            {t('{{current}} / {{total}} XP', { current: level.xp_into_level, total: level.xp_into_level + level.xp_to_next_level })}
           </Text>
           <Text style={styles.progressPercent}>{Math.round(progress)}%</Text>
         </View>

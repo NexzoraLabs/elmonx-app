@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,9 +9,10 @@ import { UserAvatar } from '@/components/account/user-avatar';
 import { HomeHeader } from '@/components/home/home-header';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { useAuth } from '@/context/auth-context';
-import { ACCOUNT_SECTIONS } from '@/data/account-menu';
+import { ACCOUNT_SECTIONS, UK_VERIFICATION_ROW, type AccountSection as AccountSectionData } from '@/data/account-menu';
 import { useMultiViewer } from '@/hooks/use-multi-viewer';
 import { useTranslation } from 'react-i18next';
+import { getUkStatus } from '@/services/uk-verification-api';
 
 const ROW_ROUTES: Record<string, Href> = {
   'personal-information': '/personal-info',
@@ -25,14 +27,36 @@ const ROW_ROUTES: Record<string, Href> = {
   'my-collectables': '/collectibles',
   'doodles-physicals': '/doodles-physicals',
   connections: '/connections',
+  'uk-verification': '/uk-verification',
 };
 
 export default function AccountScreen() {
   const { t } = useTranslation();
   const AppColors = useAppColors();
   const styles = useStyles();
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
   const multiViewer = useMultiViewer();
+  // Website account page: UK residents get a "UK Verification" entry, and a compliance alert until
+  // they've filled it in (checked again whenever the screen is shown, e.g. after saving the form).
+  const [uk, setUk] = useState({ isUk: false, verified: true });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      let active = true;
+      getUkStatus(token)
+        .then((status) => active && setUk(status))
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [token])
+  );
+
+  const sections: AccountSectionData[] = uk.isUk
+    ? ACCOUNT_SECTIONS.map((section, index) => (index === 0 ? { ...section, rows: [...section.rows, UK_VERIFICATION_ROW] } : section))
+    : ACCOUNT_SECTIONS;
+
   const handlePressRow = (key: string) => {
     if (key === 'multi-viewer') {
       multiViewer.open();
@@ -40,7 +64,6 @@ export default function AccountScreen() {
     }
     const route = ROW_ROUTES[key];
     if (route) router.push(route);
-    // TODO: wire up remaining destinations once those screens are designed.
   };
 
   const handleLogOut = async () => {
@@ -54,7 +77,21 @@ export default function AccountScreen() {
       <HomeHeader variant="back" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {ACCOUNT_SECTIONS.map((section) => (
+        {uk.isUk && !uk.verified ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/uk-verification')}
+            style={({ pressed }) => [styles.ukAlert, pressed && styles.pressed]}>
+            <Ionicons name="alert-circle-outline" size={18} color={AppColors.gold} />
+            <Text style={styles.ukAlertText}>
+              {t(
+                'In accordance with new UK compliance regulations, residents are required to complete a short form to verify their details before continuing with purchases.'
+              )}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {sections.map((section) => (
           <AccountSection
             key={section.title}
             section={section}
@@ -101,6 +138,21 @@ const useStyles = makeStyles((AppColors) => ({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 32,
+  },
+  ukAlert: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(234,179,8,0.15)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  ukAlertText: {
+    flex: 1,
+    color: AppColors.textPrimary,
+    fontSize: 12,
+    lineHeight: 18,
   },
   userRow: {
     flexDirection: 'row',

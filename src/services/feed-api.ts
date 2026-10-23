@@ -1,40 +1,21 @@
 import type { Post, PostAuthor } from '@/services/profile-api';
 
 import { API_BASE_URL } from '@/config/env';
+import { apiFetch, assertSuccess as assertEnvelope, readJson, type ApiEnvelope } from '@/services/http';
 import { appendLocalFile } from '@/services/upload-file';
-import i18n from '@/i18n';
 
-type ApiEnvelope<T> = {
-  status?: number;
-  success?: boolean;
-  message: string;
-  data?: T;
-};
-
-class FeedApiError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'FeedApiError';
-  }
-}
-
-function assertSuccess<T>(envelope: ApiEnvelope<T>): T {
-  // Business errors come back as HTTP 200/201 with body `status: 201` (or >= 400).
-  if (envelope.success === false || (envelope.status && (envelope.status >= 400 || envelope.status === 201))) {
-    throw new FeedApiError(envelope.message || i18n.t('Something went wrong.'));
-  }
-  return envelope.data as T;
-}
+// Business errors come back as HTTP 200/201 with body `status: 201` (or >= 400).
+const assertSuccess = <T,>(envelope: ApiEnvelope<T>): T => assertEnvelope(envelope, { rejectStatus201: true });
 
 async function request<T>(path: string, token: string | null, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
-  return assertSuccess((await response.json()) as ApiEnvelope<T>);
+  return assertSuccess(await readJson<ApiEnvelope<T>>(response));
 }
 
 const json = (method: string, body: object = {}): RequestInit => ({
@@ -68,6 +49,15 @@ export async function getFollowingFeed(token: string, page: number): Promise<Fee
 
 export async function getUserPosts(token: string | null, userId: string, page: number): Promise<Post[]> {
   return (await request<Post[]>(`/feed/user/${userId}/posts?${pageQuery(page)}`, token)) ?? [];
+}
+
+/** Website post page: `post/:id` (a post) or `post/repost/:id` (a repost row, same shape as a feed row). */
+export async function getPost(token: string | null, postId: string): Promise<FeedRow | null> {
+  return (await request<FeedRow>(`/post/${encodeURIComponent(postId)}`, token)) ?? null;
+}
+
+export async function getRepost(token: string | null, repostId: string): Promise<FeedRow | null> {
+  return (await request<FeedRow>(`/post/repost/${encodeURIComponent(repostId)}`, token)) ?? null;
 }
 
 // ---- Create post ----
@@ -251,24 +241,26 @@ export type BlockedListItem = {
 
 type PagedResponse<T> = {
   status?: number;
+  /** Set on a followers / following list the viewer may not see (private account). */
+  is_private?: boolean;
   data?: T[];
   current_page?: number;
   total_count?: number;
 };
 
 // List endpoints need the whole envelope (data + total_count), not just `data`.
-async function requestPaged<T>(path: string, token: string): Promise<PagedResponse<T>> {
-  const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  const envelope = (await response.json()) as PagedResponse<T> & ApiEnvelope<T[]>;
+async function requestPaged<T>(path: string, token: string | null): Promise<PagedResponse<T>> {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  const envelope = await readJson<PagedResponse<T> & ApiEnvelope<T[]>>(response);
   assertSuccess(envelope);
   return envelope;
 }
 
-export async function getFollowers(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
+export async function getFollowers(token: string | null, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
   return requestPaged<FollowListItem>(`/follow/followers/${userId}?${pageQuery(page, limit)}`, token);
 }
 
-export async function getFollowing(token: string, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
+export async function getFollowing(token: string | null, userId: string, page = 1, limit = 20): Promise<PagedResponse<FollowListItem>> {
   return requestPaged<FollowListItem>(`/follow/following/${userId}?${pageQuery(page, limit)}`, token);
 }
 
