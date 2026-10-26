@@ -17,7 +17,7 @@ import { WEB_URL } from '@/config/env';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import i18n, { appLocale } from '@/i18n';
+import i18n from '@/i18n';
 import {
   auctionImage,
   editionsLabel,
@@ -504,16 +504,6 @@ export default function AuctionDetailScreen() {
             {gate === 'cancelled' && (
               <View style={styles.gateBox}>
                 <Text style={styles.gateText}>{t('This auction has been cancelled.')}</Text>
-              </View>
-            )}
-
-            {gate === 'ended' && (
-              <View style={styles.gateBox}>
-                <Text style={styles.gateText}>
-                  {auction.clearing_price != null
-                    ? t('Auction ended · sold at {{price}} X', { price: auction.clearing_price.toLocaleString(appLocale()) })
-                    : t('Auction has ended.')}
-                </Text>
               </View>
             )}
 
