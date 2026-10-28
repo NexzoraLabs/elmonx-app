@@ -30,6 +30,7 @@ const EXTRA_CONSTANTS = {
   'components/collectibles/auction-wins-list.tsx': ['WIN_STATUS_LABEL'],
   'app/(tabs)/auctions.tsx': ['TABS', 'EMPTY_LABEL'],
   'app/(tabs)/auction/[id].tsx': ['STATUS_LABEL'],
+  'components/wallet/export-statement-sheet.tsx': ['MODES'],
   'app/(tabs)/(drawer)/(home-tabs)/feed.tsx': ['SEGMENTS'],
   'components/collections/auctions-tab-page.tsx': ['STATUS_FILTERS'],
   'services/catalog-filters.ts': ['BLOCKCHAIN_OPTIONS', 'DESTINATION_OPTIONS', 'EDITION_OPTIONS'],

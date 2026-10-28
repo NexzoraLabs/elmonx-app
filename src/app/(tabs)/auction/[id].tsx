@@ -17,7 +17,8 @@ import { WEB_URL } from '@/config/env';
 import { useAuth } from '@/context/auth-context';
 import { useChat } from '@/context/chat-context';
 import { makeStyles, useAppColors } from '@/context/theme-context';
-import i18n from '@/i18n';
+import i18n, { appLocale, currentLanguage } from '@/i18n';
+import { rich, slots } from '@/i18n/rich';
 import {
   auctionImage,
   editionsLabel,
@@ -53,6 +54,32 @@ const STATUS_LABEL: Record<AuctionView['status'], string> = {
   Cancelled: 'Cancelled',
 };
 
+// "29 Sep – 29 Oct 2026" + "8:00 pm BST" (phone's time zone), shown above the countdown.
+function auctionSchedule(startIso: string, endIso: string): { range: string; closingTime: string } | null {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+  const locale = appLocale('en-GB');
+  const dayMonth = (d: Date) => d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  const full = (d: Date) => d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  const range =
+    start.toDateString() === end.toDateString()
+      ? full(end)
+      : `${start.getFullYear() === end.getFullYear() ? dayMonth(start) : full(start)} – ${full(end)}`;
+  const closingTime = end.toLocaleTimeString(locale, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: currentLanguage() === 'en',
+    timeZoneName: 'short',
+  });
+  return { range, closingTime };
+}
+
+// "1 minute" / "5 minutes" for the anti-snipe rule.
+function minutesLabel(n: number): string {
+  return n === 1 ? i18n.t('1 minute') : i18n.t('{{n}} minutes', { n });
+}
+
 export default function AuctionDetailScreen() {
   const { t } = useTranslation();
   const AppColors = useAppColors();
@@ -66,6 +93,7 @@ export default function AuctionDetailScreen() {
   const [auction, setAuction] = useState<AuctionView | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showXcoinRate, setShowXcoinRate] = useState(false);
   const [clockNow, setClockNow] = useState(() => Date.now());
   const [amount, setAmount] = useState<string>('');
   const [pending, setPending] = useState<PendingBid | null>(null);
@@ -227,6 +255,8 @@ export default function AuctionDetailScreen() {
   const endsInMs = auction ? new Date(auction.end_time).getTime() - now : 0;
   const inAntiSnipe =
     !!auction && auction.status === 'Live' && !!auction.anti_snipe?.enabled && endsInMs > 0 && endsInMs <= auction.anti_snipe.window_minutes * 60000;
+  const schedule =
+    auction && (auction.status === 'Upcoming' || auction.status === 'Live') ? auctionSchedule(auction.start_time, auction.end_time) : null;
   const ranked = auction?.bids ?? [];
   const removed = auction?.removed_bids ?? [];
   const visibleBids = showAllBids ? ranked : ranked.slice(0, 10);
@@ -385,6 +415,17 @@ export default function AuctionDetailScreen() {
             <Text style={styles.title}>{drop?.title}</Text>
             <Text style={styles.editions}>{editionsLabel(auction.editions)}</Text>
 
+            {schedule && (
+              <View>
+                <Text style={styles.scheduleRange}>{schedule.range}</Text>
+                <Text style={styles.scheduleClosing}>
+                  {rich(t('Closing at {{time}}', slots('time')), {
+                    time: <Text style={styles.scheduleClosingTime}>{schedule.closingTime}</Text>,
+                  })}
+                </Text>
+              </View>
+            )}
+
             {auction.status === 'Upcoming' || (auction.status === 'Live' && endsInMs > 0) ? (
               <AuctionCountdown
                 label={auction.status === 'Upcoming' ? t('Starts in') : t('Ends in')}
@@ -394,9 +435,32 @@ export default function AuctionDetailScreen() {
               />
             ) : null}
 
+            {auction.anti_snipe?.enabled && (auction.status === 'Upcoming' || (auction.status === 'Live' && endsInMs > 0 && !inAntiSnipe)) && (
+              <Text style={styles.antiSnipeRule}>
+                {rich(t('Any bid placed within the final {{window}} will extend the auction by an additional {{extension}}.', slots('window', 'extension')), {
+                  window: <Text style={styles.antiSnipeRuleBold}>{minutesLabel(auction.anti_snipe.window_minutes)}</Text>,
+                  extension: <Text style={styles.antiSnipeRuleBold}>{minutesLabel(auction.anti_snipe.extension_minutes)}</Text>,
+                })}
+              </Text>
+            )}
+
             <View style={styles.priceRow}>
               <View>
-                <Text style={styles.priceLabel}>{auction.total_bids > 0 ? t('Current bid') : t('Starting bid')}</Text>
+                <View style={styles.priceLabelRow}>
+                  <Text style={styles.priceLabel}>{auction.total_bids > 0 ? t('Current bid') : t('Starting bid')}</Text>
+                  <PressableScale
+                    pressScale="button"
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('What is an X-coin worth?')}
+                    onPress={() => {
+                      haptic('selection');
+                      setShowXcoinRate((v) => !v);
+                    }}
+                  >
+                    <Ionicons name="information-circle-outline" size={14} color={AppColors.textSecondary} />
+                  </PressableScale>
+                </View>
                 <Text style={styles.price}>
                   {t('{{amount}} X', { amount: (auction.current_price ?? auction.leading_bid ?? auction.initial_price ?? 0).toLocaleString() })}
                 </Text>
@@ -415,6 +479,7 @@ export default function AuctionDetailScreen() {
                   </View>
                 </>
               )}
+              {showXcoinRate && <Text style={styles.xcoinRate}>{t('1 X-Coin = £1.00')}</Text>}
             </View>
 
             {gate === 'open' && auction.quick_bids?.length > 0 && (
@@ -470,7 +535,11 @@ export default function AuctionDetailScreen() {
 
             {gate === 'no_wallet' && (
               <View style={styles.gateBox}>
-                <Text style={styles.gateText}>{t('Connect a wallet to bid')}</Text>
+                <Text style={styles.gateText}>
+                  {t('Connect a wallet to bid')}
+                  {'\n'}
+                  {t('No funds are taken by connecting the wallet.')}
+                </Text>
                 <PressableScale pressScale="button" accessibilityRole="button" style={styles.gateBtn} onPress={() => openWallet()}>
                   <Text style={styles.gateBtnText}>{t('Connect Wallet')}</Text>
                 </PressableScale>
@@ -744,6 +813,30 @@ const useStyles = makeStyles((AppColors) => ({
     fontSize: 14,
     fontWeight: '500',
   },
+  scheduleRange: {
+    color: AppColors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  scheduleClosing: {
+    color: AppColors.textSecondary,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  scheduleClosingTime: {
+    color: AppColors.textPrimary,
+    fontWeight: '700',
+  },
+  antiSnipeRule: {
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: -4,
+  },
+  antiSnipeRuleBold: {
+    color: AppColors.textPrimary,
+    fontWeight: '700',
+  },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -751,6 +844,17 @@ const useStyles = makeStyles((AppColors) => ({
     borderRadius: 14,
     padding: 14,
     flexWrap: 'wrap',
+  },
+  priceLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  xcoinRate: {
+    width: '100%',
+    marginTop: 10,
+    color: AppColors.textSecondary,
+    fontSize: 12,
   },
   priceLabel: {
     color: AppColors.textSecondary,

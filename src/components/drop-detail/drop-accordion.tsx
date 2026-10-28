@@ -5,9 +5,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState, type ReactNode } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { RemainingEditionsSheet } from '@/components/drop-detail/remaining-editions-sheet';
+import { PressableScale } from '@/components/motion';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { makeStyles, useAppColors } from '@/context/theme-context';
 import { BURNED_EDITIONS } from '@/data/burned-editions';
+import { useCountdown } from '@/hooks/use-countdown';
 import { isSpecialDrop, type Drop } from '@/services/drops-api';
 import { useTranslation } from 'react-i18next';
 import { appLocale } from '@/i18n';
@@ -49,6 +52,7 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
   const styles = useStyles();
   const [open, setOpen] = useState<string | null>(null);
   const [license, setLicense] = useState<{ title: string; description?: string } | null>(null);
+  const [remainingOpen, setRemainingOpen] = useState(false);
   const toggle = (key: string) => setOpen((prev) => (prev === key ? null : key));
 
   const blindBoxItems = Array.isArray(drop.blind_box_items_data) ? drop.blind_box_items_data : [];
@@ -102,6 +106,7 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
                 <Row key={`${edition.rarity}-${index}`} label={edition.rarity} value={String(edition.count)} />
               ))
             : null}
+        <CheckRemainingButton drop={drop} onPress={() => setRemainingOpen(true)} />
       </Section>
 
       <Section title={t('Details')} open={open === 'details'} onToggle={() => toggle('details')}>
@@ -241,7 +246,27 @@ export function DropAccordion({ drop, remaining, onCheckAllowlist }: Props) {
           </View>
         ) : null}
       </BottomSheet>
+      <RemainingEditionsSheet drop={remainingOpen ? drop : null} onClose={() => setRemainingOpen(false)} />
     </View>
+  );
+}
+
+/**
+ * Website "Check Remaining": unsold editions only exist in Layer2_NFTs, and the website shows the
+ * button once the drop isn't Upcoming (status flips to Live when release_date passes) and the sale
+ * isn't closed. Its own component so the release countdown doesn't re-render the whole accordion.
+ */
+function CheckRemainingButton({ drop, onPress }: { drop: Drop; onPress: () => void }) {
+  const { t } = useTranslation();
+  const styles = useStyles();
+  const releaseMs = drop.release_date ? new Date(drop.release_date).getTime() : 0;
+  const released = useCountdown(releaseMs).isComplete;
+  const isUpcoming = drop.status === 'Upcoming' && !(releaseMs > 0 && released);
+  if (drop.type !== 'Layer_2' || isUpcoming || drop.is_sale_closed) return null;
+  return (
+    <PressableScale pressScale="button" haptic="light" onPress={onPress} style={styles.smallButton}>
+      <Text style={styles.smallButtonText}>{t('Check Remaining')}</Text>
+    </PressableScale>
   );
 }
 

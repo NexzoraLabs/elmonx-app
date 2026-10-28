@@ -4,7 +4,7 @@ import type { CollectionCategory, CollectionGridItem } from '@/data/collections'
 import { appendCatalogParams, DEFAULT_CATALOG_FILTERS, type CatalogFilters } from '@/services/catalog-filters';
 
 import { API_BASE_URL } from '@/config/env';
-import { apiFetch, readJson } from '@/services/http';
+import { apiFetch, assertSuccess, readJson, type ApiEnvelope } from '@/services/http';
 import i18n, { appLocale, currentLanguage } from '@/i18n';
 const ITEMS_PER_PAGE = 15;
 
@@ -72,6 +72,8 @@ export type Drop = {
   is_blind_box: boolean;
   /** Admin flag: AR for everyone, not only owners (list_sell defaults it to false). */
   is_ar_available_to_all?: boolean;
+  /** 'Upcoming' until an admin/cron flips it; the website treats it as Live once release_date passes. */
+  status?: string;
   is_sale_closed: boolean;
   is_open_drop: boolean;
   /**
@@ -226,6 +228,20 @@ export async function checkWhitelist(
     headers: authHeaders(token),
   });
   return readJson<{ status: number; allocated?: number; consumed?: number }>(response);
+}
+
+export type RemainingEdition = {
+  token_id: string;
+  name: string | null;
+};
+
+/** Unsold Layer 2 editions of a drop (public route, website "Check Remaining"). */
+export async function getRemainingEditions(dropId: string): Promise<RemainingEdition[]> {
+  const params = new URLSearchParams({ drop_id: dropId });
+  const response = await apiFetch(`${API_BASE_URL}/drop/remaining_editions?${params.toString()}`);
+  const json = await readJson<ApiEnvelope<RemainingEdition[]>>(response);
+  // A 201 here is an AJV validation failure.
+  return assertSuccess(json, { rejectStatus201: true }) ?? [];
 }
 
 // Doodles / Wagner launch drops: the website hides rarity for these (environment.ts SPECIAL_DROP_IDS).
