@@ -102,7 +102,7 @@ export default function UserSearchScreen() {
           <Pressable
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             onPress={() => router.push({ pathname: '/profile/[id]', params: { id: item.user_name } })}>
-            <Image source={{ uri: resolveAvatar(item.profile_avatar) }} style={styles.avatar} contentFit="cover" />
+            <Image source={resolveAvatar(item.profile_avatar)} style={styles.avatar} contentFit="cover" />
             <View style={styles.rowText}>
               <View style={styles.nameRow}>
                 <Text style={styles.name} numberOfLines={1}>

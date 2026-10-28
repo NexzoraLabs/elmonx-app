@@ -15,7 +15,7 @@ export function SuggestedUserRow({ user, onPress }: { user: SuggestedUser; onPre
   const styles = useStyles();
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
-      <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.avatar} contentFit="cover" />
+      <Image source={resolveAvatar(user.profile_avatar)} style={styles.avatar} contentFit="cover" />
       <View style={styles.text}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>

@@ -11,6 +11,7 @@ import type { LeaderboardUser } from '@/services/rewards-api';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { appendUnique } from '@/services/http';
+import { resolveAvatar } from '@/services/profile-api';
 
 const ITEMS_PER_PAGE = 10;
 const RANK_COLORS = ['#F5B400', '#B5B8C0', '#C97B3D'] as const;
@@ -117,7 +118,6 @@ export default function LeaderboardScreen() {
 
 function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
   const { t } = useTranslation();
-  const AppColors = useAppColors();
   const styles = useStyles();
   const isTop3 = rank <= 3;
   return (
@@ -135,13 +135,7 @@ function RankRow({ rank, user }: { rank: number; user: LeaderboardUser }) {
         <Pressable
           onPress={() => router.push({ pathname: '/profile/[id]', params: { id: user.user_name } })}
           style={styles.userTouch}>
-          {user.avatar ? (
-            <Image source={{ uri: user.avatar }} style={styles.avatar} contentFit="cover" />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person-outline" size={18} color={AppColors.textSecondary} />
-            </View>
-          )}
+          <Image source={resolveAvatar(user.avatar)} style={styles.avatar} contentFit="cover" />
           <View>
             <Text style={styles.userName} numberOfLines={1}>
               {user.user_name || t('Unknown')}
@@ -267,10 +261,6 @@ const useStyles = makeStyles((AppColors) => ({
     height: 40,
     borderRadius: 20,
     backgroundColor: AppColors.border,
-  },
-  avatarPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   userName: {
     color: AppColors.textPrimary,

@@ -130,7 +130,7 @@ function FollowListBody({ onClose, kind, userId, username }: Props) {
                 onPress={() => openProfile(item.user.user_name)}
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
                 <Image
-                  source={{ uri: resolveAvatar(item.user.profile_avatar_url ?? item.user.profile_avatar) }}
+                  source={resolveAvatar(item.user.profile_avatar_url ?? item.user.profile_avatar)}
                   style={styles.avatar}
                   contentFit="cover"
                   cachePolicy="memory-disk"

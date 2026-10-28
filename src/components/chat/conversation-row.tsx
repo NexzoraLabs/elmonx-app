@@ -53,7 +53,7 @@ export function ConversationRow({ conversation, online, typing }: Props) {
       }>
       <View>
         <Image
-          source={{ uri: resolveAvatar(participant.profile_avatar || participant.profile_avatar_url) }}
+          source={resolveAvatar(participant.profile_avatar || participant.profile_avatar_url)}
           style={styles.avatar}
           contentFit="cover"
         />

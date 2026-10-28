@@ -1,9 +1,8 @@
 import { Image } from 'expo-image';
 
-import { PlaceholderThumb } from '@/components/home/placeholder-thumb';
-import { makeStyles, useAppColors } from '@/context/theme-context';
+import { makeStyles } from '@/context/theme-context';
 import type { UserData } from '@/services/auth-api';
-import { isImageUrl } from '@/services/profile-api';
+import { DEFAULT_AVATAR, isRealAvatar } from '@/services/profile-api';
 
 type Props = {
   user: UserData | null;
@@ -11,17 +10,17 @@ type Props = {
 };
 
 export function UserAvatar({ user, size }: Props) {
-  const AppColors = useAppColors();
   const styles = useStyles();
-  const avatarUrl = [user?.profile_avatar_url, user?.profile_avatar].find(
-    (url) => isImageUrl(url) && url !== 'images/avatar/default.png'
-  );
+  const avatarUrl = [user?.profile_avatar_url, user?.profile_avatar].find(isRealAvatar);
   const shape = { width: size, height: size, borderRadius: size / 2 };
 
-  return avatarUrl ? (
-    <Image cachePolicy="memory-disk" source={{ uri: avatarUrl }} style={[styles.image, shape]} contentFit="cover" />
-  ) : (
-    <PlaceholderThumb color={AppColors.surface} icon="person-outline" style={shape} iconSize={size * 0.45} />
+  return (
+    <Image
+      cachePolicy="memory-disk"
+      source={avatarUrl ?? DEFAULT_AVATAR}
+      style={[styles.image, shape]}
+      contentFit="cover"
+    />
   );
 }
 

@@ -298,7 +298,7 @@ export default function PublicProfileScreen() {
     <View>
       <CoverBanner uri={profileApi.resolveCover(profile.cover_image)} />
       <View style={styles.info}>
-        <Image source={{ uri: profileApi.resolveAvatar(profile.profile_avatar) }} style={styles.avatar} contentFit="cover" />
+        <Image source={profileApi.resolveAvatar(profile.profile_avatar)} style={styles.avatar} contentFit="cover" />
         <View style={styles.nameRow}>
           <Text style={styles.name}>{profile.user_name}</Text>
           {isPrivate ? <Ionicons name="lock-closed" size={14} color={AppColors.textSecondary} /> : null}

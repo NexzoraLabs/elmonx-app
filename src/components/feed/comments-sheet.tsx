@@ -151,7 +151,7 @@ function CommentsContent({
             return (
               <View style={styles.commentRow}>
                 <Image
-                  source={{ uri: resolveAvatar(item.author?.profile_avatar) }}
+                  source={resolveAvatar(item.author?.profile_avatar)}
                   style={styles.avatar}
                   contentFit="cover"
                 />

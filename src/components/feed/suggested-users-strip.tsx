@@ -84,7 +84,7 @@ export function SuggestedUsersStrip({ variant = 'feed' }: { variant?: 'feed' | '
               key={user._id}
               style={styles.card}
               onPress={() => router.push({ pathname: '/profile/[id]', params: { id: user.user_name } })}>
-              <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.avatar} contentFit="cover" />
+              <Image source={resolveAvatar(user.profile_avatar)} style={styles.avatar} contentFit="cover" />
               <View style={styles.nameRow}>
                 <Text style={styles.name} numberOfLines={1}>
                   @{user.user_name}

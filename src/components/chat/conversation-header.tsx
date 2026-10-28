@@ -4,11 +4,12 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
+import type { AvatarSource } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 
 type ConversationHeaderProps = {
   username: string;
-  avatarUrl: string;
+  avatarUrl: AvatarSource;
   online: boolean;
   typing: boolean;
   onPressProfile: () => void;
@@ -32,7 +33,7 @@ export function ConversationHeader({ username, avatarUrl, online, typing, onPres
 
       <Pressable style={styles.identity} onPress={onPressProfile}>
         <View>
-          <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+          <Image source={avatarUrl} style={styles.avatar} contentFit="cover" />
           {online ? <View style={styles.onlineDot} /> : null}
         </View>
         <View style={styles.nameBlock}>

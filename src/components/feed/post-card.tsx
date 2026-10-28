@@ -174,7 +174,7 @@ function AuthorRow({
         disabled={!author}
         onPress={() => author && onPressAuthor(author)}>
         <Image cachePolicy="memory-disk"
-          source={{ uri: resolveAvatar(author?.profile_avatar || author?.profile_avatar_url) }}
+          source={resolveAvatar(author?.profile_avatar || author?.profile_avatar_url)}
           style={styles.avatar}
           contentFit="cover"
         />

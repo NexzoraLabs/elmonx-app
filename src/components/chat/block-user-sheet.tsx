@@ -5,6 +5,7 @@ import { AuthButton } from '@/components/auth/auth-button';
 import { Image } from 'expo-image';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { makeStyles, useAppColors } from '@/context/theme-context';
+import type { AvatarSource } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 
 const CONSEQUENCES: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }[] = [
@@ -21,7 +22,7 @@ type BlockUserSheetProps = {
   visible: boolean;
   onClose: () => void;
   name: string;
-  avatarUrl: string;
+  avatarUrl: AvatarSource;
   onConfirm: () => void;
 };
 
@@ -32,7 +33,7 @@ export function BlockUserSheet({ visible, onClose, name, avatarUrl, onConfirm }:
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.header}>
-        <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+        <Image source={avatarUrl} style={styles.avatar} contentFit="cover" />
         <Text style={styles.title}>{t('Block {{name}}?', { name })}</Text>
         <Text style={styles.subtitle}>{t('Are you sure you want to block this user.')}</Text>
       </View>

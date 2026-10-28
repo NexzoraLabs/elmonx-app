@@ -193,7 +193,7 @@ export default function ProfileTabScreen() {
           onPress={() => pickAndUpload('avatar')}
           style={styles.avatarWrap}>
           <Image
-            source={{ uri: header?.avatar ?? profileApi.DEFAULT_AVATAR_URL }}
+            source={header?.avatar ?? profileApi.DEFAULT_AVATAR}
             style={styles.avatar}
             contentFit="cover"
           />

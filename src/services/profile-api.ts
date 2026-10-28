@@ -2,9 +2,20 @@ import { API_BASE_URL } from '@/config/env';
 import { apiFetch, assertSuccess as assertEnvelope, readJson, type ApiEnvelope } from '@/services/http';
 import { appendLocalFile } from '@/services/upload-file';
 
-// Same fallbacks the website uses when a user has no avatar/cover.
-const DEFAULT_AVATAR_PATH = 'images/avatar/default.png';
-export const DEFAULT_AVATAR_URL = 'https://assets.elmonx.com/default.png';
+// Bundled default avatar, shown wherever a user has no avatar. New file name on
+// purpose so a cached copy of the old default image never shows.
+export const DEFAULT_AVATAR: number = require('@/assets/images/default-profile.webp');
+
+/** A real avatar URL, or the bundled default image (an `expo-image` `source`). */
+export type AvatarSource = string | number;
+
+// The backend still stores/returns the old default image for users with no
+// avatar/cover (relative path, CDN URL, raw S3 URL) — all mean "none".
+const LEGACY_DEFAULT_AVATARS = new Set([
+  'images/avatar/default.png',
+  'https://assets.elmonx.com/default.png',
+  'https://elmonx-uploads.s3.eu-west-2.amazonaws.com/default.png',
+]);
 
 // HTTP 200 comes back even for logical failures; 201 in the body means a validation error here.
 const assertSuccess = <T,>(envelope: ApiEnvelope<T>): T => assertEnvelope(envelope, { rejectStatus201: true });
@@ -28,13 +39,17 @@ export function isImageUrl(path?: string): path is string {
   return Boolean(path) && !/\.(glb|gltf)(\?|$)/i.test(path as string);
 }
 
-export function resolveAvatar(path?: string): string {
-  if (!isImageUrl(path) || path === DEFAULT_AVATAR_PATH) return DEFAULT_AVATAR_URL;
-  return path;
+/** A displayable avatar the user actually set (not a 3D model, not the old default image). */
+export function isRealAvatar(path?: string): path is string {
+  return isImageUrl(path) && !LEGACY_DEFAULT_AVATARS.has(path);
+}
+
+export function resolveAvatar(path?: string): AvatarSource {
+  return isRealAvatar(path) ? path : DEFAULT_AVATAR;
 }
 
 export function resolveCover(path?: string): string | undefined {
-  if (!path || path === DEFAULT_AVATAR_PATH) return undefined;
+  if (!path || LEGACY_DEFAULT_AVATARS.has(path)) return undefined;
   return path;
 }
 
@@ -43,7 +58,7 @@ export function resolveCover(path?: string): string | undefined {
 export type MyProfileHeader = {
   userId: string;
   userName: string;
-  avatar: string;
+  avatar: AvatarSource;
   cover?: string;
   createdAt?: string;
   postsCount: number;

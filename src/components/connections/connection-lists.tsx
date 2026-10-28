@@ -355,7 +355,7 @@ function AvatarImage({ url }: { url?: string | null }) {
   const src = resolveAvatar(url ?? undefined);
   return (
     <Image
-      source={{ uri: src }}
+      source={src}
       style={styles.avatar}
       contentFit="cover"
       transition={100}

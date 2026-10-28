@@ -114,7 +114,7 @@ export default function ChatListScreen() {
                       params: { id: 'new', userId: user._id, username: user.user_name, avatar: user.profile_avatar ?? '' },
                     })
                   }>
-                  <Image source={{ uri: resolveAvatar(user.profile_avatar) }} style={styles.personAvatar} contentFit="cover" />
+                  <Image source={resolveAvatar(user.profile_avatar)} style={styles.personAvatar} contentFit="cover" />
                   <View style={styles.personText}>
                     <View style={styles.personNameRow}>
                       <Text style={styles.personName}>@{user.user_name}</Text>

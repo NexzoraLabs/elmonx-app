@@ -3,11 +3,12 @@ import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
 import { makeStyles, useAppColors } from '@/context/theme-context';
+import type { AvatarSource } from '@/services/profile-api';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
   username: string;
-  avatarUrl: string;
+  avatarUrl: AvatarSource;
   onViewProfile: () => void;
 };
 
@@ -18,7 +19,7 @@ export function NewConversationProfileCard({ username, avatarUrl, onViewProfile 
   const styles = useStyles();
   return (
     <View style={styles.container}>
-      <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+      <Image source={avatarUrl} style={styles.avatar} contentFit="cover" />
       <Text style={styles.username}>@{username}</Text>
       <Text style={styles.meta}>{t('No messages yet. Say hi!')}</Text>
 
